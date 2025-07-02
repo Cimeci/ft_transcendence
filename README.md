@@ -6,15 +6,17 @@
 
 ## 🛠️ Web (backend/frontend)
 
+<a>
    ├── Major: Framework Backend (Fastify + Node.js)
 
-       └── ⚠ Nécessaire pour sortir du PHP
+    └── ⚠ Nécessaire pour sortir du PHP
 
    ├── Minor: Frontend Toolkit (Tailwind + TS)
 
    └── Minor: Database (SQLite)
 
        └── ⚠ Nécessaire si tu as un backend avec données persistantes
+</a>
 
 ## 👤 User Management
 
