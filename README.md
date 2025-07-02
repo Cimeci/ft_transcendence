@@ -2,7 +2,7 @@
 
 
 <details>
-<summary><h1>Modules</h1></summary>
+<summary><h2>Modules</h2></summary>
 
 ## 🛠️ Web (backend/frontend)
    ├── Major: Framework Backend (Fastify + Node.js)
