@@ -8,7 +8,7 @@
 
    ├── Major: Framework Backend (Fastify + Node.js)
 
-   │   └── ⚠ Nécessaire pour sortir du PHP
+       └── ⚠ Nécessaire pour sortir du PHP
 
    ├── Minor: Frontend Toolkit (Tailwind + TS)
 
@@ -20,7 +20,7 @@
 
    ├── Major: Standard User Auth (register, login, stats, avatar, friends)
 
-   │   └── Très cohérent avec un backend
+       └── Très cohérent avec un backend
 
    └── Major: Remote Auth (Google Sign-In)
 
@@ -79,7 +79,7 @@
 ## 🕹️ Server-Side Pong
 
    ├── Major: Pong avec API + logique côté serveur
-   
+
    └── Major: Pong en CLI connecté au web (très original !)
 
 </details>
