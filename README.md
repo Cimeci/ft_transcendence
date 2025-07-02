@@ -1,5 +1,4 @@
-# ft_transcendence
-
+# 🕹️ Transcendence
 
 <details>
 <summary><h2>Modules</h2></summary>
