@@ -1,8 +1,7 @@
 # ft_transcendence
 
 
-<details>
-    <h1>Modules</h1>
+<details><h1>Modules</h1>
 
 ## 🛠️ Web (backend/frontend)
    ├── Major: Framework Backend (Fastify + Node.js)
