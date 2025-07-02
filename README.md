@@ -6,27 +6,17 @@
 
 ## 🛠️ Web (backend/frontend)
 
-<a>
-   ├── Major: Framework Backend (Fastify + Node.js)
-
-    └── ⚠ Nécessaire pour sortir du PHP
+   ├── Major: Framework Backend (Fastify + Node.js) -> ⚠ Nécessaire pour sortir du PHP
 
    ├── Minor: Frontend Toolkit (Tailwind + TS)
 
-   └── Minor: Database (SQLite)
-
-       └── ⚠ Nécessaire si tu as un backend avec données persistantes
-</a>
+   └── Minor: Database (SQLite) -> ⚠ Nécessaire si tu as un backend avec données persistantes
 
 ## 👤 User Management
 
-   ├── Major: Standard User Auth (register, login, stats, avatar, friends)
+   ├── Major: Standard User Auth (register, login, stats, avatar, friends) -> Très cohérent avec un backend
 
-       └── Très cohérent avec un backend
-
-   └── Major: Remote Auth (Google Sign-In)
-
-       └── Bonus en ergonomie mais plus complexe
+   └── Major: Remote Auth (Google Sign-In) -> Bonus en ergonomie mais plus complexe
 
 ## 🎮 Gameplay & UX
 
