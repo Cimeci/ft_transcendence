@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { mkdirSync } from 'fs';
 import fp from 'fastify-plugin';
 
+// creer la db pour les tables que l'on va creer
 async function databasePlugin(fastify, options) {
   try {
     mkdirSync('./db', { recursive: true });
