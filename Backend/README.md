@@ -31,48 +31,101 @@ Microservices:
 
 La conteneurisation de microservices avec Docker implique la creation d'un Dockerfile contenant des instructions pour construire une image Docker.
 
-- Defininir l'image de base
+1ere partie: Faire un dockerfile pour 1 service 
 
-  L'instruction FROM specifie l'image de base pour construire une image Docker et doit etre la premiere mention listee dans le fichier. L'image de base est la premiere couche vierge qui vous donne le controle de ce que votre image finale contiendra. Il peut s'agir d'une image officielle Docker comme BusyBox ou CentOS. Alternativement, il peut s'agir d'une image de base personnalisee qui inclut des logiciels supplementaires et des dependances dont vous avez besoin pour votre image.
+    - Defininir l'image de base
 
-  EX : "FROM node:14-alpine"
+    L'instruction FROM specifie l'image de base pour construire une image Docker et doit etre la premiere mention listee dans le fichier. L'image de base est la premiere couche vierge qui vous donne le controle de ce que votre image finale contiendra. Il peut s'agir d'une image officielle Docker comme BusyBox ou CentOS. Alternativement, il peut s'agir d'une image de base personnalisee qui inclut des logiciels supplementaires et des dependances dont vous avez besoin pour votre image.
 
-- Fixer le repertoire
+    EX : "FROM node:14-alpine"
 
-    La commande suivante est l'instruction WORKDIR. Cette commande definit le repertoire actif sur lequel s'executent toutes les commandes suivantes. C'est similaire a l'execution de la commande "cd" a l'interieur du conteneur.
-    
-    EX: "WORKDIR /usr/src/app"
+    - Fixer le repertoire
 
-- Copier le code de la source
+        La commande suivante est l'instruction WORKDIR. Cette commande definit le repertoire actif sur lequel s'executent toutes les commandes suivantes. C'est similaire a l'execution de la commande "cd" a l'interieur du conteneur.
+        
+        EX: "WORKDIR /usr/src/app"
 
-    La commande suivante est COPY, elle copie des fichiers d'un emplacement a un autre. Lorsque l'image est construite, les fichiers specifies sont copies du repertoire d'application hote vers le repertoire de travail specifie (WORKDIR).
-    Une commande similaire a COPY est la commande ADD, qui remplit la meme donction mais egalement gerer des URL distantes et des fichiers compresses de decompression.
+    - Copier le code de la source
 
-    EX: "COPY ["package.json", "package-lock.json", "./"]"
+        La commande suivante est COPY, elle copie des fichiers d'un emplacement a un autre. Lorsque l'image est construite, les fichiers specifies sont copies du repertoire d'application hote vers le repertoire de travail specifie (WORKDIR).
+        Une commande similaire a COPY est la commande ADD, qui remplit la meme donction mais egalement gerer des URL distantes et des fichiers compresses de decompression.
 
-- installer les dependances
+        EX: "COPY ["package.json", "package-lock.json", "./"]"
 
-    La commande RUN appelle l'installation d'applications de conteneurs ou de dependances de paquets. a l'etape precedente, nous avons defini une directive pour copier les fichiers de dependance. Ici, vous devez spécifier une commande qui installe ces dépendances. 
-    bonus: npm ci -> ci est une commande distincte de install (clean-install)
-        - lit exclusivement le fichier package-lock.json
-        - supprime node_modules puis réinstalle toutes les dépendances exactement comme lockées
-        - échoue si le lockfile est absent ou incohérent avec package.json
-        - est plus rapide et reproductible que npm install dans un environnement CI ou une image Docker
+    - installer les dependances
 
-    EX: "RUN npm install"
+        La commande RUN appelle l'installation d'applications de conteneurs ou de dependances de paquets. a l'etape precedente, nous avons defini une directive pour copier les fichiers de dependance. Ici, vous devez spécifier une commande qui installe ces dépendances. 
+        bonus: npm ci -> ci est une commande distincte de install (clean-install)
+            - lit exclusivement le fichier package-lock.json
+            - supprime node_modules puis réinstalle toutes les dépendances exactement comme lockées
+            - échoue si le lockfile est absent ou incohérent avec package.json
+            - est plus rapide et reproductible que npm install dans un environnement CI ou une image Docker
 
-- Copier au repertoire de travail
+        EX: "RUN npm install"
 
-    Une commande COPY copie tout le code source de l'application de l'hôte au répertoire de travail du conteneur précédemment spécifié. Étant donné que les fichiers de dépendance du paquet ont déjà été copiés et installés, le conteneur dispose désormais de tout ce dont l'application a besoin pour fonctionner avec succès.
+    - Copier au repertoire de travail
 
-    EX: "COPY .."
+        Une commande COPY copie tout le code source de l'application de l'hôte au répertoire de travail du conteneur précédemment spécifié. Étant donné que les fichiers de dépendance du paquet ont déjà été copiés et installés, le conteneur dispose désormais de tout ce dont l'application a besoin pour fonctionner avec succès.
 
-- Executer le port de service
+        EX: "COPY .."
 
-    La commande EXPOSE n'ouvre pas les ports. Il indique simplement à Docker quel port l'application écoute pour le trafic.
+    - Executer le port de service
 
-    EX: "EXPOSE 3001"
+        La commande EXPOSE n'ouvre pas les ports. Il indique simplement à Docker quel port l'application écoute pour le trafic.
 
-- Executer la demande
+        EX: "EXPOSE 3001"
 
-    Enfin, CMD definit la commande que vous souhaitez executer lors de l'execution d'un conteneur a partir d'une image
+    - Executer la demande
+
+        Enfin, CMD definit la commande que vous souhaitez executer lors de l'execution d'un conteneur a partir d'une image
+
+    ca donne ca pour transc:
+    ```
+        FROM node:20-slim
+        WORKDIR /app
+        COPY package.json .
+        COPY package-lock.json .
+        RUN npm ci --only=production
+        COPY . .
+        EXPOSE 3000
+        CMD ["node", "src/tournament/tournament.js"]
+    ```
+
+    c'est un dockerfile pour lancer en solo un service en particulier. ou les package*.json sont a la racine du projet et pas dans le dossier du service en question.
+    et pour lancer le tout il faut faire:
+    docker build -f src/tournament/Dockerfile -t tournament-sevice .
+    docker run -p 3000:3000 --name tournament-container tournament-service
+
+    a note que npm ci --only=production ne peut etre mit que s'il y a un package-lock.json de copie. et qu'on met node:20-slim et pas node:24-slim car la derniere version de node est trop recente donc il n'y a pas de binaire pre-compile de better-sqlite3.
+
+2eme partie: lancement de tout les services ensemble
+
+    comme pour inception faire un .yml a la racine du projet avec chaque service ou chacun est sur le meme network. 
+    pour cette partie ne pas expose le meme port pour tous sinon il y aura un conflit sur l'hote ce qui donne ca:
+
+    services:
+        auth:
+            ports:
+            - "3001:3000"
+        game:
+            ports:
+            - "3002:3000"
+        tournament:
+            ports:
+            - "3003:3000"
+        user:
+            ports:
+            - "3004:3000"
+
+    et rajouter un package.json dans chaque dossier de service pour que les docker puisse avoir acces a ceux ci. (2eme option c'est de changer le context dans le .yml: "build: context: . dockerfile: src/auth/Dockerfile)
+
+    puis enfin lancer le tout avec: docker compose up -build.
+    les services vont etre sur:
+        -   Auth : http://localhost:3001
+        -   Game : http://localhost:3002
+        -   Tournament : http://localhost:3003
+        -   User : http://localhost:3004
+
+3eme partie: rajouter un proxy
+
+    le proxy est un intermediaire qui recoit une requete, la transmet a quelqu'un d'autre et vous renvoie la reponse.

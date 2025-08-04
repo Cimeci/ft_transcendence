@@ -1,0 +1,51 @@
+services:
+  gateway:
+    container_name: gateway_container
+    build: ./src/gateway
+    networks:
+      - backend
+    ports:
+      - "4000:443"
+    depends_on:
+      - auth
+      - game
+      - tournament
+      - user
+    restart: on-failure
+  auth:
+    container_name: auth_container
+    build: ./src/auth
+    networks:
+      - backend
+    expose:
+      - "4000"
+    restart: on-failure
+  game:
+    container_name: game_container
+    build: ./src/game
+    networks:
+      - backend
+    expose:
+      - "4000"
+    restart: on-failure
+  tournament:
+    container_name: tournament_container
+    build: ./src/tournament
+    networks:
+      - backend
+    expose:
+      - "4000"
+    restart: on-failure
+  user:
+    container_name: user_container
+    build: ./src/user
+    networks:
+      - backend
+    expose:
+      - "4000"
+    restart: on-failure
+
+networks:
+  backend:
+    name: back
+    driver: bridge

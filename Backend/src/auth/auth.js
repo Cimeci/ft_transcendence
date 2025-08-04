@@ -60,21 +60,14 @@ app.setErrorHandler((error, request, reply) => {
     reply.status(500).send({ error: 'Internal Server Error' });
 });
 
+app.get('/', async(request, reply) => {
+    return 'hello';
+});
+
 app.get('/login', async(request, reply) => {
     return 'login';
 });
 
-app.get('/', async(request, reply) => {
-    return 'hello world';
-});
-
-app.listen({ port: 3000, host: '0.0.0.0' })
-    .then(() => {
-        console.log('Auth service running on port 3000');
-    })
-    .catch ((err) => {
-        app.log.error(err);
-        process.exit(1);
-    });
+app.listen({ port: 4000, host: '0.0.0.0' })
 
 export default app;
