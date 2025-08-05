@@ -2,6 +2,7 @@ export const translations = {
   fr: {
     // Navbar link
     home: "Accueil",
+    settings: "Parametres",
     //HomePage
     welcome: "Bienvenue",
     login: "Connexion",
@@ -93,6 +94,7 @@ export const translations = {
   en: {
     // Navbar link
     home: "Home",
+    settings: "Settings",
     //HomePage
     welcome: "Welcome",
     login: "Login",
@@ -184,6 +186,7 @@ export const translations = {
   es: {
     // Navbar link
     home: "Inicio",
+    settings: "Parámetro",
     //HomePage
     welcome: "Bienvenido",
     login: "Iniciar sesión",

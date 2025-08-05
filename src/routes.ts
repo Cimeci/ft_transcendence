@@ -1,12 +1,16 @@
 import './style.css';
-import { createNavbar, getCurrentLang } from './components/navbar';
+import { createNavbar} from './components/navbar';
 import { HomePage } from './pages/home';
 import { LoginPage } from './pages/login';
+import { ShopPage } from './pages/shop';
+import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
 
 const routes: { [key: string]: () => HTMLElement } = {
 	'/': HomePage,
 	'/login': LoginPage,
+	'/shop': ShopPage,
+	'/settings': SettingsPage,
 };
 
 export const navigateTo = (url: string) => {
@@ -22,10 +26,11 @@ const renderPage = () => {
 		contentToRender = pageRenderer();
 	} else {
 		const notFound = document.createElement('div');
-		notFound.innerHTML = '<h1>404</h1><p>Page not found.</p>';
-		contentToRender = notFound;
+        notFound.innerHTML = '<h1 class="text-6xl font-bold mb-4">404</h1><p class="text-2xl">Page not found.</p>';
+        notFound.className = "text-green-600 flex items-center justify-center flex-1 bg-black bg-opacity-90 p-0 z-2002";
+        contentToRender = notFound;
 	}
-
+ 
 	const appElement = document.getElementById('app');
 	if (appElement) {
 		appElement.innerHTML = '';
@@ -57,7 +62,9 @@ window.addEventListener('popstate', renderPage);
 
 const navRoutesForNavbar: { [key: string]: string } = {
 	'/': translations[getCurrentLang()].home,
-	'/login': 'Login',
+	'/login': translations[getCurrentLang()].login,
+	'/shop': translations[getCurrentLang()].shop,
+	'/settings': translations[getCurrentLang()].settings,
 };
 const navbar = createNavbar(navRoutesForNavbar);
 document.body.prepend(navbar);
