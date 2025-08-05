@@ -75,8 +75,7 @@ body {
 	min-height: 100vh;
 	min-width: 320px;
 	padding: 0 1rem;
-	background-image: linear-gradient(rgba(10, 10, 10, 0.3), rgba(0, 0, 0, 0.8)), 
-										url('../background.jpg'); 
+	background-image: linear-gradient(rgba(10, 10, 10, 0.3), rgba(0, 0, 0, 0.8)), url('../transcendence_bg.png'); 
 	background-size: cover; 
 	background-position: center center; 
 	background-repeat: no-repeat; 
@@ -124,59 +123,67 @@ body::before {
 	}
 }
 
-/* --- Navbar burger menu CSS --- */
-.navbar-links {
-  display: none;
-  flex-direction: column;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100vw;
-  background: #242424cc;
-  color: white;
-  text-align: center;
-  z-index: 100;
-  padding: 1rem 0;
-}
-
-.navbar-links.open {
+.navbar-burger {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  z-index: 1000;
+  background: #242424cc;
+  backdrop-filter: blur(4px);
 }
 
-@media (min-width: 768px) {
-  .navbar-links {
-    display: flex !important;
-    position: static;
-    flex-direction: row;
-    background: transparent;
-    color: inherit;
-    width: auto;
-    padding: 0;
-  }
-  .navbar-links.open {
-    display: flex !important;
-  }
-}
-
-.hamburger-btn {
+.hamburger-btn-burger {
+  z-index: 3001;
   display: block;
-  position: absolute;
-  right: 1rem;
-  top: 1rem;
   background: transparent;
   border: none;
   font-size: 2rem;
   color: white;
-  z-index: 101;
   cursor: pointer;
+  margin-left: auto;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
 }
 
-@media (min-width: 768px) {
-  .hamburger-btn {
-    display: none;
-  }
+.navbar-links-burger {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  right: -10vw;
+  width: 5vw;
+  height: 100vh;
+  background: #242424;
+  color: white;
+  text-align: right;
+  z-index: 2000;
+  padding: 4rem 2rem 2rem 2rem;
+  border-left: 2px solid #00d45f;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+  transition: right 0.3s cubic-bezier(.4,0,.2,1);
 }
-/* --- End Navbar burger menu CSS --- */
+
+.navbar-links-burger.open {
+  right: 0;
+}
+
+.close-btn-burger {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: #00bcd4;
+  cursor: pointer;
+  z-index: 3002;
+}
 
 h2 {
 	font-size: 2.5em;
