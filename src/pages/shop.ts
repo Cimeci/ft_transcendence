@@ -3,19 +3,20 @@ import { translations } from '../i18n';
 
 export function ShopPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
-	mainContainer.className = "bg-purple-300 flex flex-col items-center pt-40 h-screen gap-4";
-	
+	 mainContainer.className = "min-h-screen w-full bg-purple-300 flex flex-col items-center justify-center gap-4";
+
 	const title = document.createElement("h2");
 	title.textContent = translations[getCurrentLang()].shop;
+	title.className = "relative top-21 p-6";
 	mainContainer.appendChild(title);
 
 	const shopContainer = document.createElement("div");
 	shopContainer.className = "shop-grid";
 
 	const lstImg = [
-		'/public/default_bar.png',
-		'/public/fire_bar.png',
-		'/public/ice_bar.png',
+		'/public/bar/default_bar.png',
+		'/public/bar/fire_bar.png',
+		'/public/bar/ice_bar.png',
 	];
 
 	const lstNameImg = [
@@ -34,7 +35,7 @@ export function ShopPage(): HTMLElement {
 		item.appendChild(image);
 	
 		const price = document.createElement("p");
-		price.textContent = "80 $"
+		price.textContent = "1080 $"
 		price.className = "border-3 text-3xl";
 		item.appendChild(price);
 
@@ -43,19 +44,14 @@ export function ShopPage(): HTMLElement {
 		name.className = "m-2 text-4xl cursor-pointer";
 		item.appendChild(name);
 
-		// const buyMsg = document.createElement("div");
-		// buyMsg.className = "text-green-500 text-lg mt-2";
-		// buyMsg.style.display = "none";
-		// buyMsg.textContent = translations[getCurrentLang()].play + " effectué !";
-		// item.appendChild(buyMsg);
-
 		item.addEventListener("click", () => {
 			name.className = "text-green-500 text-4xl";
 			name.textContent = "Buy";
 			setTimeout(() => {
 				name.textContent = translations[getCurrentLang()][lstNameImg[i] as keyof typeof translations['en']];
 				name.className = "text-4xl cursor-pointer";
-			}, 2000);
+
+			}, 600);
 		});
 
 		shopContainer.appendChild(item);
