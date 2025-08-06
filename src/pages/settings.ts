@@ -16,7 +16,7 @@ langDropdownContainer.style.marginRight = '0.5rem';
 const langButton = document.createElement('button');
 langButton.type = 'button';
 langButton.className = 'ml-2 p-1 bg-transparent border-none cursor-pointer flex items-center';
-langButton.innerHTML = `<img src="/translate.png" alt="Lang" class="translate-icon" />`;
+langButton.innerHTML = `<img src="/langue.png" alt="Lang" class="translate-icon" />`;
 
 const langMenu = document.createElement('ul');
 langMenu.className = 'mt-2 bg-[#242424] rounded shadow-lg z-50 text-white border border-cyan-700';
@@ -54,7 +54,7 @@ document.addEventListener('click', () => {
 
 export function SettingsPage(): HTMLElement {
     const mainContainer = document.createElement("div");
-    mainContainer.className = "flex flex-col items-center justify-center h-screen text-blue-500 gap-4";
+    mainContainer.className = "bg-green-300 flex flex-col items-center pt-40 h-screen gap-4";
     
     const title = document.createElement("h2");
     title.textContent = translations[getCurrentLang()].settings;
