@@ -5,7 +5,7 @@ services:
     networks:
       - backend
     ports:
-      - "4000:443"
+      - "4443:443"
     depends_on:
       - auth
       - game
@@ -17,32 +17,32 @@ services:
     build: ./src/auth
     networks:
       - backend
-    expose:
-      - "4000"
+    volumes:
+      - ./src/auth/data:/app/data
     restart: on-failure
   game:
     container_name: game_container
     build: ./src/game
     networks:
       - backend
-    expose:
-      - "4000"
+    volumes:
+      - ./src/game/data:/app/data
     restart: on-failure
   tournament:
     container_name: tournament_container
     build: ./src/tournament
     networks:
       - backend
-    expose:
-      - "4000"
+    volumes:
+      - ./src/tournament/data:/app/data
     restart: on-failure
   user:
     container_name: user_container
     build: ./src/user
     networks:
       - backend
-    expose:
-      - "4000"
+    volumes:
+      - ./src/user/data:/app/data
     restart: on-failure
 
 networks:

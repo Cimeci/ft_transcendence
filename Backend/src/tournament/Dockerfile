@@ -4,4 +4,5 @@ COPY package*.json .
 RUN npm install
 COPY . .
 EXPOSE 4000
-CMD ["node", "tournament.js"]
+# CMD ["node", "tournament.js"]
+CMD ["npm", "run", "dev"]

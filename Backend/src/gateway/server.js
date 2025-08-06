@@ -36,7 +36,7 @@ app.setErrorHandler(async (error, request, reply) => {
   reply.status(500).send({ error: 'Internal server error' });
 });
 
-//page de base quand on met http://localhost:3000 dans le navigateur
+//page de base quand on met http://localhost:443 dans le navigateur
 app.get('/', (request, reply) => {
     return {message: 'Salut'}
 })
