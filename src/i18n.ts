@@ -4,6 +4,7 @@ export const translations = {
         home: "Accueil",
         settings: "Parametres",
         shop: "Boutique",
+        inventory: "Inventaire",
         //HomePage
         welcome: "Bienvenue",
         login: "Connexion",
@@ -20,6 +21,7 @@ export const translations = {
         home: "Home",
         settings: "Settings",
         shop: "Shop",
+        inventory: "Inventory",
         //HomePage
         welcome: "Welcome",
         login: "Login",
@@ -36,6 +38,7 @@ export const translations = {
         home: "Inicio",
         settings: "Parámetro",
         shop: "Tienda",
+        inventory: "Inventario",
         //HomePage
         welcome: "Bienvenido",
         login: "Iniciar sesión",

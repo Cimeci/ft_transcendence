@@ -3,6 +3,7 @@ import { createNavbar} from './components/navbar';
 import { HomePage } from './pages/home';
 import { LoginPage } from './pages/login';
 import { ShopPage } from './pages/shop';
+import { InventoryPage } from './pages/inventory';
 import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
 
@@ -10,6 +11,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/': HomePage,
 	'/login': LoginPage,
 	'/shop': ShopPage,
+	'/inventory': InventoryPage,
 	'/settings': SettingsPage,
 };
 
@@ -64,6 +66,7 @@ const navRoutesForNavbar: { [key: string]: string } = {
 	'/': translations[getCurrentLang()].home,
 	'/login': translations[getCurrentLang()].login,
 	'/shop': translations[getCurrentLang()].shop,
+	'/inventory': translations[getCurrentLang()].inventory,
 	'/settings': translations[getCurrentLang()].settings,
 };
 const navbar = createNavbar(navRoutesForNavbar);

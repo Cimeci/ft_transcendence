@@ -21,7 +21,7 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 		link.href = path;
 		link.textContent = routes[path];
 		link.setAttribute('data-link', '');
-		link.className = 'text-xl transition-all duration-300 hover:text-[#C3BABA] hover:font-bold hover:scale-110';
+		link.className = 'text-xl transition-all duration-300 hover:text-[#C3BABA] hover:font-bold hover:scale-110 ';
 		navLinks.appendChild(link);
 	}
 	nav.appendChild(navLinks);

@@ -12,7 +12,7 @@ export function HomePage(): HTMLElement {
 	const pageTitle = document.createElement('h1');
     pageTitle.className = `
         text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r 
-        from-green-500 to-cyan-400 
+        from-white via-green-500 to-white 
         tracking-wide
         [filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.5))_drop-shadow(0_2px_2px_rgba(0,0,0,0.3))]
         md:text-6xl
