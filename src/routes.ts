@@ -6,12 +6,15 @@ import { ShopPage } from './pages/shop';
 import { InventoryPage } from './pages/inventory';
 import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
+import { PongMenuPage, PongGamePage } from './pages/pong'
 
 const routes: { [key: string]: () => HTMLElement } = {
 	'/': HomePage,
 	'/login': LoginPage,
 	'/shop': ShopPage,
 	'/inventory': InventoryPage,
+	'/pong': PongMenuPage,
+	'/pong/game': PongGamePage,
 	'/settings': SettingsPage,
 };
 
@@ -57,6 +60,11 @@ document.addEventListener('click', event => {
 	if (linkElement) {
 		event.preventDefault();
 		navigateTo(linkElement.getAttribute('href')!);
+		//* close navbar *//
+		const navLinks = document.querySelector('.navbar-links-burger');
+		if (navLinks && navLinks.classList.contains('open')) {
+			navLinks.classList.remove('open');
+		}
 	}
 });
 

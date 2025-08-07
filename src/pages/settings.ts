@@ -58,7 +58,7 @@ export function SettingsPage(): HTMLElement {
     
     const title = document.createElement("h2");
     title.textContent = translations[getCurrentLang()].settings;
-    title.className = "text-4xl mb-6";
+    title.className = "fixed top-0 p-6 z-1000";
 
     const langSection = document.createElement("div");
     langSection.className = "flex items-center gap-2";

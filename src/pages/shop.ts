@@ -7,7 +7,7 @@ export function ShopPage(): HTMLElement {
 
 	const title = document.createElement("h2");
 	title.textContent = translations[getCurrentLang()].shop;
-	title.className = "relative top-21 p-6";
+	title.className = "fixed top-0 p-6 z-1000";
 	mainContainer.appendChild(title);
 
 	const shopContainer = document.createElement("div");
@@ -17,12 +17,14 @@ export function ShopPage(): HTMLElement {
 		'/public/bar/default_bar.png',
 		'/public/bar/fire_bar.png',
 		'/public/bar/ice_bar.png',
+		'/public/bar/amethyst_bar.png'
 	];
 
 	const lstNameImg = [
 		'default_bar',
 		'fire_bar',
 		'ice_bar',
+		'amethyst_bar',
 	];
 
 	for (let i = 0; i < lstImg.length; i++) {

@@ -15,20 +15,21 @@ export interface Inventory {
 
 const userInventory: Inventory = {
 	avatar: [
-        { id: 'avatar/default_avatar.png', name: 'default_avatar', type: 'avatar'},
-        // { id: 'avatar/inowak--.jpg', name: 'inowak--_avatar', type: 'avatar'},
-		// { id: 'avatar/mdegache.jpg', name: 'mdegache_avatar', type: 'avatar'},
-		// { id: 'avatar/amblanch.jpg', name: 'amblanch_avatar', type: 'avatar'},
+        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar'},
+        { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar'},
+		{ id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar'},
+		{ id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar'},
     ],
 	background: [
-		{ id: 'bg/default_bg.png', name: 'default_bg', type: 'background'},
-        { id: 'bg/default_bg.png', name: 'default_bg', type: 'background'},
+		{ id: 'bg/default_bg.png', name: 'default bg', type: 'background'},
+        { id: 'bg/default_bg.png', name: 'default bg', type: 'background'},
     ],
     bar: [
-        { id: 'bar/default_bar.png', name: 'default_bar', type: 'bar'},
-        { id: 'bar/default_bar.png', name: 'default_bar', type: 'bar'},
-        { id: 'bar/ice_bar.png', name: 'ice_bar', type: 'bar'},
-        { id: 'bar/fire_bar.png', name: 'fire_bar', type: 'bar'},
+        { id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
+        { id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
+        { id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar'},
+        { id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar'},
+		{ id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar'},
 
     ],
 	ball: [
@@ -54,13 +55,13 @@ function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLEle
 	inventoryContainer.appendChild(AvatarContainer);
 
 	const AvatarPage = document.createElement("div");
-	AvatarPage.className = "shop-grid gap-2"
+	AvatarPage.className = "shop-grid gap-8"
 	AvatarPage.style.display = "none";
 
 	for (let i = 1; i < inventory.avatar.length; i++)
 	{
 		const itemAvatar = document.createElement("div");
-		itemAvatar.className = "border-4 justify-center text-center items-center gap-2";
+		itemAvatar.className = "border-8 justify-center text-center items-center gap-2";
 
 		const imgAvatar = document.createElement("img");
 		imgAvatar.src = inventory.avatar[i].id;
@@ -111,13 +112,13 @@ function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTM
 	inventoryContainer.appendChild(backgroundContainer);
 
 	const backgroundPage = document.createElement("div");
-	backgroundPage.className = "shop-grid gap-2"
+	backgroundPage.className = "shop-grid gap-8"
 	backgroundPage.style.display = "none";
 
 	for (let i = 1; i < inventory.background.length; i++)
 	{
 		const itembackground = document.createElement("div");
-		itembackground.className = "border-4 justify-center text-center items-center gap-2";
+		itembackground.className = "border-8 justify-center text-center items-center gap-2";
 
 		const imgbackground = document.createElement("img");
 		imgbackground.src = inventory.background[i].id;
@@ -153,11 +154,11 @@ function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTM
 
 function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 	const  barContainer = document.createElement("div");
-	barContainer.className = "z-2 flex border-6 rounded grid justify-center text-center m-5";
+	barContainer.className = "flex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.bar[0].type;
-	TypeContainer.className = "border-3 tracking-widest text-2xl p-2"
+	TypeContainer.className = "border-4 tracking-widest text-2xl p-2"
 	barContainer.appendChild(TypeContainer);
 
 	const PrincipalImgbar = document.createElement("img");
@@ -168,13 +169,13 @@ function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElemen
 	inventoryContainer.appendChild(barContainer);
 
 	const barPage = document.createElement("div");
-	barPage.className = "shop-grid gap-2"
+	barPage.className = "shop-grid gap-8"
 	barPage.style.display = "none";
 
 	for (let i = 1; i < inventory.bar.length; i++)
 	{
 		const itembar = document.createElement("div");
-		itembar.className = "border-4 justify-center text-center items-center gap-2";
+		itembar.className = "border-8 justify-center text-center items-center gap-2";
 
 		const imgbar = document.createElement("img");
 		imgbar.src = inventory.bar[i].id;
@@ -225,7 +226,7 @@ function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLEleme
 	inventoryContainer.appendChild(ballContainer);
 
 	const ballPage = document.createElement("div");
-	ballPage.className = "shop-grid gap-2"
+	ballPage.className = "shop-grid gap-8"
 	ballPage.style.display = "none";
 
 	for (let i = 1; i < inventory.ball.length; i++)
@@ -271,7 +272,7 @@ export function InventoryPage(): HTMLElement {
 	
 	const title = document.createElement("h2");
 	title.textContent = translations[getCurrentLang()].inventory;
-	title.className = "fixed top-21 p-6 z-0";
+	title.className = "fixed top-0 p-6 z-1000";
 	mainContainer.appendChild(title);
 
 	const inventory = userInventory;

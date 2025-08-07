@@ -173,6 +173,7 @@ body::before {
 .shop-grid {
 	display: grid;
 	grid-template-columns: 1fr;
+	transition: grid-template-columns 0.5s cubic-bezier(.4,0,.2,1);
 }
 
 @media (min-width: 800px) {
@@ -212,10 +213,26 @@ body::before {
 	}
 }
 
+/* HOME */
+
+.card-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10rem;
+}
+
+@media (min-width: 800px) {
+	.card-grid {
+		grid-template-columns: repeat(2, 1fr);
+		transition: all;
+		transform: 2s;
+	}
+}
+
 h2 {
 	font-size: 2.5em;
 	line-height: 1.1;
 	color: #ffffff;
-	margin-bottom: 50px;
+	/* margin-bottom: 50px; */
 }
 
