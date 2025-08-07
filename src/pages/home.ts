@@ -29,6 +29,10 @@ export function HomePage(): HTMLElement {
 	PongImg.className = "size-80 rounded-4xl cursor-pointer transition-all duration-300 hover:scale-110"
 	PongLinkContainer.appendChild(PongImg);
 
+	PongImg.addEventListener("click", () => {
+		navigateTo('/pong')
+	});
+
 	LinkContainer.appendChild(PongLinkContainer);
 
 	const TournamentLinkContainer = document.createElement("div");
@@ -40,7 +44,7 @@ export function HomePage(): HTMLElement {
 	TournamentLinkContainer.appendChild(TournatmentImg);
 
 	TournatmentImg.addEventListener("click", () => {
-		navigateTo('/pong')
+		navigateTo('/pong/tournament')
 	});
 
 	LinkContainer.appendChild(TournamentLinkContainer);
