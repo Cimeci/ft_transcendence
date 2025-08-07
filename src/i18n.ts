@@ -15,6 +15,7 @@ export const translations = {
         default_bar: "Barre de base",
         fire_bar: "Barre en feu",
         ice_bar: "Barre en glace",
+        amethyst_bar: "Barre en améthyste",
     },
     en: {
         // Navbar link
@@ -32,6 +33,7 @@ export const translations = {
         default_bar: "Default bar",
         fire_bar: "Fire bar",
         ice_bar: "Ice bar",
+        amethyst_bar: "Amethyst bar",
     },
     es: {
         // Navbar link
@@ -49,5 +51,6 @@ export const translations = {
         default_bar: "Barra básica",
         fire_bar: "Barra en llamas",
         ice_bar: "Barra de hielo",
+        amethyst_bar: "Barra de amatista",
     }
 };
