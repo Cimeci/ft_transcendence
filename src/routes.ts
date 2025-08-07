@@ -6,7 +6,8 @@ import { ShopPage } from './pages/shop';
 import { InventoryPage } from './pages/inventory';
 import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
-import { PongMenuPage, PongGamePage } from './pages/pong'
+import { PongMenuPage, PongGamePage } from './pages/pong';
+import { PongTournamentPage } from './pages/tournament';
 
 const routes: { [key: string]: () => HTMLElement } = {
 	'/': HomePage,
@@ -15,6 +16,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/inventory': InventoryPage,
 	'/pong': PongMenuPage,
 	'/pong/game': PongGamePage,
+	'/pong/tournament': PongTournamentPage,
 	'/settings': SettingsPage,
 };
 
@@ -32,7 +34,7 @@ const renderPage = () => {
 	} else {
 		const notFound = document.createElement('div');
         notFound.innerHTML = '<h1 class="text-6xl font-bold mb-4">404</h1><p class="text-2xl">Page not found.</p>';
-        notFound.className = "text-green-600 flex items-center justify-center flex-1 bg-black bg-opacity-90 p-0 z-2002";
+        notFound.className = "bg-gradient-to-r from-black via-green-900 to-black text-white flex items-center justify-center flex-1 bg-black bg-opacity-90 p-0 z-2002";
         contentToRender = notFound;
 	}
  
