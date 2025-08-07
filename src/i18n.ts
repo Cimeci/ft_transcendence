@@ -16,6 +16,11 @@ export const translations = {
         fire_bar: "Barre en feu",
         ice_bar: "Barre en glace",
         amethyst_bar: "Barre en améthyste",
+        // Cosmetics
+        avatar: "Avatar",
+        gamebackground: "Fond du jeux",
+        bar: "Barre",
+        ball: "Balle",
     },
     en: {
         // Navbar link
@@ -34,6 +39,11 @@ export const translations = {
         fire_bar: "Fire bar",
         ice_bar: "Ice bar",
         amethyst_bar: "Amethyst bar",
+        // Cosmetics
+        avatar: "Avatar",
+        gamebackground: "Game background",
+        bar: "Bar",
+        ball: "Ball",
     },
     es: {
         // Navbar link
@@ -52,5 +62,10 @@ export const translations = {
         fire_bar: "Barra en llamas",
         ice_bar: "Barra de hielo",
         amethyst_bar: "Barra de amatista",
+        // Cosmetics
+        avatar: "Avatar",
+        gamebackground: "Fondo del juego",
+        bar: "Barra",
+        ball: "Bola",
     }
 };
