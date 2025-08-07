@@ -6,7 +6,7 @@ import { ShopPage } from './pages/shop';
 import { InventoryPage } from './pages/inventory';
 import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
-import { PongMenuPage, PongGamePage } from './pages/pong';
+import { PongMenuPage, PongGamePage, PongOverlayPage } from './pages/pong';
 import { PongTournamentPage } from './pages/tournament';
 
 const routes: { [key: string]: () => HTMLElement } = {
@@ -16,6 +16,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/inventory': InventoryPage,
 	'/pong': PongMenuPage,
 	'/pong/game': PongGamePage,
+	'/pong/game/overlay': PongOverlayPage,
 	'/pong/tournament': PongTournamentPage,
 	'/settings': SettingsPage,
 };
