@@ -37,7 +37,10 @@ export const userSignupSchema = {
     properties: {
         username: { type: 'string', minLength: 3, maxLength: 16},
         email: { type: 'string', format: 'email'},
-        password: { type: 'string', minLength: 6},
+        password: { 
+          type: 'string', 
+          minLength: 6,
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()]).{6,}$'},
     },
     additionalProperties: false,
 };
@@ -49,5 +52,15 @@ export const userResponseSchema = {
         username: { type: 'string'},
         email: { type: 'string'},
         created_at: { type: 'string', format: 'date-time'},
+    },
+    errors: {
+      type: 'object',
+      properties: {
+        username: { type: 'string', example: 'The username must be between 3 and 16 characters long.' },
+            email: { type: 'string', example: 'The email address is invalid.' },
+            password: { type: 'string', 
+                        example: 'The password must be at least 6 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character.'
+                      },
+      }
     }
 };

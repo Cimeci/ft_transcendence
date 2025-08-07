@@ -1,6 +1,7 @@
 import fastify from 'fastify';
 import { userLogin, loginResponse, userSignupSchema, userResponseSchema } from './auth.schema.js';
 import Database from 'better-sqlite3/lib/database.js';
+import bcrypt from 'bcrypt'
 
 const app = fastify({ logger: true });
 
@@ -9,7 +10,7 @@ const db = new Database('./data/user.sqlite');
 
 const user = `
     CREATE TABLE IF NOT EXISTS user (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL
@@ -18,24 +19,32 @@ const user = `
 db.exec(user);
 db.close();
 
-app.post('/register', {
-        schema: {
-            body: userSignupSchema,
-            response: {
-                201: userResponseSchema,
-            }
-        }
-    }, async (request, reply) => {
-        const { username, email, password } = request.body;
-
-
-    // ... logique d'enregistrement en base ...
+app.post('/register', async (request, reply) => {
+    const { username, email, password } = request.body;
     
+    const db = new Database('./data/user.sqlite');
+    
+    const validationPassword = (password) => {
+        return /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password);
+    };
+    if (!validationPassword(password)) {
+        return reply.code(400).send({
+            error: 'Password must be at least 8 characters, include one uppercase letter, one number, and one special character.'
+        });
+    }
+
+    
+
+    const data = db.prepare('INSERT INTO user (username, email, password) VALUES (?, ?, ?)');
+    const result = data.run(username, email, password);
+    const d = result.lastInsertRowid;
+    const stmt = db.prepare('SELECT * FROM user WHERE id = ?').get(d);
+    db.close()
         return {
-            id: 1,
-            username,
-            email,
-            created_at: new Date().toISOString()
+            id: stmt.id,
+            username: stmt.username,
+            email: stmt.email,
+            password: stmt.password
         };
     });
 
