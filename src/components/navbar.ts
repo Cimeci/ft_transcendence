@@ -2,12 +2,12 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	const nav = document.createElement('nav');
 	nav.className = 'navbar-burger';
 
-	const logo = document.createElement('a');
-	logo.href = '/home';
-	logo.setAttribute('data-link', '');
-	logo.textContent = '🏠';
-	logo.className = 'important-text pl-4';
-	nav.appendChild(logo);
+	const homeLogo = document.createElement('a');
+	homeLogo.href = '/home';
+	homeLogo.setAttribute('data-link', '');
+	homeLogo.textContent = '🏠';
+	homeLogo.className = 'important-text pl-4';
+	nav.appendChild(homeLogo);
 
 	const hamburgerBtn = document.createElement('button');
 	hamburgerBtn.className = 'hamburger-btn-burger';
@@ -16,6 +16,7 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 
 	const navLinks = document.createElement('div');
 	navLinks.className = 'navbar-links-burger';
+
 	const routeKeys = Object.keys(routes);
 	for (let i = 0; i < routeKeys.length; i++) {
 		const path = routeKeys[i];
@@ -23,12 +24,20 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 		link.href = path;
 		link.textContent = routes[path];
 		link.setAttribute('data-link', '');
-		link.className = 'text-2xl transition-all duration-300 hover:text-[#C3BABA] hover:font-bold hover:scale-110 hover:text-green-800';
-		if (i === routeKeys.length - 1) {
-			link.className += ' text-red-500';
-		}
+		if (i === routeKeys.length - 1)
+			link.className = 'text-2xl transition-all duration-300 text-red-600 hover:font-bold hover:scale-110 hover:text-red-800';
+		else
+			link.className = 'text-2xl transition-all duration-300 hover:text-[#C3BABA] hover:font-bold hover:scale-110';
 		navLinks.appendChild(link);
 	}
+
+	const creditsLogo = document.createElement('a');
+	creditsLogo.href = '/credits';
+	creditsLogo.setAttribute('data-link', '');
+	creditsLogo.textContent = '©';
+	creditsLogo.className = 'absolute bottom-4 right-4 text-3xl text-white-400 hover:font-bold hover:scale-110 hover:text-green-600';
+	navLinks.appendChild(creditsLogo);
+
 	nav.appendChild(navLinks);
 
 	hamburgerBtn.addEventListener('click', () => {
