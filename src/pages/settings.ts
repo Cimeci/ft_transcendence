@@ -15,11 +15,17 @@ export function createLangSection(): HTMLElement {
 
 	const langButton = document.createElement('button');
 	langButton.type = 'button';
-	langButton.className = 'p-1 bg-transparent border-none cursor-pointer flex items-center';
-	langButton.innerHTML = `<img src="/translate.png" alt="Lang" class="size-40" />`;
+	langButton.className = 'p-10 bg-transparent border-none cursor-pointer flex items-center justify-center';
+
+	const imgBtn = document.createElement("img");
+	imgBtn.src = "/translate.png";
+	imgBtn.alt = "Lang";
+	imgBtn.className = "size-40";
+
+	langButton.appendChild(imgBtn);
 
 	const langMenu = document.createElement('ul');
-	langMenu.className = 'size-40 flex-1 bg-[#242424] rounded shadow-lg z-50 text-white border border-green-700';
+	langMenu.className = 'size-40 m-2 flex-1 bg-[#242424] rounded shadow-lg z-50 text-white border border-green-700';
 	langMenu.style.display = 'none';
 	langMenu.style.minWidth = '120px';
 	langMenu.style.listStyle = 'none';
@@ -33,7 +39,7 @@ export function createLangSection(): HTMLElement {
 
 	languages.forEach(lang => {
 		const li = document.createElement('li');
-		li.className = 'px-4 py-2 hover:bg-green-700 cursor-pointer h-[33.33%] flex items-center';
+		li.className = 'px-4 py-2 hover:bg-green-700 cursor-pointer h-1/3 flex items-center';
 		li.textContent = lang.label;
 		li.onclick = () => {
 			setLanguage(lang.code);
@@ -46,15 +52,18 @@ export function createLangSection(): HTMLElement {
 		e.stopPropagation();
 		langMenu.style.display = langMenu.style.display === 'none' ? 'block' : 'none';
 	};
-
 	document.addEventListener('click', () => {
 		langMenu.style.display = 'none';
 	});
 
-    const langSection = document.createElement("div");
-    langSection.className = "border-2 rounded-xl p-4 flex items-center gap-2";
-    langSection.appendChild(langButton);
-    langSection.appendChild(langMenu);
+	const langSection = document.createElement("div");
+	langSection.className = "border-2 rounded-xl flex items-center justify-center";
+	langSection.style.width = "350px";
+	langSection.style.height = "15rem";
+	langSection.style.maxWidth = "100%";
+	langSection.style.boxSizing = "border-box";
+	langSection.appendChild(langButton);
+	langSection.appendChild(langMenu);
 
 	return langSection;
 }
