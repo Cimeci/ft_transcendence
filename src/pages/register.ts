@@ -106,6 +106,7 @@ export function RegisterPage(): HTMLElement {
 			InputPassword.value = "";
 			InputConfirmPassword.value = "";
 			console.log("Register:", newuser); //! ADD TO THE DATA BASE //
+			navigateTo("/home");
 		}
 	});
 	LoginContainer.appendChild(RegisterBtn);
