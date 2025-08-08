@@ -3,7 +3,7 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	nav.className = 'navbar-burger';
 
 	const logo = document.createElement('a');
-	logo.href = '/';
+	logo.href = '/home';
 	logo.setAttribute('data-link', '');
 	logo.textContent = '🏠';
 	logo.className = 'important-text pl-4';
@@ -16,12 +16,17 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 
 	const navLinks = document.createElement('div');
 	navLinks.className = 'navbar-links-burger';
-	for (const path in routes) {
+	const routeKeys = Object.keys(routes);
+	for (let i = 0; i < routeKeys.length; i++) {
+		const path = routeKeys[i];
 		const link = document.createElement('a');
 		link.href = path;
 		link.textContent = routes[path];
 		link.setAttribute('data-link', '');
-		link.className = 'text-xl transition-all duration-300 hover:text-[#C3BABA] hover:font-bold hover:scale-110';
+		link.className = 'text-2xl transition-all duration-300 hover:text-[#C3BABA] hover:font-bold hover:scale-110 hover:text-green-800';
+		if (i === routeKeys.length - 1) {
+			link.className += ' text-red-500';
+		}
 		navLinks.appendChild(link);
 	}
 	nav.appendChild(navLinks);
