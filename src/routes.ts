@@ -2,16 +2,20 @@ import './style.css';
 import { createNavbar} from './components/navbar';
 import { HomePage } from './pages/home';
 import { LoginPage } from './pages/login';
+import { RegisterPage } from './pages/register';
 import { ShopPage } from './pages/shop';
 import { InventoryPage } from './pages/inventory';
 import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
 import { PongMenuPage, PongGamePage, PongOverlayPage } from './pages/pong';
 import { PongTournamentPage } from './pages/tournament';
+import { LandingPage } from './pages/landing';
 
 const routes: { [key: string]: () => HTMLElement } = {
-	'/': HomePage,
+	'/': LandingPage,
+	'/home': HomePage,
 	'/login': LoginPage,
+	'/register': RegisterPage,
 	'/shop': ShopPage,
 	'/inventory': InventoryPage,
 	'/pong': PongMenuPage,
@@ -74,11 +78,11 @@ document.addEventListener('click', event => {
 window.addEventListener('popstate', renderPage);
 
 const navRoutesForNavbar: { [key: string]: string } = {
-	'/': translations[getCurrentLang()].home,
-	'/login': translations[getCurrentLang()].login,
-	'/shop': translations[getCurrentLang()].shop,
+	'/home': translations[getCurrentLang()].home,
 	'/inventory': translations[getCurrentLang()].inventory,
+	'/shop': translations[getCurrentLang()].shop,
 	'/settings': translations[getCurrentLang()].settings,
+	'/': translations[getCurrentLang()].logout,
 };
 const navbar = createNavbar(navRoutesForNavbar);
 document.body.prepend(navbar);
