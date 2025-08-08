@@ -10,6 +10,7 @@ import { translations } from './i18n';
 import { PongMenuPage, PongGamePage, PongOverlayPage } from './pages/pong';
 import { PongTournamentPage } from './pages/tournament';
 import { LandingPage } from './pages/landing';
+import { CreditsPage } from './pages/credits';
 
 const routes: { [key: string]: () => HTMLElement } = {
 	'/': LandingPage,
@@ -23,6 +24,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/pong/game/overlay': PongOverlayPage,
 	'/pong/tournament': PongTournamentPage,
 	'/settings': SettingsPage,
+	'/credits': CreditsPage,
 };
 
 export const navigateTo = (url: string) => {
