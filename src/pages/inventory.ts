@@ -13,7 +13,7 @@ export interface Inventory {
     [type: string]: CosmeticItem[];
 }
 
-const userInventory: Inventory = {
+export const userInventory: Inventory = {
 	avatar: [
         { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar'},
         { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar'},

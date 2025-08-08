@@ -8,8 +8,8 @@ export function HomePage(): HTMLElement {
 	mainContainer.className = 'pt-25 min-h-screen w-full flex items-center justify-center gap-4 bg-linear-to-t from-green-500 via-black to-green-800';
 	
 	const pageTitle = document.createElement('h1');
-	pageTitle.className = ` fixed top-0 p-6 z-1000
-		text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r 
+	pageTitle.className = ` fixed top-20 p-6 z-1000
+		text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r 
 		from-white via-green-500 to-white 
 		tracking-wide
 		[filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.5))_drop-shadow(0_2px_2px_rgba(0,0,0,0.3))]
@@ -30,7 +30,8 @@ export function HomePage(): HTMLElement {
 	PongLinkContainer.appendChild(PongImg);
 
 	PongImg.addEventListener("click", () => {
-		navigateTo('/pong')
+		PongImg.classList.add("fade-out");
+		setTimeout(() => { navigateTo("/pong"); }, 500);
 	});
 
 	LinkContainer.appendChild(PongLinkContainer);
