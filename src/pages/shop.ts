@@ -3,7 +3,7 @@ import { translations } from '../i18n';
 
 export function ShopPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
-	 mainContainer.className = "min-h-screen w-full bg-purple-300 flex flex-col items-center justify-center gap-4";
+	 mainContainer.className = "min-h-screen w-full bg-linear-to-t from-green-500 via-black to-green-800 flex flex-col items-center justify-center gap-4";
 
 	const title = document.createElement("h2");
 	title.textContent = translations[getCurrentLang()].shop;
