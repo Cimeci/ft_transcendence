@@ -4,11 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.translate-icon {
-  width: 8rem;
-  height: 8rem;
-}
-
 /* @media (max-width: 480px) {
   .translate-icon {
 	width: 1.2rem;
@@ -59,7 +54,7 @@ body {
 	min-height: 100vh;
 	min-width: 300px;
 	padding: 0;
-	/* background-image: linear-gradient(rgba(10, 10, 10, 0.3), rgba(0, 0, 0, 0.8)), url('../bg/default_bg.png'); */
+	/* background-image: linear-gradient(rgba(10, 10, 10, 0.3), rgba(0, 0, 0, 0.8)), url('../public/bg_matrix.gif'); */
 	/* background-color: #0c0e0d; */
 	background-size: cover; 
 	background-position: center center; 
@@ -80,6 +75,11 @@ body::before {
 	background-attachment: fixed; 
 	opacity: 0.01; 
 	pointer-events: none;
+}
+
+.fade-out {
+    opacity: 0;
+    transition: opacity 1s ease;
 }
 
 @layer utilities {
@@ -151,7 +151,7 @@ body::before {
 	position: fixed;
 	top: 0;
 	right: -50rem;
-	width: 10rem;
+	width: 11rem;
 	height: 100vh;
 	background: #242424;
 	color: white;
@@ -281,5 +281,18 @@ h2 {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+/* Ajoute dans style.css */
+.shake {
+  animation: shake 0.4s;
+}
+@keyframes shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-8px); }
+  80% { transform: translateX(8px); }
+  100% { transform: translateX(0); }
 }
 
