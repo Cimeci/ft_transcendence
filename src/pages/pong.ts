@@ -66,24 +66,16 @@ export function PongMenuPage(): HTMLElement {
 	const getName1 = document.createElement("input");
 	getName1.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
 	getName1.placeholder = translations[getCurrentLang()].username1;
-	getName1.addEventListener("keydown", (e) => {
-	    if (e.key === "Enter") {
-	        user1.name = getName1.value;
-	        getName1.value = "";
-			getName1.placeholder = user1.name;
-	    }
+	getName1.addEventListener("input", () => {
+	    user1.name = getName1.value;
 	});
 	PlayContainer.appendChild(getName1);
 
-		const getName2 = document.createElement("input");
+	const getName2 = document.createElement("input");
 	getName2.className = "relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
 	getName2.placeholder = translations[getCurrentLang()].username2;
-	getName2.addEventListener("keydown", (e) => {
-	    if (e.key === "Enter") {
-	        user2.name = getName2.value;
-	        getName2.value = "";
-			getName2.placeholder = user2.name;
-	    }
+	getName2.addEventListener("input", () => {
+	    user2.name = getName2.value;
 	});
 	PlayContainer.appendChild(getName2);
 
@@ -132,9 +124,8 @@ export const user2: User = {
 export function PongOverlayPage(): HTMLElement {
     const overlay = document.createElement("div");
     overlay.className = "gap-30 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800";
-	overlay.tabIndex = 0;
 	overlay.focus();
-
+	
     const winner = (user1.score === 5) ? user1.name : user2.name;
     const loser = (user1.score === 5) ? user2.name : user1.name;
     const scoreStr = `${user1.name} (${user1.score}) vs ${user2.name} (${user2.score})`;
@@ -161,6 +152,7 @@ export function PongOverlayPage(): HTMLElement {
 	const BackBtn = document.createElement("button");
 	BackBtn.className = "relative z-10 cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
 	BackBtn.textContent = translations[getCurrentLang()].back_to_menu;
+	BackBtn.tabIndex = 0;
 
 	BackBtn.addEventListener('click', () => {
 		overlay.classList.add("fade-out");
