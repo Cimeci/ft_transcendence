@@ -19,7 +19,10 @@ export function PongMenuPage(): HTMLElement {
 	GridContainer.className = "pong-menu-grid";
 
 	const CosmeticContainer = document.createElement("div");
-	CosmeticContainer.className = "grid grid-cols-2 w-[400px] gap-10 text-center min-h-[400px]";
+	CosmeticContainer.className = "grid grid-cols-2 w-[500px] gap-10 text-center min-h-[500px]";
+	CosmeticContainer.addEventListener('click', () => {
+		navigateTo("/inventory")
+	})
 
 	const cosmteticNames = [
 		"avatar", "background", "bar", "ball"
@@ -182,52 +185,72 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 	const container = document.createElement("div");
 	container.className = "relative flex flex-col items-center justify-center";
 
-	const ballCosmetic = userInventory.ball[0];
-	const ballImg = new window.Image();
-	ballImg.src = ballCosmetic.id;
-
+	// Utilise directement le cosmétique en position 0 (image réelle servie depuis /public)
+	const resolveBallPath = () => {
+		const raw = userInventory.ball[0]?.id || '';
+		return raw.startsWith('/') ? raw : '/' + raw; // garantit le chemin absolu pour Vite (/public)
+	};
+	let currentBallSrc = resolveBallPath();
+	const ballImg = new Image();
+	ballImg.src = currentBallSrc;
 	let ballImgLoaded = false;
 	ballImg.onload = () => { ballImgLoaded = true; };
 
+	// Skin de la barre gauche (bar[0])
+	const resolveBarPath = () => {
+		const raw = userInventory.bar[0]?.src || '';
+		return raw.startsWith('/') ? raw : '/' + raw;
+	};
+	let currentBarSrc = resolveBarPath();
+	const leftBarImg = new Image();
+	leftBarImg.src = currentBarSrc;	
+	let leftBarImgLoaded = false;
+	leftBarImg.onload = () => { leftBarImgLoaded = true; };
+
+	// Skin de la barre droite (bar[1])
+	const resolveRightBarPath = () => {
+		const raw = userInventory.bar[1]?.src || userInventory.bar[0]?.src || '';
+		return raw.startsWith('/') ? raw : '/' + raw;
+	};
+	let currentRightBarSrc = resolveRightBarPath();
+	const rightBarImg = new Image();
+	rightBarImg.src = currentRightBarSrc;
+	let rightBarImgLoaded = false;
+	rightBarImg.onload = () => { rightBarImgLoaded = true; };
+
 	const canvas = document.createElement("canvas");
-	canvas.width = 800;
-	canvas.height = 600;
-	canvas.className = "border-2 bg-[url(" + userInventory.background[0].id + ")]";
+	canvas.width = 1200;
+	canvas.height = 800;
+	canvas.className = "border-2 bg-[url(" + (userInventory.background[0].id.startsWith('/')?userInventory.background[0].id:'/'+userInventory.background[0].id) + ")]";
 	canvas.tabIndex = 0;
 	canvas.focus();
 	container.appendChild(canvas);
 
 	const ctx = canvas.getContext("2d")!;
 	const paddleWidth = 10;
-	const paddleHeight = 100;
+	const paddleHeight = 120;
 	const speed = 6;
 
 	const leftPaddle = { x: 10, y: canvas.height / 2 - paddleHeight / 2 };
 	const rightPaddle = { x: canvas.width - 20, y: canvas.height / 2 - paddleHeight / 2 };
 
-	const ball = {
-		x: canvas.width / 2,
-		y: canvas.height / 2,
-		radius: 10,
-		speedX: 5,
-		speedY: 5
-	};
+	const ball = { x: canvas.width / 2, y: canvas.height / 2, radius: 20, speedX: 5, speedY: 5 };
 
 	const keys: Record<string, boolean> = {};
 	document.addEventListener("keydown", (e) => {
-	  	keys[e.key] = true;
-	  	if (e.key === "Escape" || e.key === "Esc" || e.key === "echap") {
-	    	const parent = container.parentElement;
-	    	if (parent) parent.innerHTML = "";
-	    	navigateTo("/pong");
-	  	}
-	  	if (e.key === "q") {
-	    	user1.score = 5;
-	  	}
-		if (e.key === "e") {
-	    	ball.speedX *= 1.1;
-	    	ball.speedY *= 1.1;
-	  	}
+	  keys[e.key] = true;
+	  if (e.key === "Escape" || e.key === "Esc" || e.key === "echap") {
+	    const parent = container.parentElement;
+	    if (parent) parent.innerHTML = "";
+	    navigateTo("/pong");
+	  }
+	  if (e.key === "q") {
+	    user1.score = 5;
+	  }
+	  if (e.key === "e") {
+	    ball.speedX *= 1.1;
+	    ball.speedY *= 1.1;
+	  }
 	});
 	document.addEventListener("keyup", (e) => { keys[e.key] = false; });
 
@@ -250,11 +273,7 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 	let isGameOver = false;
 	let overlayTriggered = false;
 
-	const displaySpeed = document.createElement("h1");
 	function update() {
-		displaySpeed.className = "absolute top-10 items-center justify-center";
-		displaySpeed.textContent = ball.speedX + " | " + ball.speedY;
-
 		if (isGameOver) return;
 		if (keys["echap"]) return;
 		if (keys["w"] && leftPaddle.y > 2) leftPaddle.y -= speed;
@@ -279,22 +298,46 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 	function draw() {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.fillStyle = "white";
-		ctx.fillRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
-		ctx.fillRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
-
-		// Dessine la balle comme une image seulement si chargée
-		if (ballImgLoaded) {
-			ctx.save();
-			ctx.beginPath();
-			ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-			ctx.clip();
-			ctx.drawImage(ballImg, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
-			ctx.restore();
+		// Mise à jour dynamique si le skin bar gauche a changé
+		const latestBar = resolveBarPath();
+		if (latestBar !== currentBarSrc) {
+			currentBarSrc = latestBar;
+			leftBarImgLoaded = false;
+			leftBarImg.src = currentBarSrc;
+		}
+		// Mise à jour dynamique si le skin bar droite a changé
+		const latestRightBar = resolveRightBarPath();
+		if (latestRightBar !== currentRightBarSrc) {
+			currentRightBarSrc = latestRightBar;
+			rightBarImgLoaded = false;
+			rightBarImg.src = currentRightBarSrc;
+		}
+		// Dessin left paddle avec skin
+		if (leftBarImgLoaded) {
+			ctx.drawImage(leftBarImg, leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
 		} else {
-			// Dessine une balle blanche en attendant
+			ctx.fillRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+		}
+		// Dessin right paddle avec skin index 1 (fallback index 0)
+		if (rightBarImgLoaded) {
+			ctx.drawImage(rightBarImg, rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+		} else {
+			ctx.fillRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+		}
+
+		// Si l'utilisateur a changé le skin (index 0 modifié) avant le lancement, on ne regénère pas de forme : on dessine l'image brute.
+		const latest = resolveBallPath();
+		if (latest !== currentBallSrc) {
+			currentBallSrc = latest;
+			ballImgLoaded = false;
+			ballImg.src = currentBallSrc;
+		}
+		if (ballImgLoaded) {
+			ctx.drawImage(ballImg, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
+		} else {
+			ctx.fillStyle = "rgba(255,255,255,0.3)";
 			ctx.beginPath();
 			ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-			ctx.fillStyle = "white";
 			ctx.fill();
 		}
 
@@ -315,7 +358,6 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 
 	resetBall();
 	loop();
-	container.appendChild(displaySpeed);
 
 	return container;
 }
