@@ -4,6 +4,7 @@ import { translations } from '../i18n';
 export type CosmeticType = 'avatar' | 'background' | 'bar' | 'ball';
 
 export interface CosmeticItem {
+	src?: string;
     id: string;
     name: string;
 	type: CosmeticType;
@@ -25,16 +26,18 @@ export const userInventory: Inventory = {
         { id: 'bg/default_bg.png', name: 'default bg', type: 'background'},
     ],
     bar: [
-        { id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
-        { id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
-        { id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar'},
-        { id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar'},
-		{ id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar'},
+        { src: 'playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
+        { src: 'playbar/default_bar.png', id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
+        { src: 'playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar'},
+        { src: 'playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar'},
+		{ src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar'},
+		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
 
     ],
 	ball: [
 		{ id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
 		{ id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
+		{ id: 'ball/tennis_ball.png', name: 'tennis_ball', type: 'ball'},
 	],
 };
 
@@ -55,7 +58,7 @@ function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLEle
 	inventoryContainer.appendChild(AvatarContainer);
 
 	const AvatarPage = document.createElement("div");
-	AvatarPage.className = "shop-grid gap-8"
+	AvatarPage.className = "inventory-grid gap-8";
 	AvatarPage.style.display = "none";
 
 	for (let i = 1; i < inventory.avatar.length; i++)
@@ -90,12 +93,13 @@ function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLEle
 	}
 
 	PrincipalImgAvatar.addEventListener("click", () => {
-		AvatarPage.style.display = AvatarPage.style.display == "flex" ? "none":"flex";
+		AvatarPage.style.display = AvatarPage.style.display === "grid" ? "none" : "grid";
 	})
 	return AvatarPage;
 }
 
 function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
+
 	const  backgroundContainer = document.createElement("div");
 	backgroundContainer.className = "z-2 flex border-6 rounded grid justify-center text-center m-5";
 	
@@ -112,7 +116,7 @@ function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTM
 	inventoryContainer.appendChild(backgroundContainer);
 
 	const backgroundPage = document.createElement("div");
-	backgroundPage.className = "shop-grid gap-8"
+	backgroundPage.className = "inventory-grid gap-8";
 	backgroundPage.style.display = "none";
 
 	for (let i = 1; i < inventory.background.length; i++)
@@ -147,7 +151,7 @@ function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTM
 	}
 
 	PrincipalImgbackground.addEventListener("click", () => {
-		backgroundPage.style.display = backgroundPage.style.display == "flex" ? "none":"flex";
+		backgroundPage.style.display = backgroundPage.style.display === "grid" ? "none" : "grid";
 	})
 	return backgroundPage;
 }
@@ -169,7 +173,7 @@ function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElemen
 	inventoryContainer.appendChild(barContainer);
 
 	const barPage = document.createElement("div");
-	barPage.className = "shop-grid gap-8"
+	barPage.className = "inventory-grid gap-8";
 	barPage.style.display = "none";
 
 	for (let i = 1; i < inventory.bar.length; i++)
@@ -204,7 +208,7 @@ function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElemen
 	}
 
 	PrincipalImgbar.addEventListener("click", () => {
-		barPage.style.display = barPage.style.display == "flex" ? "none":"flex";
+		barPage.style.display = barPage.style.display === "grid" ? "none" : "grid";
 	})
 	return barPage;
 }
@@ -226,7 +230,7 @@ function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLEleme
 	inventoryContainer.appendChild(ballContainer);
 
 	const ballPage = document.createElement("div");
-	ballPage.className = "shop-grid gap-8"
+	ballPage.className = "inventory-grid gap-8";
 	ballPage.style.display = "none";
 
 	for (let i = 1; i < inventory.ball.length; i++)
@@ -261,7 +265,7 @@ function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLEleme
 	}
 
 	PrincipalImgball.addEventListener("click", () => {
-		ballPage.style.display = ballPage.style.display == "flex" ? "none":"flex";
+		ballPage.style.display = ballPage.style.display === "grid" ? "none" : "grid";
 	})
 	return ballPage;
 }
