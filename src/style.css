@@ -172,20 +172,28 @@ body::before {
 
 .shop-grid {
 	display: grid;
-	grid-template-columns: 1fr;
+	grid-template-columns: 1fr; /* mobile très petit: 1 */
 	transition: grid-template-columns 0.5s cubic-bezier(.4,0,.2,1);
 }
 
-@media (min-width: 800px) {
-	.shop-grid {
-		grid-template-columns: repeat(2, 1fr);
-	}
+/* ≥600px : 2 colonnes */
+@media (min-width: 600px) {
+	.shop-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ≥900px : 3 colonnes */
+@media (min-width: 900px) {
+	.shop-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ≥1200px : 4 colonnes */
 @media (min-width: 1200px) {
-	.shop-grid {
-    	grid-template-columns: repeat(3, 1fr);
-	}
+	.shop-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ≥1500px : 5 colonnes (max) */
+@media (min-width: 1500px) {
+	.shop-grid { grid-template-columns: repeat(5, 1fr); }
 }
 
 /* INVENTORY */
@@ -243,7 +251,7 @@ body::before {
 	gap: 20px;
 }
 
-@media (max-width: 1250px) {
+@media (max-width: 1450px) {
 	.pong-menu-grid {
 		flex-direction: column;
 		gap: 2rem;
