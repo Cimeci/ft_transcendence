@@ -1,3 +1,6 @@
+import { translations } from '../i18n';
+import { getCurrentLang } from '../pages/settings';
+
 export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	const nav = document.createElement('nav');
 	nav.className = 'navbar-burger';
@@ -20,10 +23,14 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	const routeKeys = Object.keys(routes);
 	for (let i = 0; i < routeKeys.length; i++) {
 		const path = routeKeys[i];
+		const key = routes[path];
 		const link = document.createElement('a');
 		link.href = path;
-		link.textContent = routes[path];
 		link.setAttribute('data-link', '');
+		link.dataset.i18n = key;
+		link.textContent = routes[path];
+		// @ts-ignore
+		link.textContent = translations[getCurrentLang()][key] ?? key;
 		if (i === routeKeys.length - 1)
 			link.className = 'text-2xl transition-all duration-300 text-red-600 hover:font-bold hover:scale-110 hover:text-red-800';
 		else
@@ -43,6 +50,14 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	hamburgerBtn.addEventListener('click', () => {
 		navLinks.classList.toggle('open');
 	});
+
+	window.addEventListener('langchange', () => {
+        navLinks.querySelectorAll('a[data-i18n]').forEach(link => {
+            const key = link.getAttribute('data-i18n')!;
+			// @ts-ignore
+            link.textContent = translations[getCurrentLang()][key] ?? key;
+        });
+    });
 
 	return nav;
 }

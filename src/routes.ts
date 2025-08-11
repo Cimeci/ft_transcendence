@@ -52,6 +52,11 @@ const renderPage = () => {
 	}
 
 	// Navbar links update
+	const oldNavbar = document.querySelector('nav.navbar-burger');
+    if (oldNavbar) oldNavbar.remove();
+    const navbar = createNavbar(navRoutesForNavbar);
+    document.body.prepend(navbar);
+
 	const navbarLinks = document.querySelectorAll('nav .navbar-links a[data-link]');
 	navbarLinks.forEach(link => {
 		const href = link.getAttribute('href');
@@ -80,11 +85,11 @@ document.addEventListener('click', event => {
 window.addEventListener('popstate', renderPage);
 
 const navRoutesForNavbar: { [key: string]: string } = {
-	'/home': translations[getCurrentLang()].home,
-	'/inventory': translations[getCurrentLang()].inventory,
-	'/shop': translations[getCurrentLang()].shop,
-	'/settings': translations[getCurrentLang()].settings,
-	'/': translations[getCurrentLang()].logout,
+    '/home': 'home',
+    '/inventory': 'inventory',
+    '/shop': 'shop',
+    '/settings': 'settings',
+    '/': 'logout',
 };
 const navbar = createNavbar(navRoutesForNavbar);
 document.body.prepend(navbar);
