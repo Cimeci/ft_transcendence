@@ -270,6 +270,41 @@ body::before {
     font-family: 'Orbitron', 'monospace';
 }
 
+.neon-move {
+  background-image: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #22c55e 20%,
+    #0aff0a 40%,
+    #22c55e 60%,
+    #ffffff 80%
+  );
+  background-size: 300% 100%;
+  animation: neonSlide 5s linear infinite, neonPulse 2.2s ease-in-out infinite;
+  position: relative;
+}
+.neon-move::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  animation: neonSweep 3.5s linear infinite;
+}
+@keyframes neonSlide {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+@keyframes neonPulse {
+  0%,100% { text-shadow: 0 0 6px #22c55e, 0 0 14px #22c55e }
+  50%     { text-shadow: 0 0 2px #22c55e, 0 0 8px #22c55e }
+}
+@keyframes neonSweep {
+  0%   { opacity: .2; transform: translateX(-10%); }
+  50%  { opacity: .45; }
+  100% { opacity: .2; transform: translateX(10%); }
+}
+
 /* ALL */
 
 h2 {
@@ -304,3 +339,15 @@ h2 {
   100% { transform: translateX(0); }
 }
 
+/* LOGIN */
+
+.login-container {
+
+}
+
+@media (max-width: 975px){
+	.login-container {
+		flex-direction: column-reverse;
+		gap: 4rem;
+	}
+}
