@@ -15,9 +15,10 @@ export function ShopPage(): HTMLElement {
 
 	const lstImg = [
 		'/public/bar/default_bar.png',
-		'/public/bar/fire_bar.png',
 		'/public/bar/ice_bar.png',
-		'/public/bar/amethyst_bar.png'
+		'/public/bar/fire_bar.png',
+		'/public/bar/amethyst_bar.png',
+		'/public/bar/matrix_bar.png',
 	];
 
 	const lstNameImg = [
@@ -25,6 +26,7 @@ export function ShopPage(): HTMLElement {
 		'fire_bar',
 		'ice_bar',
 		'amethyst_bar',
+		'matrix_bar'
 	];
 
 	for (let i = 0; i < lstImg.length; i++) {
