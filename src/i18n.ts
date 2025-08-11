@@ -23,6 +23,7 @@ export const translations = {
 		fire_bar: "Barre en feu",
 		ice_bar: "Barre en glace",
 		amethyst_bar: "Barre en améthyste",
+		matrix_bar: "Barre matrix",
 		// Cosmetics
 		avatar: "Avatar",
 		gamebackground: "Fond du jeux",
@@ -58,6 +59,7 @@ export const translations = {
 		fire_bar: "Fire bar",
 		ice_bar: "Ice bar",
 		amethyst_bar: "Amethyst bar",
+		matrix_bar: "Matrix bar",
 		// Cosmetics
 		avatar: "Avatar",
 		gamebackground: "Game background",
@@ -92,6 +94,7 @@ export const translations = {
 		fire_bar: "Barra en llamas",
 		ice_bar: "Barra de hielo",
 		amethyst_bar: "Barra de amatista",
+		matrix_bar: "Barra Matrix",
 		// Cosmetics
 		avatar: "Avatar",
 		gamebackground: "Fondo del juego",
