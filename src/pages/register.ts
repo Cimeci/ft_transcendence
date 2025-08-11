@@ -7,6 +7,7 @@ import { getCurrentLang, createLangSection } from './settings';
 export interface User {
     name: string;
     password: string;
+	confirm_password: string; 
     // inventory?: Inventory;
 }
 
@@ -28,29 +29,31 @@ export function RegisterPage(): HTMLElement {
 	mainContainer.appendChild(pageTitle);
 	
 	const translation = createLangSection();
-	translation.className = "absolute top-5 right-5"
+	translation.className = "absolute top-0 right-0"
 	mainContainer.appendChild(translation);
 
-	const newuser: User = {name: "", password: ""};
+	const newuser: User = {name: "", password: "", confirm_password: ""};
 
-	const LoginContainer = document.createElement("div");
-	LoginContainer.className = "flex flex-col justify-center items-center border-2 w-[35rem] p-15 gap-8 bg-black/60 rounded-xl";
+	const RegisterContainer = document.createElement("div");
+	RegisterContainer.className = "flex flex-col justify-center items-center border-2 w-[35rem] p-15 gap-8 bg-black/60 rounded-xl";
 
 	const InputName = document.createElement("input");
-	InputName.className = "text-xl border-2 rounded px-4 py-2 w-full mb-2";
+	InputName.className = "text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103";
 	InputName.placeholder = translations[getCurrentLang()].username;
+	InputName.maxLength = 20;
+	InputName.focus();
 	InputName.addEventListener("input", () => {
 		newuser.name = InputName.value;
 	});
-	LoginContainer.appendChild(InputName);
+	RegisterContainer.appendChild(InputName);
 
 	function togglePassword(input: HTMLInputElement, icon: HTMLImageElement) {
 		if (input.type === "password") {
 			input.type = "text";
-			icon.src = "/open-eye.png"; // chemin vers l'icône "voir"
+			icon.src = "/eye.svg";
 		} else {
 			input.type = "password";
-			icon.src = "/close-eye.png"; // chemin vers l'icône "masquer"
+			icon.src = "/eye-off.svg";
 		}
 	}
 
@@ -64,60 +67,158 @@ export function RegisterPage(): HTMLElement {
 
 	// Input Password
 	const InputPassword = document.createElement("input");
-	InputPassword.className = "text-xl border-2 rounded px-4 py-2 w-full";
+	InputPassword.className = "text-xl border-2 rounded px-4 py-2 w-full duration-300 transtion-all focus:scale-103";
 	InputPassword.placeholder = translations[getCurrentLang()].password;
 	InputPassword.type = "password";
+	InputPassword.maxLength = 30;
+	InputPassword.focus();
 	InputPassword.addEventListener("input", () => {
 		newuser.password = InputPassword.value;
 	});
 	const EyePassword = document.createElement("img");
-	EyePassword.className = "absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer w-10 h-10";
-	EyePassword.src = "/close-eye.png";
-	EyePassword.alt = "Afficher/Masquer";
+	EyePassword.className = "absolute right-2 top-1/5 cursor-pointer w-7 h-7 duration-500 transtion-all hover:scale-110";
+	EyePassword.src = "/eye-off.svg";
+	EyePassword.alt = "Show/Hide";
 	EyePassword.onclick = () => togglePassword(InputPassword, EyePassword);
-	LoginContainer.appendChild(createInputWithEye(InputPassword, EyePassword));
+	RegisterContainer.appendChild(createInputWithEye(InputPassword, EyePassword));
 
 	// Input Confirm Password
 	const InputConfirmPassword = document.createElement("input");
-	InputConfirmPassword.className = "text-xl border-2 rounded px-4 py-2 w-full";
+	InputConfirmPassword.className = "text-xl border-2 rounded px-4 py-2 w-full duration-300 transtion-all focus:scale-103";
 	InputConfirmPassword.placeholder = translations[getCurrentLang()].confirm_password;
 	InputConfirmPassword.type = "password";
-	let confirmPassword: string;
+	InputConfirmPassword.maxLength = 30;
+	InputConfirmPassword.focus();
 	InputConfirmPassword.addEventListener("input", () => {
-		confirmPassword = InputConfirmPassword.value;
+		newuser.confirm_password = InputConfirmPassword.value;
 	});
 	const EyeConfirm = document.createElement("img");
-	EyeConfirm.className = "absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer w-10 h-10";
-	EyeConfirm.src = "/close-eye.png";
-	EyeConfirm.alt = "Afficher/Masquer";
-	EyeConfirm.onclick = () => togglePassword(InputConfirmPassword, EyeConfirm);
-	LoginContainer.appendChild(createInputWithEye(InputConfirmPassword, EyeConfirm));
+	EyeConfirm.className = "absolute right-2 top-1/5 cursor-pointer w-7 h-7 duration-500 transtion-all hover:scale-110";
+	EyeConfirm.src = "/eye-off.svg";
+	EyeConfirm.alt = "Show/Hide";
+	EyeConfirm.onclick = () => togglePassword(InputPassword, EyeConfirm);
+	RegisterContainer.appendChild(createInputWithEye(InputConfirmPassword, EyeConfirm));
 
 	// Register Button
 	const RegisterBtn = document.createElement("button");
-	RegisterBtn.className = "mt-4 px-8 py-3 rounded-xl bg-green-600 text-white text-2xl hover:bg-green-700 transition-all w-full";
-	RegisterBtn.textContent = "Register";
+	RegisterBtn.className = "mt-4 px-8 py-3 rounded-xl bg-green-600 text-white text-2xl duration-300 focus:scale-105 hover:scale-105 hover:bg-green-700 transition-all w-full";
+	RegisterBtn.textContent = translations[getCurrentLang()].register;
 	RegisterBtn.addEventListener("click", () => {
-		if (newuser.name == "" || newuser.password == "" || confirmPassword != newuser.password) {
-			RegisterBtn.classList.add("shake");
-			setTimeout(() => RegisterBtn.classList.remove("shake"), 400);
+		if (newuser.password.length < 8 || newuser.confirm_password.length < 8 || newuser.name == "" || newuser.confirm_password != newuser.password) {
+
+			if (newuser.name == "") {
+				InputName.value = "";
+				InputName.placeholder = translations[getCurrentLang()].empty_input;
+				InputName.classList.add('placeholder:text-red-500');
+				InputName.classList.add('shake');
+			}
+			if (newuser.password == "") {
+				InputPassword.value = "";
+				InputPassword.placeholder = translations[getCurrentLang()].empty_input;
+				InputPassword.classList.add('placeholder:text-red-500');
+				InputPassword.classList.add('shake');
+				EyePassword.classList.add('shake');
+			}
+			if (newuser.confirm_password == "") {
+				InputConfirmPassword.value = "";
+				InputConfirmPassword.placeholder = translations[getCurrentLang()].empty_input;
+				InputConfirmPassword.classList.add('placeholder:text-red-500');
+				InputConfirmPassword.classList.add('shake');
+				EyeConfirm.classList.add('shake');
+			}
+
+			if (newuser.password.length < 8 && newuser.password.length > 0) {
+				InputPassword.value = "";
+				InputPassword.placeholder = translations[getCurrentLang()].insufficient_length;
+				InputPassword.classList.add('placeholder:text-red-500');
+				InputPassword.classList.add('shake');
+				EyePassword.classList.add('shake');
+			}
+			if (newuser.confirm_password.length < 8 && newuser.confirm_password.length > 0) {
+				InputConfirmPassword.value = "";
+				InputConfirmPassword.placeholder = translations[getCurrentLang()].insufficient_length;
+				InputConfirmPassword.classList.add('placeholder:text-red-500');
+				InputConfirmPassword.classList.add('shake');
+				EyeConfirm.classList.add('shake');
+			}
+
+			if (newuser.confirm_password != newuser.password)
+			{
+				InputPassword.value = "";
+				InputPassword.placeholder = translations[getCurrentLang()].not_same_input;
+				InputPassword.classList.add('placeholder:text-red-500');
+				InputPassword.classList.add('shake');
+				EyePassword.classList.add('shake');
+
+				InputConfirmPassword.value = "";
+				InputConfirmPassword.placeholder = translations[getCurrentLang()].not_same_input;
+				InputConfirmPassword.classList.add('placeholder:text-red-500');
+				InputConfirmPassword.classList.add('shake');
+				EyeConfirm.classList.add('shake');
+			}
+
+			setTimeout(() => InputName.value = newuser.name, 800);
+			setTimeout(() => InputName.placeholder = translations[getCurrentLang()].username, 800);
+			setTimeout(() => InputName.classList.remove('placeholder:text-red-500'), 800);
+			setTimeout(() => InputName.classList.remove("shake"), 800);
+			
+			setTimeout(() => InputPassword.value = newuser.password, 800);
+			setTimeout(() => InputPassword.placeholder = translations[getCurrentLang()].password, 800);
+			setTimeout(() => InputPassword.classList.remove('placeholder:text-red-500'), 800);
+			setTimeout(() => InputPassword.classList.remove("shake"), 800);
+			setTimeout(() => EyePassword.classList.remove("shake"), 800);
+
+			setTimeout(() => InputConfirmPassword.value = newuser.confirm_password, 800);
+			setTimeout(() => InputConfirmPassword.placeholder = translations[getCurrentLang()].confirm_password, 800);
+			setTimeout(() => InputConfirmPassword.classList.remove('placeholder:text-red-500'), 800);
+			setTimeout(() => InputConfirmPassword.classList.remove("shake"), 800);
+			setTimeout(() => EyeConfirm.classList.remove("shake"), 800);
+
 		} else {
 			InputName.value = "";
 			InputPassword.value = "";
 			InputConfirmPassword.value = "";
+			mainContainer.removeChild(translation)
+			mainContainer.removeChild(RegisterContainer);
+			mainContainer.removeChild(pageTitle);
 			console.log("Register:", newuser); //! ADD TO THE DATA BASE //
-			navigateTo("/home");
+			const overlay = document.createElement("div");
+            overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
+			overlay.style.opacity = "0";
+            overlay.style.transition = "opacity 1s ease";
+
+            const msg = document.createElement("h1");
+            msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
+            msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
+            overlay.appendChild(msg);
+
+            document.body.appendChild(overlay);
+            requestAnimationFrame(() => {
+                overlay.style.opacity = "1";
+            });
+
+            RegisterContainer.classList.add("fade-out");
+
+            setTimeout(() => {
+				overlay.style.opacity = "0";
+				const onTransitionEnd = () => {
+					overlay.removeEventListener("transitionend", onTransitionEnd);
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                	navigateTo("/home");
+				}
+				overlay.addEventListener("transitionend", onTransitionEnd);
+            }, 5000);
 		}
 	});
-	LoginContainer.appendChild(RegisterBtn);
+	RegisterContainer.appendChild(RegisterBtn);
 
 	const linkLogin = document.createElement("a");
-	linkLogin.className = "text-green-800";
+	linkLogin.className = "text-green-800 hover:text-green-700 focus:scale-103 hover:scale-103 transition-all duration-400";
 	linkLogin.textContent = translations[getCurrentLang()].back_to_login;
 	linkLogin.href = "/login";
-	LoginContainer.appendChild(linkLogin);
+	RegisterContainer.appendChild(linkLogin);
 
-	mainContainer.appendChild(LoginContainer);
+	mainContainer.appendChild(RegisterContainer);
 
 	return mainContainer;
 }
