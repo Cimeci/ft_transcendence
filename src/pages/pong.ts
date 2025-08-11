@@ -15,10 +15,10 @@ export function PongMenuPage(): HTMLElement {
 	mainContainer.appendChild(TitlePong);
 
 	const GridContainer = document.createElement("div");
-	GridContainer.className = "pong-menu-grid";
+	GridContainer.className = "gap-10 pong-menu-grid";
 
 	const CosmeticContainer = document.createElement("div");
-	CosmeticContainer.className = "grid grid-cols-2 w-[500px] gap-10 text-center min-h-[500px]";
+	CosmeticContainer.className = "grid grid-cols-2 w-[25vw] gap-10 text-center h-[50vh]";
 	CosmeticContainer.addEventListener('click', () => {
 		navigateTo("/inventory")
 	})
@@ -35,7 +35,7 @@ export function PongMenuPage(): HTMLElement {
 		itemDiv.className = "flex flex-col items-center";
 
 		const img = document.createElement("img");
-		img.className = "size-40 transition-all duration-300 hover:scale-110 text-3xl tracking-widest text-green-400 neon-matrix border-2 border-green-400 rounded-lg mb-2 w-full h-full";
+		img.className = "rounded-xl p-4 size-40 transition-all duration-300 hover:scale-110 text-3xl tracking-widest text-green-400 neon-matrix border-2 border-green-400 rounded-lg mb-2 w-full h-full hover:p-1";
 		img.src = firstItem.id;
 		img.alt = firstItem.name;
 
@@ -68,6 +68,7 @@ export function PongMenuPage(): HTMLElement {
 	const getName1 = document.createElement("input");
 	getName1.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
 	getName1.placeholder = translations[getCurrentLang()].username1;
+	getName1.maxLength = 16;
 	getName1.addEventListener("input", () => {
 		user1.name = getName1.value;
 	});
@@ -76,18 +77,23 @@ export function PongMenuPage(): HTMLElement {
 	const getName2 = document.createElement("input");
 	getName2.className = "relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
 	getName2.placeholder = translations[getCurrentLang()].username2;
+	getName2.maxLength = 16;
 	getName2.addEventListener("input", () => {
 		user2.name = getName2.value;
 	});
 	PlayContainer.appendChild(getName2);
 
 	const HistoryContainer = document.createElement("div");
-	HistoryContainer.className = "history border-2 border-green-400 rounded-xl flex flex-col items-center text-center gap-4 h-[60vh] w-[400px]";
+	HistoryContainer.className = "history border-5 border-green-400 rounded-xl flex flex-col items-center text-center w-[25vw] h-[70vh]";
 
 	const HistoryTitle = document.createElement("h2");
-	HistoryTitle.className = "border-2 border-green-400 w-full rounded-xl p-2 text-5xl tracking-widest neon-matrix mb-4";
+	HistoryTitle.className = "border-green-400 w-full rounded-xl p-2 text-5xl tracking-widest neon-matrix";
 	HistoryTitle.textContent = "H I S T O R Y";
 	HistoryContainer.appendChild(HistoryTitle);
+
+	const line = document.createElement("p");
+	line.className = "border-3 border-green-400 w-full mb-4";
+	HistoryContainer.appendChild(line);
 
 	const historyList = document.createElement("ul");
 	historyList.className = "text-xl text-green-300 text-center";
@@ -181,8 +187,24 @@ export function PongOverlayPage(): HTMLElement {
 }
 
 function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
-	const container = document.createElement("div");
-	container.className = "relative flex flex-col items-center justify-center";
+    const container = document.createElement("div");
+    container.className = "relative flex flex-col items-center justify-center";
+
+    // GESTION DES TOUCHES
+    const keys: Record<string, boolean> = {};
+    const onKeyDown = (e: KeyboardEvent) => {
+        keys[e.key] = true;
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+        keys[e.key] = false;
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    function cleanup() {
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
+    }
 
 	const resolveBallPath = () => {
 		const raw = userInventory.ball[0]?.id || '';
@@ -214,13 +236,18 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 	let rightBarImgLoaded = false;
 	rightBarImg.onload = () => { rightBarImgLoaded = true; };
 
-	const canvas = document.createElement("canvas");
-	canvas.width = 1200;
-	canvas.height = 800;
-	canvas.className = "border-2 bg-[url(" + (userInventory.background[0].id.startsWith('/')?userInventory.background[0].id:'/'+userInventory.background[0].id) + ")]";
-	canvas.tabIndex = 0;
-	canvas.focus();
-	container.appendChild(canvas);
+    const canvas = document.createElement("canvas");
+    canvas.width = 1400;
+    canvas.height = 800;
+    const bgUrl = userInventory.background[0].id.startsWith('/')
+        ? userInventory.background[0].id
+        : '/' + userInventory.background[0].id;
+    canvas.className = "border-2 w-[70vw] h-[80vh]";
+    canvas.style.backgroundImage = `url('${bgUrl}')`;
+    canvas.style.backgroundSize = "cover";
+    canvas.style.backgroundPosition = "center";
+    canvas.style.backgroundRepeat = "no-repeat";
+    container.appendChild(canvas);
 
 	const ctx = canvas.getContext("2d")!;
 	const paddleWidth = 10;
@@ -231,38 +258,40 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 	const rightPaddle = { x: canvas.width - 20, y: canvas.height / 2 - paddleHeight / 2 };
 
 	const ball = { x: canvas.width / 2, y: canvas.height / 2, radius: 20, speedX: 5, speedY: 5 };
+	let ballRotation = 0;
+	const BALL_SPIN_STEP = Math.PI / 6;
 
-	const keys: Record<string, boolean> = {};
-	document.addEventListener("keydown", (e) => {
-		keys[e.key] = true;
-		if (e.key === "Escape" || e.key === "Esc" || e.key === "echap") {
-			const parent = container.parentElement;
-			if (parent) parent.innerHTML = "";
-				navigateTo("/pong");
-		}
-	  	if (e.key === "q")
-			user1.score = 5;
+	let launchTimeout: number | null = null; // <-- ajouté
 
-		if (e.key === "e") {
-			ball.speedX *= 1.1;
-			ball.speedY *= 1.1;
-		}
-	});
-	document.addEventListener("keyup", (e) => { keys[e.key] = false; });
+    function resetBall(forceDirection?: number) {
+        // Position centrale
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        // Stoppe la balle pendant l’attente
+        ball.speedX = 0;
+        ball.speedY = 0;
+        ballRotation = 0;
 
-	function resetBall() {
-	  	ball.x = canvas.width / 2;
-	  	ball.y = canvas.height / 2;
-	  	const speed = canvas.width / 200;
-	  	const maxAngle = Math.PI / 4;
-	  	let angle = 0;
-	  	do {
-			angle = (Math.random() * 2 - 1) * maxAngle;
-	  	} while (Math.abs(angle) < 0.1);
-	  	const direction = Math.random() < 0.5 ? -1 : 1;
-	  	ball.speedX = Math.cos(angle) * speed * direction;
-	  	ball.speedY = Math.sin(angle) * speed;
-	}
+        // Annule un éventuel timer précédent
+        if (launchTimeout !== null) {
+            clearTimeout(launchTimeout);
+        }
+
+        const speed = canvas.width / 200;
+        const maxAngle = Math.PI / 4;
+
+        launchTimeout = window.setTimeout(() => {
+            let angle = 0;
+            do {
+                angle = (Math.random() * 2 - 1) * maxAngle;
+            } while (Math.abs(angle) < 0.1);
+
+            const direction = forceDirection ?? (Math.random() < 0.5 ? -1 : 1);
+            ball.speedX = Math.cos(angle) * speed * direction;
+            ball.speedY = Math.sin(angle) * speed;
+            launchTimeout = null;
+        }, 3000); // 3 secondes d’attente
+    }
 
 	let prevScore1 = user1.score;
 	let prevScore2 = user2.score;
@@ -271,7 +300,10 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 
 	function update() {
 		if (isGameOver) return;
-		if (keys["echap"]) return;
+		if (keys["Escape"]) return;
+		if (keys["q"]) user1.score = 5;
+		if (keys["e"]) {ball.speedX *= 1.1; ball.speedY *= 1.1;}
+
 		if (keys["w"] && leftPaddle.y > 2) leftPaddle.y -= speed;
 		if (keys["s"] && leftPaddle.y + paddleHeight < canvas.height - 2) leftPaddle.y += speed;
 		if (keys["ArrowUp"] && rightPaddle.y > 2) rightPaddle.y -= speed;
@@ -279,20 +311,42 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 		ball.x += ball.speedX;
 		ball.y += ball.speedY;
 		if (ball.y < 0 || ball.y > canvas.height) ball.speedY *= -1;
+		// Collisions paddles
 		const hitLeft = ball.x - ball.radius < leftPaddle.x + paddleWidth && ball.y > leftPaddle.y && ball.y < leftPaddle.y + paddleHeight;
 		const hitRight = ball.x + ball.radius > rightPaddle.x && ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight;
-		if (hitLeft || hitRight) ball.speedX *= -1;
-		if (ball.x < 0) { user2.score++; resetBall(); ball.speedX *= -1; }
-		if (ball.x > canvas.width) { user1.score++; resetBall(); ball.speedX *= -1; }
+		if (hitLeft || hitRight) {
+			ball.speedX *= -1;
+			ballRotation += BALL_SPIN_STEP;
+		}
+
+		// Score (on passe la direction du prochain service)
+		if (ball.x < 0) {
+			user2.score++;
+			resetBall(1);   // relance vers le joueur 1 (à droite)
+		}
+		if (ball.x > canvas.width) {
+			user1.score++;
+			resetBall(-1);  // relance vers le joueur 2 (à gauche)
+		}
+
 		if (user1.score === 5 || user2.score === 5) {
 			isGameOver = true;
+			if (launchTimeout !== null) {
+				clearTimeout(launchTimeout);
+				launchTimeout = null;
+			}
 		}
-		ball.speedX *= 1.0005;
-		ball.speedY *= 1.0005;
+
+		// Accélération progressive uniquement si la balle est en mouvement
+		if (ball.speedX !== 0 || ball.speedY !== 0) {
+			ball.speedX *= 1.0005;
+			ball.speedY *= 1.0005;
+		}
 	}
 
 	function draw() {
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.clearRect(0, 0, canvas.width, canvas.height); // Laisse le GIF CSS visible
+
 		ctx.fillStyle = "white";
 
 		const latestBar = resolveBarPath();
@@ -308,33 +362,37 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 			rightBarImgLoaded = false;
 			rightBarImg.src = currentRightBarSrc;
 		}
-		
-		if (leftBarImgLoaded) {
-			ctx.drawImage(leftBarImg, leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
-		} else {
-			ctx.fillRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
-		}
-		
-		if (rightBarImgLoaded) {
-			ctx.drawImage(rightBarImg, rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
-		} else {
-			ctx.fillRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
-		}
 
+		// Paddles
+		if (leftBarImgLoaded) ctx.drawImage(leftBarImg, leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+		else ctx.fillRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+
+		if (rightBarImgLoaded) ctx.drawImage(rightBarImg, rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+		else ctx.fillRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+
+		// Balle
 		const latest = resolveBallPath();
 		if (latest !== currentBallSrc) {
 			currentBallSrc = latest;
 			ballImgLoaded = false;
 			ballImg.src = currentBallSrc;
 		}
-		if (ballImgLoaded) {
-			ctx.drawImage(ballImg, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
-		} else {
-			ctx.fillStyle = "rgba(255,255,255,0.3)";
-			ctx.beginPath();
-			ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-			ctx.fill();
-		}
+        if (ballImgLoaded) {
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(ballRotation);
+            ctx.drawImage(ballImg, -ball.radius, -ball.radius, ball.radius * 2, ball.radius * 2);
+            ctx.restore();
+        } else {
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(ballRotation);
+            ctx.fillStyle = "rgba(255,255,255,0.6)";
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
 
 		if (user1.score !== prevScore1) { score1Elem.textContent = user1.name + ": " + user1.score; prevScore1 = user1.score; }
 		if (user2.score !== prevScore2) { score2Elem.textContent = user2.name + ": " + user2.score; prevScore2 = user2.score; }
@@ -347,11 +405,13 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 			requestAnimationFrame(loop);
 		} else if (!overlayTriggered) {
 			overlayTriggered = true;
+			cleanup();
 			navigateTo("/pong/game/overlay");
 		}
 	}
 
-	resetBall();
+	// Au lancement du jeu
+    resetBall();
 	loop();
 
 	return container;
@@ -359,28 +419,47 @@ function Pong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 
 export function PongGamePage(): HTMLElement {
 	const mainContainer = document.createElement("div");
-	mainContainer.className = "gap-10 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800"
+	mainContainer.className = "gap-2 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800"
 
 	// Nettoyage du container avant d'ajouter le jeu
 	mainContainer.innerHTML = "";
 
 	const TitlePong = document.createElement("h1");
-	TitlePong.className = "text-8xl tracking-widest text-green-400 neon-matrix w-full text-center";
+	TitlePong.className = "absolute top-0 text-8xl tracking-widest text-green-400 neon-matrix w-full text-center";
 	TitlePong.textContent = "P O N G";
 	mainContainer.appendChild(TitlePong);
 
 	const ScorePong = document.createElement("div");
-	ScorePong.className = "w-[800px] flex";
+	ScorePong.className = "w-[69vw] h-[100px] flex justify-between";
+
+	const Profile1 = document.createElement("div");
+	Profile1.className = "flex items-end gap-3"
+
+	const Avatar1 = document.createElement("img");
+	Avatar1.src = "/" + userInventory.avatar[0].id;
+	Avatar1.className = "border-1 size-15 rounded-lg";
+	Profile1.appendChild(Avatar1);
 
 	const Score1 = document.createElement("h1");
-	Score1.className = "text-4xl tracking-widest text-green-400 neon-matrix w-full text-left";
+	Score1.className = "text-3xl tracking-widest text-green-400 neon-matrix";
 	Score1.textContent = user1.name + ": " + user1.score
-	ScorePong.appendChild(Score1);
+	Profile1.appendChild(Score1);
+
+	const Profile2 = document.createElement("div");
+	Profile2.className = "flex items-end gap-3"
+
+	const Avatar2 = document.createElement("img");
+	Avatar2.src = "/public/avatar/default_avatar.png";
+	Avatar2.className = "border-1 size-15 rounded-lg";
+	Profile2.appendChild(Avatar2);
 
 	const Score2 = document.createElement("h1");
-	Score2.className = "text-4xl tracking-widest text-green-400 neon-matrix w-full text-right";
+	Score2.className = "text-3xl tracking-widest text-green-400 neon-matrix";
 	Score2.textContent = user2.name + ": " + user2.score
-	ScorePong.appendChild(Score2);
+	Profile2.appendChild(Score2);
+
+	ScorePong.appendChild(Profile1);
+	ScorePong.appendChild(Profile2);
 
 	mainContainer.appendChild(ScorePong);
 
