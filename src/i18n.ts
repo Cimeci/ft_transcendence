@@ -7,15 +7,17 @@ export const translations = {
 		go_to_register: "Aller a la page d'inscription",
 		// Register
 		back_to_login: "Retour a la page de login",
+		empty_input: "Entrée vide",
+		not_same_input: "Entrées differentes",
+		insufficient_length: "Longueur insuffisante (8 min)",
 		// Navbar link
 		home: "Accueil",
-		settings: "Parametres",
-		shop: "Boutique",
 		inventory: "Inventaire",
-		//HomePage
-		welcome: "Bienvenue",
-		login: "Connexion",
+		shop: "Boutique",
+		settings: "Parametres",
 		logout: "Déconnexion",
+		//HomePage
+		login: "Connexion",
 		register: "Inscription",
 		play: "Jouer",
 		// ShopPage
@@ -34,6 +36,7 @@ export const translations = {
 		username2: "Joueur 2",
 		// Overlay
 		back_to_menu: "Retour au menu",
+		welcome_to_our_transcendence: "Bienvenue dans notre Transcendence",
 	},
 	en: {
 		// Login
@@ -43,6 +46,9 @@ export const translations = {
 		go_to_register: "Go to register",
 		// Register
 		back_to_login: "Back to login page",
+		empty_input: "Empty input",
+		not_same_input: "Not the same input",
+		insufficient_length: "Insufficient length (8 min)",
 		// Navbar link
 		home: "Home",
 		settings: "Settings",
@@ -69,6 +75,7 @@ export const translations = {
 		username2: "Player2",
 		// Overlay
 		back_to_menu: "Back to menu",
+		welcome_to_our_transcendence: "Welcome to our Transcendence",
 	},
 	es: {
 		// Login
@@ -78,6 +85,9 @@ export const translations = {
 		go_to_register: "Volver a la página de registrarse",
 		// Register
 		back_to_login: "Volver a la página de inicio de sesión",
+		empty_input: "entrada vacía",
+		not_same_input: "No es la misma entrada",
+		insufficient_length: "Duración insuficiente (8 min)",
 		// Navbar link
 		home: "Inicio",
 		inventory: "Inventario",
@@ -104,5 +114,6 @@ export const translations = {
 		username2: "Jugador 2",
 		// Overlay
 		back_to_menu: "	Volver al menú",
+		welcome_to_our_transcendence: "Bienvenido a nuestra trascendencia",
 	}
 };
