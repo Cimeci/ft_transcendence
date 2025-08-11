@@ -5,7 +5,7 @@ export function CreditsPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "text-white min-h-screen w-full flex justify-center items-center";
 	mainContainer.style.backgroundImage = "url('/swenn.jpg')";
-	// mainContainer.style.backgroundSize = "cover";
+	// mainContainer.style.backgroundSize = "100% 100%";
 	mainContainer.style.backgroundPosition = "center";
 	// mainContainer.style.backgroundRepeat = "no-repeat";
 

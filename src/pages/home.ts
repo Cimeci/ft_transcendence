@@ -25,7 +25,7 @@ export function HomePage(): HTMLElement {
 	PongLinkContainer.className = "";
 
 	const PongImg = document.createElement("img");
-	PongImg.src = "/public/pong_icone.png"
+	PongImg.src = "/pong_icone.png"
 	PongImg.className = "size-80 rounded-4xl cursor-pointer transition-all duration-300 hover:scale-110"
 	PongLinkContainer.appendChild(PongImg);
 
@@ -40,7 +40,7 @@ export function HomePage(): HTMLElement {
 	TournamentLinkContainer.className = "";
 
 	const TournatmentImg = document.createElement("img");
-	TournatmentImg.src = "/public/tournament_icone.png"
+	TournatmentImg.src = "/tournament_icone.png"
 	TournatmentImg.className = "size-80 rounded-4xl cursor-pointer transition-all duration-300 hover:scale-110"
 	TournamentLinkContainer.appendChild(TournatmentImg);
 

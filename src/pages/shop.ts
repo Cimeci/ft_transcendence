@@ -14,11 +14,11 @@ export function ShopPage(): HTMLElement {
 	shopContainer.className = "shop-grid";
 
 	const lstImg = [
-		'/public/bar/default_bar.png',
-		'/public/bar/ice_bar.png',
-		'/public/bar/fire_bar.png',
-		'/public/bar/amethyst_bar.png',
-		'/public/bar/matrix_bar.png',
+		'/bar/default_bar.png',
+		'/bar/ice_bar.png',
+		'/bar/fire_bar.png',
+		'/bar/amethyst_bar.png',
+		'/bar/matrix_bar.png',
 	];
 
 	const lstNameImg = [
@@ -44,7 +44,8 @@ export function ShopPage(): HTMLElement {
 		item.appendChild(price);
 
 		const name = document.createElement("a");
-		name.textContent = translations[getCurrentLang()][lstNameImg[i] as keyof typeof translations['en']];
+		// @ts-ignore
+		name.textContent = translations[getCurrentLang()][lstNameImg[i]] ?? lstNameImg[i];
 		name.className = "m-2 text-4xl cursor-pointer";
 		item.appendChild(name);
 
@@ -52,8 +53,9 @@ export function ShopPage(): HTMLElement {
 			name.className = "text-green-500 text-4xl";
 			name.textContent = "Buy";
 			setTimeout(() => {
-				name.textContent = translations[getCurrentLang()][lstNameImg[i] as keyof typeof translations['en']];
-				name.className = "text-4xl cursor-pointer";
+				// @ts-ignore
+				name.textContent = translations[getCurrentLang()][lstNameImg[i]] ?? lstNameImg[i];
+				name.className = "m-2 text-4xl cursor-pointer";
 
 			}, 600);
 		});

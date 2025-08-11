@@ -20,10 +20,15 @@ export const userInventory: Inventory = {
         { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar'},
 		{ id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar'},
 		{ id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar'},
+		{ id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar'},
+		{ id: 'avatar/rgramati.jpg', name: 'rgramati avatar', type: 'avatar'},
+		{ id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar'},
     ],
 	background: [
-		{ id: 'bg/default_bg.png', name: 'default bg', type: 'background'},
+		{ id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
+		{ id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
         { id: 'bg/default_bg.png', name: 'default bg', type: 'background'},
+		{ id: 'bg/matrix_bg.gif', name: 'matrix bg', type: 'background'},
     ],
     bar: [
         { src: 'playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
@@ -43,7 +48,7 @@ export const userInventory: Inventory = {
 
 function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 	const  AvatarContainer = document.createElement("div");
-	AvatarContainer.className = "z-2 flex border-6 rounded grid justify-center text-center m-5";
+	AvatarContainer.className = "transition-all duration-300 hover:scale-110 z-2 flex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.avatar[0].type;
@@ -101,7 +106,7 @@ function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLEle
 function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 
 	const  backgroundContainer = document.createElement("div");
-	backgroundContainer.className = "z-2 flex border-6 rounded grid justify-center text-center m-5";
+	backgroundContainer.className = "transition-all duration-300 hover:scale-110 z-2 flex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.background[0].type;
@@ -158,7 +163,7 @@ function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTM
 
 function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 	const  barContainer = document.createElement("div");
-	barContainer.className = "flex border-6 rounded grid justify-center text-center m-5";
+	barContainer.className = "ftransition-all duration-300 hover:scale-110 lex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.bar[0].type;
@@ -215,7 +220,7 @@ function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElemen
 
 function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 	const  ballContainer = document.createElement("div");
-	ballContainer.className = "z-2 flex border-6 rounded grid justify-center text-center m-5";
+	ballContainer.className = "transition-all duration-300 hover:scale-110 z-2 flex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.ball[0].type;
