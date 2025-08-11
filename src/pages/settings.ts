@@ -15,21 +15,23 @@ export function createLangSection(): HTMLElement {
 
 	const langButton = document.createElement('button');
 	langButton.type = 'button';
-	langButton.className = 'p-10 bg-transparent border-none cursor-pointer flex items-center justify-center';
+	langButton.className = 'p-1 bg-transparent border-none cursor-pointer flex items-center justify-center';
 
 	const imgBtn = document.createElement("img");
-	imgBtn.src = "/translate.png";
+	imgBtn.src = "/translate.svg";
 	imgBtn.alt = "Lang";
-	imgBtn.className = "size-40";
-
+	imgBtn.className = "size-20 focus:scale-110 hover:scale-110 duration-300 transition-all";
 	langButton.appendChild(imgBtn);
 
 	const langMenu = document.createElement('ul');
-	langMenu.className = 'size-40 m-2 flex-1 bg-[#242424] rounded shadow-lg z-50 text-white border border-green-700';
+	langMenu.className = 'mr-2 gap-5 size-25 flex-1 bg-[#242424] rounded-xl shadow-lg z-50 text-white border border-green-700';
 	langMenu.style.display = 'none';
-	langMenu.style.minWidth = '120px';
 	langMenu.style.listStyle = 'none';
 	langMenu.style.padding = '0';
+	langMenu.style.opacity = '0';
+    langMenu.style.transform = 'scale(0.92) translateY(-6px)';
+    langMenu.style.transformOrigin = 'top';
+    langMenu.style.transition = 'opacity 180ms ease, transform 180ms ease';
 
 	const languages = [
 		{ code: 'fr', label: 'Français' },
@@ -39,7 +41,7 @@ export function createLangSection(): HTMLElement {
 
 	languages.forEach(lang => {
 		const li = document.createElement('li');
-		li.className = 'px-4 py-2 hover:bg-green-700 cursor-pointer h-1/3 flex items-center';
+		li.className = 'px-4 py-2 rounded-xl duration-300 hover:scale-105 transition-all hover:bg-green-700 cursor-pointer h-1/3 flex items-center';
 		li.textContent = lang.label;
 		li.onclick = () => {
 			setLanguage(lang.code);
@@ -48,24 +50,43 @@ export function createLangSection(): HTMLElement {
 		langMenu.appendChild(li);
 	});
 
-	langButton.onclick = (e) => {
-		e.stopPropagation();
-		langMenu.style.display = langMenu.style.display === 'none' ? 'block' : 'none';
-	};
-	document.addEventListener('click', () => {
-		langMenu.style.display = 'none';
-	});
+	function openMenu() {
+        if (langMenu.style.display === 'block') return;
+        langMenu.style.display = 'block';
+        requestAnimationFrame(() => {
+            langMenu.style.opacity = '1';
+            langMenu.style.transform = 'scale(1) translateY(0)';
+        });
+    }
 
-	const langSection = document.createElement("div");
-	langSection.className = "border-2 rounded-xl flex items-center justify-center";
-	langSection.style.width = "350px";
-	langSection.style.height = "15rem";
-	langSection.style.maxWidth = "100%";
-	langSection.style.boxSizing = "border-box";
-	langSection.appendChild(langButton);
-	langSection.appendChild(langMenu);
+    function closeMenu() {
+        if (langMenu.style.display === 'none') return;
+        langMenu.style.opacity = '0';
+        langMenu.style.transform = 'scale(0.95) translateY(-4px)';
+        const onEnd = () => {
+            langMenu.removeEventListener('transitionend', onEnd);
+            if (langMenu.style.opacity === '0') {
+                langMenu.style.display = 'none';
+            }
+        };
+        langMenu.addEventListener('transitionend', onEnd);
+    }
 
-	return langSection;
+    langButton.onclick = (e) => {
+        e.stopPropagation();
+        if (langMenu.style.display === 'none') openMenu(); else closeMenu();
+    };
+
+    document.addEventListener('click', () => closeMenu());
+
+    const langSection = document.createElement("div");
+    langSection.className = "p-3 border-2 rounded-xl flex items-center justify-center";
+    langSection.style.maxWidth = "100%";
+    langSection.style.boxSizing = "border-box";
+    langSection.appendChild(langButton);
+    langSection.appendChild(langMenu);
+
+    return langSection;
 }
 
 export function SettingsPage(): HTMLElement {
@@ -81,7 +102,7 @@ export function SettingsPage(): HTMLElement {
     settingsContainer.className = "flex justify-center items-center border-2 w-9/10 h-9/10";
 
     const langSection = createLangSection();
-    langSection.className += " max-w-xs w-full";
+    langSection.className += "p-20";
 
     settingsContainer.appendChild(langSection);
     mainContainer.appendChild(settingsContainer);
