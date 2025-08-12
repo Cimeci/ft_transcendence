@@ -23,7 +23,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/pong/game': PongGamePage,
 	'/pong/game/overlay': PongOverlayPage,
 	'/tournament/menu': PongTournamentPage,
-	'/tournament/': PongTournamentInterfacePage,
+	'/tournament': PongTournamentInterfacePage,
 	'/settings': SettingsPage,
 	'/credits': CreditsPage,
 };
