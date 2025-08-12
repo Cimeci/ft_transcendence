@@ -21,8 +21,10 @@ export const translations = {
 		// PongPage
 		play: "Jouer",
 		// Tournament
+
+		tournament_name: "Nom du tournoi",
 		tournament: "Tournoi",
-		host: "héberger",
+		host: "Héberger",
 		join: "Rejoindre",
 		player_number: "Nombre de joueurs ?",
 		ia_number: "Nombre d'IA ?",
@@ -67,6 +69,7 @@ export const translations = {
 		// PongPage
 		play: "Play",
 		// Tournament
+		tournament_name: "Tournament name",
 		tournament: "Tournament",
 		host: "Host",
 		join: "Join",
@@ -112,6 +115,7 @@ export const translations = {
 		// PongPage
 		play: "Jugar",
 		// Tournament
+		tournament_name: "Nombre del torneo",
 		tournament: "Torneo",
 		host: "Alojar",
 		join: "Unirse",
