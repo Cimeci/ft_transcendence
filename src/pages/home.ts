@@ -45,7 +45,7 @@ export function HomePage(): HTMLElement {
 	TournamentLinkContainer.appendChild(TournatmentImg);
 
 	TournatmentImg.addEventListener("click", () => {
-		navigateTo('/pong/tournament')
+		navigateTo('/tournament/menu')
 	});
 
 	LinkContainer.appendChild(TournamentLinkContainer);

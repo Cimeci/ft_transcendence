@@ -315,15 +315,15 @@ h2 {
 }
 
 .animated-gradient-border {
-  background: linear-gradient(270deg, #39ff14, #022e09, #39ff14, #000000);
-  background-size: 400% 400%;
-  animation: gradient-border-move 3s linear infinite;
+	background: linear-gradient(270deg, #39ff14, #022e09, #39ff14, #000000);
+	background-size: 400% 400%;
+	animation: gradient-border-move 3s linear infinite;
 }
 
 @keyframes gradient-border-move {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
 }
 
 /* Ajoute dans style.css */
@@ -331,12 +331,12 @@ h2 {
   animation: shake 0.4s;
 }
 @keyframes shake {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(-8px); }
-  40% { transform: translateX(8px); }
-  60% { transform: translateX(-8px); }
-  80% { transform: translateX(8px); }
-  100% { transform: translateX(0); }
+	0% { transform: translateX(0); }
+	20% { transform: translateX(-8px); }
+	40% { transform: translateX(8px); }
+	60% { transform: translateX(-8px); }
+	80% { transform: translateX(8px); }
+	100% { transform: translateX(0); }
 }
 
 /* LOGIN */
@@ -350,4 +350,50 @@ h2 {
 		flex-direction: column-reverse;
 		gap: 4rem;
 	}
+}
+
+
+/* TOURNAMENT */
+
+.rounded-range {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 8px;
+	border-radius: 9999px;
+	background: #3fd46c;
+	outline: none;
+}
+
+.rounded-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #16a34a;
+  transition: box-shadow .2s ease;
+}
+
+.rounded-range:hover::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px rgba(22, 163, 74, .2); /* halo au hover/focus */
+}
+
+.rounded-range::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 3px solid #16a34a;
+  transition: box-shadow .2s ease;
+}
+.rounded-range:focus::-moz-range-thumb,
+.rounded-range:hover::-moz-range-thumb {
+  box-shadow: 0 0 0 6px rgba(22, 163, 74, .2);
+}
+.rounded-range::-moz-range-progress {
+  height: 10px;
+  border-radius: 9999px;
+  background: #065f46;         /* partie “remplie” */
 }
