@@ -397,3 +397,15 @@ h2 {
   border-radius: 9999px;
   background: #065f46;         /* partie “remplie” */
 }
+
+.tournament-container {
+
+}
+
+@media (max-width: 975px){
+	.tournament-container {
+		flex-direction: column;
+		gap: 4rem;
+		margin-top: 6rem;
+	}
+}
