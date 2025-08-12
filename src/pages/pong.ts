@@ -5,6 +5,32 @@ import { userInventory } from "../pages/inventory"
 
 export const gameHistory: string[] = [];
 
+export function CreateWrappedButton(mainContainer: HTMLElement, txt: string, path: string, size: number): HTMLElement {
+	const PlayContainer = document.createElement("div");
+	PlayContainer.className = "flex flex-col justify-center items-center gap-4 text-center";
+
+	const PlayBtnWrapper = document.createElement("div");
+	PlayBtnWrapper.className = "relative flex items-center justify-center animated-gradient-border rounded-full p-1 mb-2";
+
+	const PlayBtn = document.createElement("button");
+	PlayBtn.className = "relative z-10 cursor-pointer transition-all duration-300 hover:scale-98 text-" + String(size) + "xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
+	PlayBtn.textContent = txt;
+
+	PlayBtn.addEventListener('click', () => {
+		mainContainer.classList.add("fade-out");
+		setTimeout(() => {
+			user1.score = 0;
+			user2.score = 0;
+			navigateTo(path);
+		}, 1000);
+	});
+
+	PlayBtnWrapper.appendChild(PlayBtn);
+	PlayContainer.appendChild(PlayBtnWrapper);
+
+	return (PlayContainer);
+}
+
 export function PongMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "pt-25 min-h-screen w-full flex items-center justify-center bg-linear-to-bl from-black via-green-900 to-black"
@@ -43,27 +69,7 @@ export function PongMenuPage(): HTMLElement {
 		CosmeticContainer.appendChild(itemDiv);
 	}
 
-	const PlayContainer = document.createElement("div");
-	PlayContainer.className = "flex flex-col justify-center items-center gap-4 text-center";
-
-	const PlayBtnWrapper = document.createElement("div");
-	PlayBtnWrapper.className = "relative flex items-center justify-center animated-gradient-border rounded-full p-1 mb-2";
-
-	const PlayBtn = document.createElement("button");
-	PlayBtn.className = "relative z-10 cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
-	PlayBtn.textContent = "P L A Y";
-
-	PlayBtn.addEventListener('click', () => {
-		mainContainer.classList.add("fade-out");
-		setTimeout(() => {
-			user1.score = 0;
-			user2.score = 0;
-			navigateTo("/pong/game");
-		}, 1000);
-	});
-
-	PlayBtnWrapper.appendChild(PlayBtn);
-	PlayContainer.appendChild(PlayBtnWrapper);
+	const PlayContainer = CreateWrappedButton(mainContainer, translations[getCurrentLang()].play, "/pong/game", 8)
 
 	const getName1 = document.createElement("input");
 	getName1.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
