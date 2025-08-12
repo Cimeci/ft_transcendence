@@ -10,10 +10,11 @@ export function CreateWrappedButton(mainContainer: HTMLElement, txt: string, pat
 	PlayContainer.className = "flex flex-col justify-center items-center gap-4 text-center";
 
 	const PlayBtnWrapper = document.createElement("div");
-	PlayBtnWrapper.className = "relative flex items-center justify-center animated-gradient-border rounded-full p-1 mb-2";
+	// Wrapper légèrement plus grand que le bouton, plus fin
+	PlayBtnWrapper.className = "relative inline-flex items-center justify-center animated-gradient-border rounded-full p-[clamp(2px,0.6vw,8px)] mb-2 w-fit h-fit";
 
 	const PlayBtn = document.createElement("button");
-	PlayBtn.className = "relative z-10 cursor-pointer transition-all duration-300 hover:scale-98 text-" + String(size) + "xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
+	PlayBtn.className = "relative z-10 inline-flex items-center justify-center whitespace-nowrap leading-none w-fit h-fit cursor-pointer transition-all duration-300 hover:scale-98 text-" + String(size) + "xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
 	PlayBtn.textContent = txt;
 
 	PlayBtn.addEventListener('click', () => {
@@ -69,7 +70,7 @@ export function PongMenuPage(): HTMLElement {
 		CosmeticContainer.appendChild(itemDiv);
 	}
 
-	const PlayContainer = CreateWrappedButton(mainContainer, translations[getCurrentLang()].play, "/pong/game", 8)
+	const PlayContainer = CreateWrappedButton(mainContainer, translations[getCurrentLang()].play, "/pong/game", 7)
 
 	const getName1 = document.createElement("input");
 	getName1.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
@@ -161,10 +162,11 @@ export function PongOverlayPage(): HTMLElement {
 	BackContainer.className = "flex flex-col justify-center items-center gap-4 text-center";
 
 	const BackBtnWrapper = document.createElement("div");
-	BackBtnWrapper.className = "relative flex items-center justify-center animated-gradient-border rounded-full p-1 mb-2";
+	// Wrapper légèrement plus grand que le bouton, plus fin
+	BackBtnWrapper.className = "relative inline-flex items-center justify-center animated-gradient-border rounded-full p-[clamp(2px,0.6vw,8px)] mb-2 w-fit h-fit";
 
 	const BackBtn = document.createElement("button");
-	BackBtn.className = "relative z-10 cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
+	BackBtn.className = "relative z-10 inline-flex items-center justify-center whitespace-nowrap leading-none w-fit h-fit cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
 	BackBtn.textContent = translations[getCurrentLang()].back_to_menu;
 	BackBtn.tabIndex = 0;
 
