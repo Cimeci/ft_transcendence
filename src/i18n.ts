@@ -1,11 +1,13 @@
 export const translations = {
 	fr: {
 		// Login
+		login: "Connexion",
 		username: "Pseudonyme",
 		password: "Mots de passe",
 		confirm_password: "Confirmer le mots de passe",
 		go_to_register: "Aller a la page d'inscription",
 		// Register
+		register: "Inscription",
 		back_to_login: "Retour a la page de login",
 		empty_input: "Entrée vide",
 		not_same_input: "Entrées differentes",
@@ -16,10 +18,15 @@ export const translations = {
 		shop: "Boutique",
 		settings: "Parametres",
 		logout: "Déconnexion",
-		//HomePage
-		login: "Connexion",
-		register: "Inscription",
+		// PongPage
 		play: "Jouer",
+		// Tournament
+		tournament: "Tournoi",
+		host: "héberger",
+		join: "Rejoindre",
+		player_number: "Nombre de joueurs ?",
+		ia_number: "Nombre d'IA ?",
+		back: "Retour",
 		// ShopPage
 		default_bar: "Barre de base",
 		fire_bar: "Barre en feu",
@@ -40,11 +47,13 @@ export const translations = {
 	},
 	en: {
 		// Login
+		login: "Login",
 		username: "Username",
 		password: "Password",
 		confirm_password: "Confirm password",
 		go_to_register: "Go to register",
 		// Register
+		register: "Register",
 		back_to_login: "Back to login page",
 		empty_input: "Empty input",
 		not_same_input: "Not the same input",
@@ -54,12 +63,16 @@ export const translations = {
 		settings: "Settings",
 		shop: "Shop",
 		inventory: "Inventory",
-		//HomePage
-		welcome: "Welcome",
-		login: "Login",
 		logout: "Logout",
-		register: "Register",
+		// PongPage
 		play: "Play",
+		// Tournament
+		tournament: "Tournament",
+		host: "Host",
+		join: "Join",
+		player_number: "Number of players?",
+		ia_number: "Number of AI?",
+		back: "Back",
 		// ShopPage
 		default_bar: "Default bar",
 		fire_bar: "Fire bar",
@@ -79,11 +92,13 @@ export const translations = {
 	},
 	es: {
 		// Login
+		login: "Iniciar sesión",
 		username: "Seudónimo",
 		password: "Contraseñas",
 		confirm_password: "Confirmar contraseña",
 		go_to_register: "Volver a la página de registrarse",
 		// Register
+		register: "Registrarse",
 		back_to_login: "Volver a la página de inicio de sesión",
 		empty_input: "entrada vacía",
 		not_same_input: "No es la misma entrada",
@@ -93,12 +108,16 @@ export const translations = {
 		inventory: "Inventario",
 		settings: "Parámetro",
 		shop: "Tienda",
-		//HomePage
-		welcome: "Bienvenido",
-		login: "Iniciar sesión",
 		logout: "Cerrar sesión",
-		register: "Registrarse",
+		// PongPage
 		play: "Jugar",
+		// Tournament
+		tournament: "Torneo",
+		host: "Alojar",
+		join: "Unirse",
+		player_number: "¿Número de jugadores?",
+		ia_number: "¿Número de IA?",
+		back: "Atrás",
 		// ShopPage
 		default_bar: "Barra básica",
 		fire_bar: "Barra en llamas",
