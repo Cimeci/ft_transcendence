@@ -1,15 +1,18 @@
 import { translations } from '../i18n';
 import { getCurrentLang } from '../pages/settings';
+import { navigateTo } from '../routes';
 
 export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	const nav = document.createElement('nav');
 	nav.className = 'navbar-burger';
 
-	const homeLogo = document.createElement('a');
-	homeLogo.href = '/home';
+	const homeLogo = document.createElement('img');
 	homeLogo.setAttribute('data-link', '');
-	homeLogo.textContent = '🏠';
-	homeLogo.className = 'important-text pl-4';
+	homeLogo.src =  "/house.svg";
+	homeLogo.className = 'ml-3 right-10 size-10 cursor-pointer hover:scale-110 duration-300 transition-all';
+	homeLogo.addEventListener('click', () => {
+		navigateTo("/home");
+	})
 	nav.appendChild(homeLogo);
 
 	const hamburgerBtn = document.createElement('button');
