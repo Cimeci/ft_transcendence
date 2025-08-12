@@ -11,6 +11,25 @@ export interface User {
     // inventory?: Inventory;
 }
 
+export function togglePassword(input: HTMLInputElement, icon: HTMLImageElement) {
+	if (input.type === "password") {
+		input.type = "text";
+		icon.src = "/eye.svg";
+	} else {
+		input.type = "password";
+		icon.src = "/eye-off.svg";
+	}
+}
+
+export function createInputWithEye(input: HTMLInputElement, eye: HTMLImageElement): HTMLDivElement {
+	const wrapper = document.createElement("div");
+	wrapper.className = "relative w-full mb-2";
+	wrapper.appendChild(input);
+	wrapper.appendChild(eye);
+	return wrapper;
+}
+
+
 export function RegisterPage(): HTMLElement {
 	const mainContainer = document.createElement('div');
 	mainContainer.className = 'z-2000 min-h-screen w-full flex items-center justify-center gap-4 bg-linear-to-bl from-green-800 via-black to-green-800';
@@ -46,24 +65,6 @@ export function RegisterPage(): HTMLElement {
 		newuser.name = InputName.value;
 	});
 	RegisterContainer.appendChild(InputName);
-
-	function togglePassword(input: HTMLInputElement, icon: HTMLImageElement) {
-		if (input.type === "password") {
-			input.type = "text";
-			icon.src = "/eye.svg";
-		} else {
-			input.type = "password";
-			icon.src = "/eye-off.svg";
-		}
-	}
-
-	function createInputWithEye(input: HTMLInputElement, eye: HTMLImageElement): HTMLDivElement {
-		const wrapper = document.createElement("div");
-		wrapper.className = "relative w-full mb-2";
-		wrapper.appendChild(input);
-		wrapper.appendChild(eye);
-		return wrapper;
-	}
 
 	// Input Password
 	const InputPassword = document.createElement("input");
