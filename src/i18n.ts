@@ -21,7 +21,11 @@ export const translations = {
 		// PongPage
 		play: "Jouer",
 		// Tournament
-
+		name: "Nom",
+		nbplayer: "Nb Joueurs",
+		visibilty: "Visibilité",
+		private: "Privé",
+		public: "Public",
 		tournament_name: "Nom du tournoi",
 		tournament: "Tournoi",
 		host: "Héberger",
@@ -69,6 +73,11 @@ export const translations = {
 		// PongPage
 		play: "Play",
 		// Tournament
+		name: "Name",
+		nbplayer: "Nb Players",
+		visibilty: "Visibility",
+		private: "Private",
+		public: "Public",
 		tournament_name: "Tournament name",
 		tournament: "Tournament",
 		host: "Host",
@@ -115,6 +124,11 @@ export const translations = {
 		// PongPage
 		play: "Jugar",
 		// Tournament
+		name: "Nombre",
+		nbplayer: "Nb Jugadores",
+		visibilty: "Visibilidad",
+		private: "Privado",
+		public: "Público",
 		tournament_name: "Nombre del torneo",
 		tournament: "Torneo",
 		host: "Alojar",
