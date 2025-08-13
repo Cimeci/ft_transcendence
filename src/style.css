@@ -398,14 +398,15 @@ h2 {
   background: #065f46;         /* partie “remplie” */
 }
 
-.tournament-container {
-
+/* Halo vert sur le thumb du slider quand il est focus */
+.rounded-range:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.25); /* green-600 ~ */
+}
+.rounded-range:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.25);
 }
 
-@media (max-width: 975px){
-	.tournament-container {
-		flex-direction: column;
-		gap: 4rem;
-		margin-top: 6rem;
-	}
-}
+/* Scrollbar discrète */
+ul::-webkit-scrollbar { width: 6px; }
+ul::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 9999px; }
+ul::-webkit-scrollbar-track { background: transparent; }
