@@ -9,9 +9,9 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	const homeLogo = document.createElement('img');
 	homeLogo.setAttribute('data-link', '');
 	homeLogo.src =  "/house.svg";
-	homeLogo.className = 'ml-3 right-10 size-10 cursor-pointer hover:scale-110 duration-300 transition-all';
+	homeLogo.className = 'ml-3 right-10 size-10 cursor-pointer active:scale-105 hover:scale-110 duration-300 transition-all';
 	homeLogo.addEventListener('click', () => {
-		navigateTo("/home");
+		setTimeout(() => {navigateTo("/home")}, 100);
 	})
 	nav.appendChild(homeLogo);
 
