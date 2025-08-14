@@ -1,5 +1,4 @@
 import fastify from "fastify";
-import { createTournament, tournamentResponse } from "./tournament.schema.js";
 import Database from 'better-sqlite3/lib/database.js';
 
 const app = fastify({ logger : true });
@@ -8,31 +7,25 @@ const db = new Database('./data/tournament.sqlite');
 
 const tournament = `
     CREATE TABLE IF NOT EXISTS tournament (
-        id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        host TEXT NOT NULL,
         name TEXT NOT NULL,
         size INTERGER,
+        players JSON NOT NULL,
+        game JSON NOT NULL,
         winner TEXT NOT NULL
     );
 `
 db.exec(tournament);
-db.close();
+app.addHook('onClose', async (instance) => {
+  db.close();
+});
 
-app.post('/tournament', {
-        schema: {
-            body: createTournament,
-            response: {
-                201: tournamentResponse
-            }
-        }
-    }, async (request, reply) => {
-        const { name, member } = request.body;
+app.post('/tournament', async (request, reply) => {
+        const { host, name, players } = request.body;
 
-        // Ici tu pourrais insérer dans la DB ou juste retourner les données reçues
+    if (!host || !name || )
 
-        reply.code(201).send ({
-            message: 'tournoi cree',
-            data: { name, member}
-        });
     });
 
 app.get('/tournament', async (request, reply) => {
