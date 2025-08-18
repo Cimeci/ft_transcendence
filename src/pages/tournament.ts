@@ -342,7 +342,7 @@ export function PongTournamentPage(): HTMLElement {
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
-    const players = Array.from({ length: size }, (_, i) => `Player ${i + 1}`);
+    const players = Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`);
 
     const bracket = createTournamentBracket(players);
     bracket.classList.add("mt-20");
@@ -356,7 +356,7 @@ export function PongTournamentPage(): HTMLElement {
 
 	const BackToMenuTitle = document.createElement("h1");
 	BackToMenuTitle.className = "text-5xl neon-matrix";
-	BackToMenuTitle.textContent = "ARE YOU SURE TO LEAVE ?";
+	BackToMenuTitle.textContent = translations[getCurrentLang()].title_leave;
 	BackToMenuSure.appendChild(BackToMenuTitle);
 
 	const BackToMenuTxt = document.createElement("p");
