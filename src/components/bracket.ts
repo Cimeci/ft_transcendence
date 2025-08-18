@@ -1,5 +1,5 @@
-// Génère un bracket SVG modulable (16, 8, 32 joueurs, etc.)
-// Utilise des "modules" de rounds et calcule les connecteurs.
+import { translations } from "../i18n";
+import { getCurrentLang } from "../pages/settings";
 
 export function createTournamentBracket(players: string[]): HTMLElement {
   	const filled = fillToPowerOfTwo(players);
@@ -76,7 +76,7 @@ export function createTournamentBracket(players: string[]): HTMLElement {
 				svg.appendChild(t1);
 				svg.appendChild(t2);
 		  	} else {
-				const label = isFinalRound ? `Final R${r + 1} - M${j + 1}` : `R${r + 1} - M${j + 1}`;
+				const label = isFinalRound ? `${translations[getCurrentLang()].final} R${r + 1} - M${j + 1}` : `R${r + 1} - M${j + 1}`;
 				const t = svgText(x + 8, yCenter + 5, label);
 		  	 	if (isFinalRound) {
 		  	 	  	t.setAttribute('font-weight', '700');
