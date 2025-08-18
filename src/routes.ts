@@ -8,7 +8,7 @@ import { InventoryPage } from './pages/inventory';
 import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
 import { PongMenuPage, PongGamePage, PongOverlayPage } from './pages/pong';
-import { PongTournamentPage, PongTournamentInterfacePage } from './pages/tournament';
+import { PongTournamentMenuPage, PongTournamentPage } from './pages/tournament';
 import { LandingPage } from './pages/landing';
 import { CreditsPage } from './pages/credits';
 
@@ -22,8 +22,8 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/pong': PongMenuPage,
 	'/pong/game': PongGamePage,
 	'/pong/game/overlay': PongOverlayPage,
-	'/tournament/menu': PongTournamentPage,
-	'/tournament': PongTournamentInterfacePage,
+	'/tournament/menu': PongTournamentMenuPage,
+	'/tournament': PongTournamentPage,
 	'/settings': SettingsPage,
 	'/credits': CreditsPage,
 };
