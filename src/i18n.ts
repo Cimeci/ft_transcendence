@@ -33,6 +33,8 @@ export const translations = {
 		player_number: "Nombre de joueurs ?",
 		ia_number: "Nombre d'IA ?",
 		back: "Retour",
+		cancel: "Annuler",
+		txt_leave: "Si vous quittez votre place dans ce tournoi, elle ne sera plus garantie.",
 		// ShopPage
 		default_bar: "Barre de base",
 		fire_bar: "Barre en feu",
@@ -85,6 +87,8 @@ export const translations = {
 		player_number: "Number of players?",
 		ia_number: "Number of AI?",
 		back: "Back",
+		cancel: "Cancel",
+		txt_leave: "If you leave your place in this tournament, it is no longer guaranteed.",
 		// ShopPage
 		default_bar: "Default bar",
 		fire_bar: "Fire bar",
@@ -136,6 +140,8 @@ export const translations = {
 		player_number: "¿Número de jugadores?",
 		ia_number: "¿Número de IA?",
 		back: "Atrás",
+		cancel: "Cancelar",
+		txt_leave: "Si abandona su plaza en este torneo, ya no estará garantizada.",
 		// ShopPage
 		default_bar: "Barra básica",
 		fire_bar: "Barra en llamas",
