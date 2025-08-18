@@ -18,12 +18,15 @@ export function CreateWrappedButton(mainContainer: HTMLElement, txt: string, pat
 	PlayBtn.textContent = txt;
 
 	PlayBtn.addEventListener('click', () => {
-		mainContainer.classList.add("fade-out");
-		setTimeout(() => {
-			user1.score = 0;
-			user2.score = 0;
-			navigateTo(path);
-		}, 1000);
+		if (path != "null")
+		{
+			mainContainer.classList.add("fade-out");
+			setTimeout(() => {
+				user1.score = 0;
+				user2.score = 0;
+				navigateTo(path);
+			}, 1000);
+		}
 	});
 
 	PlayBtnWrapper.appendChild(PlayBtn);
