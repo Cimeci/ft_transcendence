@@ -21,6 +21,7 @@ export const translations = {
 		// PongPage
 		play: "Jouer",
 		// Tournament
+		player: "Joueur",
 		name: "Nom",
 		nbplayer: "Nb Joueurs",
 		visibilty: "Visibilité",
@@ -34,7 +35,9 @@ export const translations = {
 		ia_number: "Nombre d'IA ?",
 		back: "Retour",
 		cancel: "Annuler",
-		txt_leave: "Si vous quittez votre place dans ce tournoi, elle ne sera plus garantie.",
+		title_leave: "ÊTES-VOUS SÛR DE VOULOIR QUITTER LA PAGE ?",
+		txt_leave: "Si vous quittez, votre place dans ce tournoi ne sera plus garantie.",
+		final: "FINALE",
 		// ShopPage
 		default_bar: "Barre de base",
 		fire_bar: "Barre en feu",
@@ -75,6 +78,7 @@ export const translations = {
 		// PongPage
 		play: "Play",
 		// Tournament
+		player: "Player",
 		name: "Name",
 		nbplayer: "Nb Players",
 		visibilty: "Visibility",
@@ -88,7 +92,9 @@ export const translations = {
 		ia_number: "Number of AI?",
 		back: "Back",
 		cancel: "Cancel",
-		txt_leave: "If you leave your place in this tournament, it is no longer guaranteed.",
+		title_leave: "ARE YOU SURE TO LEAVE ?",
+		txt_leave: "If you leave, your place in this tournament will no longer be guaranteed.",
+		final: "FINAL",
 		// ShopPage
 		default_bar: "Default bar",
 		fire_bar: "Fire bar",
@@ -128,6 +134,7 @@ export const translations = {
 		// PongPage
 		play: "Jugar",
 		// Tournament
+		player: "Jugadore",
 		name: "Nombre",
 		nbplayer: "Nb Jugadores",
 		visibilty: "Visibilidad",
@@ -141,7 +148,9 @@ export const translations = {
 		ia_number: "¿Número de IA?",
 		back: "Atrás",
 		cancel: "Cancelar",
-		txt_leave: "Si abandona su plaza en este torneo, ya no estará garantizada.",
+		title_leave: "¿ESTÁ SEGURO DE QUE QUIERE SALIR?",
+		txt_leave: "Si abandona, su plaza en este torneo ya no estará garantizada.",
+		final: "FINAL",
 		// ShopPage
 		default_bar: "Barra básica",
 		fire_bar: "Barra en llamas",
