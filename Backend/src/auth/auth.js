@@ -9,7 +9,7 @@ const db = new Database('./data/user.sqlite');
 
 const user = `
     CREATE TABLE IF NOT EXISTS user (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         username TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL
@@ -23,6 +23,7 @@ app.addHook('onClose', async (instance) => {
 
 app.post('/register', async (request, reply) => {
     const { username, email, password } = request.body;
+    const uuid = crypto.randomUUID();
     
     try {
         const validationPassword = (password) => {
@@ -57,22 +58,22 @@ app.post('/register', async (request, reply) => {
             });
         }
 
-        const data = db.prepare('INSERT INTO user (username, email, password) VALUES (?, ?, ?)').run(username, email, hash);
-        const d = data.lastInsertRowid;
-        const stmt = db.prepare('SELECT * FROM user WHERE id = ?').get(d);
+        db.prepare('INSERT INTO user (uuid, username, email, password) VALUES (?, ?, ?, ?)').run(uuid, username, email, hash);
+        const info = { uuid, username, email, hash }
         
         await fetch('http://user:4000/insert', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(stmt)
+            body: JSON.stringify(info)
         });
         
         return {
-            id: stmt.id,
-            username: stmt.username,
-            email: stmt.email,
+            uuid: info.uuid,
+            username: info.username,
+            email: info.email,
+            hash: info.hash
         };
     } catch (err) {
         console.error(err);

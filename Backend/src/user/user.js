@@ -7,7 +7,7 @@ const db = new Database('./data/user.sqlite');
 
 const user = `
     CREATE TABLE IF NOT EXISTS user (
-        id INTEGER PRIMARY KEY,
+        uuid TEXT PRIMARY KEY,
         username TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL
@@ -16,14 +16,14 @@ const user = `
 
 const friends = `
     CREATE TABLE IF NOT EXISTS friendships (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        friend_id INTEGER NOT NULL,
+        uuid TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        friend_id TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES user(id),
-        FOREIGN KEY (friend_id) REFERENCES user(id),
+        FOREIGN KEY (user_id) REFERENCES user(uuid),
+        FOREIGN KEY (friend_id) REFERENCES user(uuid),
         UNIQUE (user_id, friend_id)
     );
 `
@@ -55,10 +55,14 @@ app.addHook('onClose', async (instance) => {
 });
 
 app.post('/insert', async(request, reply) => {
-    const { id, username, email, password } = request.body;
+    const { uuid, username, email, hash } = request.body;
+
+    if (!hash) {
+        return reply.code(400).send({ error: 'All fields are required' });
+    }
 
     try{
-        db.prepare('INSERT INTO user (id, username, email, password) VALUES (?, ?, ?, ?)').run(id, username, email, password);
+        db.prepare('INSERT INTO user (uuid, username, email, password) VALUES (?, ?, ?, ?)').run(uuid, username, email, hash);
     } catch (err) {
         console.error(err);
         return reply.code(500).send({ error: 'Internal Server Error' });
@@ -67,9 +71,10 @@ app.post('/insert', async(request, reply) => {
 
 app.post('/friendship', async(request, reply) => {
     const { user_id, friend_id } = request.body;
+    const uuid = crypto.randomUUID();
 
     try{
-        db.prepare('INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, ?)').run(user_id, friend_id, 'pending');
+        db.prepare('INSERT INTO friendships (uuid, user_id, friend_id, status) VALUES (?, ?, ?, ?)').run(uuid, user_id, friend_id, 'pending');
 
         return { message: 'Friendship request sent' }
     } catch (err) {

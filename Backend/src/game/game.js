@@ -7,7 +7,7 @@ const db = new Database('./data/game.sqlite');
 
 const game = `
     CREATE TABLE IF NOT EXISTS game (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT PRIMARY KEY,
         player1 TEXT,
         player2 TEXT,
         score1 INTEGER DEFAULT 0,
@@ -22,12 +22,13 @@ app.addHook('onClose', async (instance) => {
 });
 
 app.post('/game', async (request, reply) => {
-    const { player1Id, player2Id, tournament } = request.body;
+    const { player1, player2, tournament } = request.body;
+    const uuid = crypto.randomUUID();
 
     try {
-        db.prepare('INSERT INTO game (player1, player2, tournament, winner) VALUES (?, ?, ?, ?)').run(player1Id, player2Id, tournament || null, null);
+        db.prepare('INSERT INTO game (uuid, player1, player2, tournament, winner) VALUES (?, ?, ?, ?, ?)').run(uuid, player1, player2, tournament || null, null);
 
-        return 'game start'
+        reply.send({ uuid });
     } catch (err) {
         console.error(err);
         return reply.code(500).send({ error: 'Internal Server Error' });
@@ -39,7 +40,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     const { score1, score2, winner } = request.body;
 
     try {
-        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? where id = ?').run(score1, score2, winner, gameId);
+        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? where uuid = ?').run(score1, score2, winner, gameId);
 
         return 'game updated';
     } catch (err) {
