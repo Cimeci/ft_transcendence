@@ -3,8 +3,9 @@ import { translations } from "../i18n";
 import { CreateWrappedButton } from "./pong";
 import { createInputWithEye, togglePassword } from "./register"; 
 import { navigateTo } from "../routes";
+import { createTournamentBracket } from "../components/bracket";
 
-let nb_players = {value: 2};
+let nb_players = {value: 16};
 
 export function CreateSlider(ref: { value: number }, txt: string, minValue: number, maxValue: number, onChange?: (v: number) => void) : HTMLElement
 {
@@ -58,12 +59,13 @@ export interface Tournament {
   maxPlayers: number;
   activePlayers: number;
   visibility: TournamentVisibility;
-  password?: string; // ← optionnel (public n’a pas de mot de passe)
+  password?: string; // only in private
 }
 
 export const tournamentList: Tournament[] = [];
+export let currentTournament: Tournament | null = null; // tournament  select  ! HAVE TO CHANGE IT BY THE BD ! //
 
-export function PongTournamentPage(): HTMLElement {
+export function PongTournamentMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "pt-25 min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
@@ -196,14 +198,14 @@ export function PongTournamentPage(): HTMLElement {
 		ConfirmJoinBtn.className = "h-[7vh] btn-fluid bg-green-600 text-white rounded-xl hover:scale-102 hover:bg-green-700 transition-all";
 		ConfirmJoinBtn.textContent = translations[getCurrentLang()].join;
 		ConfirmJoinBtn.addEventListener("click", () => {
-		  if (!tournament.password || PasswordInputJoin.value === tournament.password) {
-			mainContainer.classList.add("fade-out");
-			setTimeout(() => navigateTo("/tournament"), 1000);
-		  }
-		  else{
-			ConfirmJoinBtn.classList.add("shake")
-			setTimeout(() => {ConfirmJoinBtn.classList.remove("shake")}, 600)
-		  }
+			if (!tournament.password || PasswordInputJoin.value === tournament.password) {
+				currentTournament = tournament;                // get memorise tournament selected ! Getting it from BD ! //
+				mainContainer.classList.add("fade-out");
+				setTimeout(() => navigateTo("/tournament"), 1000);
+			} else {
+				ConfirmJoinBtn.classList.add("shake")
+				setTimeout(() => {ConfirmJoinBtn.classList.remove("shake")}, 600)
+			}
 		});
 		JoinForm.appendChild(ConfirmJoinBtn);
 
@@ -265,6 +267,7 @@ export function PongTournamentPage(): HTMLElement {
 					JoinList.insertAdjacentElement("afterend", form);
 					form.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 } else {
+                    currentTournament = tournament;                 // ← mémorise le tournoi choisi (public)
                     mainContainer.classList.add("fade-out");
                     setTimeout(() => navigateTo("/tournament"), 1000);
                 }
@@ -328,24 +331,79 @@ export function PongTournamentPage(): HTMLElement {
 	return (mainContainer);
 }
 
-export function PongTournamentInterfacePage(): HTMLElement {
-	const mainContainer = document.createElement("div");
-	mainContainer.className = "gap-5 pt-25 min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
+export function PongTournamentPage(): HTMLElement {
 
-	const Title = document.createElement("h1");
-	Title.className = "absolute top-21 tracking-widest text-6xl neon-matrix mb-15";
-	Title.textContent = translations[getCurrentLang()].tournament;
-	mainContainer.appendChild(Title);
+    const mainContainer = document.createElement("div");
+    mainContainer.className = "gap-5 pt-25 min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
-	// Rangée centrée et responsive pour les boutons
-	const ButtonsRow = document.createElement("div");
-	ButtonsRow.className = "flex flex-wrap items-center justify-center gap-6 mt-8";
+    const Title = document.createElement("h1");
+    Title.className = "absolute top-21 tracking-widest text-6xl neon-matrix mb-15";
+    Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
+    mainContainer.appendChild(Title);
 
-	const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "/tournament/menu", 1);
-	BackToMenuBtn.className = "absolute bottom-2 left-2";
+    const size = currentTournament?.maxPlayers ?? nb_players.value;
+    const players = Array.from({ length: size }, (_, i) => `Player ${i + 1}`);
 
-	ButtonsRow.appendChild(BackToMenuBtn);
-	mainContainer.appendChild(ButtonsRow);
+    const bracket = createTournamentBracket(players);
+    bracket.classList.add("mt-20");
+    mainContainer.appendChild(bracket);
 
-	return (mainContainer);
+	const BackToMenuOverlay = document.createElement("div");
+	BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+
+	const BackToMenuSure = document.createElement("div");
+	BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+
+	const BackToMenuTitle = document.createElement("h1");
+	BackToMenuTitle.className = "text-5xl neon-matrix";
+	BackToMenuTitle.textContent = "ARE YOU SURE TO LEAVE ?";
+	BackToMenuSure.appendChild(BackToMenuTitle);
+
+	const BackToMenuTxt = document.createElement("p");
+	BackToMenuTxt.className = "";
+	BackToMenuTxt.textContent = translations[getCurrentLang()].txt_leave;
+	BackToMenuSure.appendChild(BackToMenuTxt);
+
+	const actions = document.createElement("div");
+	actions.className = "flex gap-4 justify-center";
+
+	const CancelBtn = document.createElement("button");
+	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
+	CancelBtn.textContent = translations[getCurrentLang()].cancel;
+	CancelBtn.onclick = () => {
+		BackToMenuOverlay.classList.add("hidden")
+	};
+	actions.appendChild(CancelBtn);
+
+	const ConfirmBtn = document.createElement("button");
+	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
+	ConfirmBtn.textContent = translations[getCurrentLang()].back;
+	ConfirmBtn.onclick = () => {
+		mainContainer.classList.add("fade-out");
+		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
+	};
+	actions.appendChild(ConfirmBtn);
+
+	BackToMenuSure.appendChild(actions);
+	BackToMenuOverlay.appendChild(BackToMenuSure);
+	mainContainer.appendChild(BackToMenuOverlay);
+
+	const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "null", 1);
+	BackToMenuBtn.className = "absolute bottom-2 right-2";
+	BackToMenuBtn.addEventListener("click", (e) => {
+		e.preventDefault();
+		BackToMenuOverlay.classList.remove("hidden");
+	})
+    mainContainer.appendChild(BackToMenuBtn);
+
+	BackToMenuOverlay.addEventListener("click", (e) => {
+  		if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
+	});
+
+	const onEsc = (e: KeyboardEvent) => {
+  		if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
+	};
+	document.addEventListener("keydown", onEsc);
+
+    return (mainContainer);
 }
