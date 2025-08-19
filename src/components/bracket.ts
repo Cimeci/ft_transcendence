@@ -7,7 +7,7 @@ export function createTournamentBracket(players: string[]): HTMLElement {
 
   	const COL_W = 180;           // largeur d'un "module" match
   	const COL_GAP = 80;          // espace entre colonnes/rounds
-  	const MATCH_H = 60;          // hauteur d'un match
+  	const MATCH_H = 65;          // hauteur d'un match
   	const V_GAP_R0 = 15;         // espace vertical de base (round 1)
   	const MARGIN = { top: 30, left: 30, right: 30, bottom: 30 };
 	const STROKE_WIDTH = 3;
