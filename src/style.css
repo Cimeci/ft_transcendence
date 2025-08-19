@@ -380,7 +380,7 @@ h2 {
   box-shadow: 0 0 0 6px rgba(22, 163, 74, .2); /* halo au hover/focus */
 }
 
-.rounded-range::-moz-range-thumb {
+/* .rounded-range::-moz-range-thumb {
   width: 24px;
   height: 24px;
   border-radius: 9999px;
@@ -395,8 +395,8 @@ h2 {
 .rounded-range::-moz-range-progress {
   height: 10px;
   border-radius: 9999px;
-  background: #065f46;         /* partie “remplie” */
-}
+  background: #065f46;
+} */
 
 /* Halo vert sur le thumb du slider quand il est focus */
 .rounded-range:focus::-webkit-slider-thumb {
