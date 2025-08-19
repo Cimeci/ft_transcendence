@@ -52,9 +52,22 @@ export const translations = {
 		// Pong Menu
 		username1: "Joueur 1",
 		username2: "Joueur 2",
+		// utils
+		apply: "Appliquer",
 		// Overlay
 		back_to_menu: "Retour au menu",
 		welcome_to_our_transcendence: "Bienvenue dans notre Transcendence",
+		// Friends
+		friends: "Amis",
+		all : "Tout",
+        user_id : "ID utilisateur",
+		search: "Recherche",
+		no_result: "Aucun résultat trouvé",
+		invitation: "Invitation",
+		add: "Ajouter",
+		profile: "Profil",
+		delete: "Supprimer",
+		block: "Bloquer",
 	},
 	en: {
 		// Login
@@ -106,11 +119,25 @@ export const translations = {
 		gamebackground: "Game background",
 		bar: "Bar",
 		ball: "Ball",
-		username1: "Player1",
-		username2: "Player2",
+		// Pong Menu
+		username1: "Player 1",
+		username2: "Player 2",
+		// utils
+		apply: "Apply",
 		// Overlay
 		back_to_menu: "Back to menu",
 		welcome_to_our_transcendence: "Welcome to our Transcendence",
+		// Friends
+		friends: "Friends",
+		all: "All",
+		user_id: "User ID",
+		search: "Search",
+		no_result: "No result found",
+		invitation: "Invitation",
+		add: "Add",
+		profile: "Profile",
+		delete: "Delete",
+		block: "Block",
 	},
 	es: {
 		// Login
@@ -162,10 +189,24 @@ export const translations = {
 		gamebackground: "Fondo del juego",
 		bar: "Barra",
 		ball: "Bola",
+		// Pong Menu
 		username1: "Jugador 1",
 		username2: "Jugador 2",
+		// utils
+		apply: "Aplicar",
 		// Overlay
 		back_to_menu: "	Volver al menú",
 		welcome_to_our_transcendence: "Bienvenido a nuestra trascendencia",
+		// Friends
+		friends: "Amigos",
+		all: "Todos",
+		user_id: "Identificador de usuario",
+		search: "Buscar",
+		no_result: "No se han encontrado resultados",
+		invitation: "Invitación",
+		add: "Añadir",
+		profile: "Perfil",
+		delete: "Eliminar",
+		block: "Bloque",
 	}
 };
