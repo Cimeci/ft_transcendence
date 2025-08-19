@@ -11,6 +11,8 @@ import { PongMenuPage, PongGamePage, PongOverlayPage } from './pages/pong';
 import { PongTournamentMenuPage, PongTournamentPage } from './pages/tournament';
 import { LandingPage } from './pages/landing';
 import { CreditsPage } from './pages/credits';
+import { FriendsPage } from './pages/friends';
+import { UserPage } from './pages/user';
 
 const routes: { [key: string]: () => HTMLElement } = {
 	'/': LandingPage,
@@ -18,6 +20,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/login': LoginPage,
 	'/register': RegisterPage,
 	'/shop': ShopPage,
+	'/friends': FriendsPage,
 	'/inventory': InventoryPage,
 	'/pong': PongMenuPage,
 	'/pong/game': PongGamePage,
@@ -26,6 +29,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/tournament': PongTournamentPage,
 	'/settings': SettingsPage,
 	'/credits': CreditsPage,
+	'/user': UserPage,
 };
 
 export const navigateTo = (url: string) => {
@@ -86,11 +90,12 @@ document.addEventListener('click', event => {
 window.addEventListener('popstate', renderPage);
 
 const navRoutesForNavbar: { [key: string]: string } = {
-    '/home': 'home',
+    // '/home': 'home',
+	'/friends': 'friends',
     '/inventory': 'inventory',
     '/shop': 'shop',
     '/settings': 'settings',
-    '/': 'logout',
+    // '/': 'logout',
 };
 const navbar = createNavbar(navRoutesForNavbar);
 document.body.prepend(navbar);
