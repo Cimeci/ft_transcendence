@@ -14,6 +14,8 @@ export interface Inventory {
     [type: string]: CosmeticItem[];
 }
 
+export let userName: string = "default";
+
 export const userInventory: Inventory = {
 	avatar: [
         { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar'},
@@ -46,9 +48,19 @@ export const userInventory: Inventory = {
 	],
 };
 
+// Gestion exclusive des pages (une ouverte à la fois)
+const pagesRegistry: HTMLElement[] = [];
+const registerPage = (p: HTMLElement) => pagesRegistry.push(p);
+const togglePageExclusive = (target: HTMLElement) => {
+	// ouvre target et ferme toutes les autres
+	const willOpen = target.style.display !== "grid";
+	pagesRegistry.forEach(p => (p.style.display = "none"));
+	target.style.display = willOpen ? "grid" : "none";
+};
+
 function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 	const  AvatarContainer = document.createElement("div");
-	AvatarContainer.className = "transition-all duration-300 hover:scale-110 z-2 flex border-6 rounded grid justify-center text-center m-5";
+	AvatarContainer.className = "transition-all duration-300 hover:scale-105 z-2 flex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.avatar[0].type;
@@ -65,6 +77,7 @@ function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLEle
 	const AvatarPage = document.createElement("div");
 	AvatarPage.className = "inventory-grid gap-8";
 	AvatarPage.style.display = "none";
+	registerPage(AvatarPage);
 
 	for (let i = 1; i < inventory.avatar.length; i++)
 	{
@@ -98,7 +111,7 @@ function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLEle
 	}
 
 	PrincipalImgAvatar.addEventListener("click", () => {
-		AvatarPage.style.display = AvatarPage.style.display === "grid" ? "none" : "grid";
+		togglePageExclusive(AvatarPage);
 	})
 	return AvatarPage;
 }
@@ -106,7 +119,7 @@ function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLEle
 function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 
 	const  backgroundContainer = document.createElement("div");
-	backgroundContainer.className = "transition-all duration-300 hover:scale-110 z-2 flex border-6 rounded grid justify-center text-center m-5";
+	backgroundContainer.className = "transition-all duration-300 hover:scale-105 z-2 flex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.background[0].type;
@@ -123,6 +136,7 @@ function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTM
 	const backgroundPage = document.createElement("div");
 	backgroundPage.className = "inventory-grid gap-8";
 	backgroundPage.style.display = "none";
+	registerPage(backgroundPage);
 
 	for (let i = 1; i < inventory.background.length; i++)
 	{
@@ -156,14 +170,14 @@ function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTM
 	}
 
 	PrincipalImgbackground.addEventListener("click", () => {
-		backgroundPage.style.display = backgroundPage.style.display === "grid" ? "none" : "grid";
+		togglePageExclusive(backgroundPage);
 	})
 	return backgroundPage;
 }
 
 function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 	const  barContainer = document.createElement("div");
-	barContainer.className = "ftransition-all duration-300 hover:scale-110 lex border-6 rounded grid justify-center text-center m-5";
+	barContainer.className = "ftransition-all duration-300 hover:scale-105 lex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.bar[0].type;
@@ -180,6 +194,7 @@ function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElemen
 	const barPage = document.createElement("div");
 	barPage.className = "inventory-grid gap-8";
 	barPage.style.display = "none";
+	registerPage(barPage);
 
 	for (let i = 1; i < inventory.bar.length; i++)
 	{
@@ -213,14 +228,14 @@ function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElemen
 	}
 
 	PrincipalImgbar.addEventListener("click", () => {
-		barPage.style.display = barPage.style.display === "grid" ? "none" : "grid";
+		togglePageExclusive(barPage);
 	})
 	return barPage;
 }
 
 function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
 	const  ballContainer = document.createElement("div");
-	ballContainer.className = "transition-all duration-300 hover:scale-110 z-2 flex border-6 rounded grid justify-center text-center m-5";
+	ballContainer.className = "transition-all duration-300 hover:scale-105 z-2 flex border-6 rounded grid justify-center text-center m-5";
 	
 	const TypeContainer = document.createElement("p");
 	TypeContainer.textContent = inventory.ball[0].type;
@@ -237,6 +252,7 @@ function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLEleme
 	const ballPage = document.createElement("div");
 	ballPage.className = "inventory-grid gap-8";
 	ballPage.style.display = "none";
+	registerPage(ballPage);
 
 	for (let i = 1; i < inventory.ball.length; i++)
 	{
@@ -270,33 +286,67 @@ function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLEleme
 	}
 
 	PrincipalImgball.addEventListener("click", () => {
-		ballPage.style.display = ballPage.style.display === "grid" ? "none" : "grid";
+		togglePageExclusive(ballPage);
 	})
 	return ballPage;
 }
 
 export function InventoryPage(): HTMLElement {
-	const mainContainer = document.createElement("div");
-	mainContainer.className = "pt-25 min-h-screen w-full flex flex-col items-center justify-center gap-4 bg-linear-to-t from-green-500 via-black to-green-800"
+    const mainContainer = document.createElement("div");
+    mainContainer.className = "pt-25 min-h-screen w-full flex flex-col items-center justify-center gap-4 bg-linear-to-t from-green-500 via-black to-green-800"
 	
 	const title = document.createElement("h2");
 	title.textContent = translations[getCurrentLang()].inventory;
 	title.className = "fixed top-0 p-6 z-1000";
 	mainContainer.appendChild(title);
 
-	const inventory = userInventory;
-	const inventoryContainer = document.createElement("div");
-	inventoryContainer.className = "inventory-grid z-1";
+	// Input username compact, centré
+	const nameForm = document.createElement("form");
+	nameForm.className = "w-full max-w-md mx-auto mt-6";
+	const nameWrap = document.createElement("div");
+	nameWrap.className = "relative";
+	const nameLabel = document.createElement("label");
+	nameLabel.htmlFor = "username-input";
+	nameLabel.className = "mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white";
+	nameLabel.textContent = translations[getCurrentLang()].username ?? "Username";
+	nameWrap.appendChild(nameLabel);
+	const nameInput = document.createElement("input");
+	nameInput.type = "text";
+	nameInput.id = "username-input";
+	nameInput.value = userName;
+	nameInput.placeholder = (translations[getCurrentLang()].username ?? "Username") + "...";
+	nameInput.className = "block w-full p-3 pe-24 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 " +
+		"focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 " +
+		"dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500";
+	nameWrap.appendChild(nameInput);
+	const nameBtn = document.createElement("button");
+	nameBtn.type = "submit";
+	nameBtn.className = "text-white absolute end-2.5 top-1/2 -translate-y-1/2 bg-green-700 hover:bg-green-800 " +
+		"focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-3 py-2 " +
+		"dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800";
+	nameBtn.textContent = translations[getCurrentLang()].apply;
+	nameWrap.appendChild(nameBtn);
+	nameForm.appendChild(nameWrap);
+	nameForm.addEventListener("submit", (e) => {
+		e.preventDefault();
+		const v = nameInput.value.trim();
+		if (v) userName = v;
+	});
+	mainContainer.appendChild(nameForm);
 
-	mainContainer.appendChild(CreateAvatarContainer(inventory, inventoryContainer));
+    const inventory = userInventory;
+    const inventoryContainer = document.createElement("div");
+    inventoryContainer.className = "inventory-grid z-1";
 
-	mainContainer.appendChild(CreateBackgroundContainer(inventory, inventoryContainer));
+    mainContainer.appendChild(CreateAvatarContainer(inventory, inventoryContainer));
 
-	mainContainer.appendChild(CreateBarContainer(inventory, inventoryContainer));
+    mainContainer.appendChild(CreateBackgroundContainer(inventory, inventoryContainer));
 
-	mainContainer.appendChild(CreateBallContainer(inventory, inventoryContainer));
+    mainContainer.appendChild(CreateBarContainer(inventory, inventoryContainer));
+
+    mainContainer.appendChild(CreateBallContainer(inventory, inventoryContainer));
 
 
-	mainContainer.appendChild(inventoryContainer);
-	return (mainContainer);
+    mainContainer.appendChild(inventoryContainer);
+    return (mainContainer);
 }
