@@ -334,18 +334,20 @@ export function PongTournamentMenuPage(): HTMLElement {
 export function PongTournamentPage(): HTMLElement {
 
     const mainContainer = document.createElement("div");
-    mainContainer.className = "gap-5 pt-25 min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
+    mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
     const Title = document.createElement("h1");
-    Title.className = "absolute top-21 tracking-widest text-6xl neon-matrix mb-15";
+    Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
     Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
     const players = Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`);
+    // const players = Array.from({ length: size }, (_, i) => ``);
+	
 
     const bracket = createTournamentBracket(players);
-    bracket.classList.add("mt-20");
+    bracket.classList.add("mt-15", "pl-5");
     mainContainer.appendChild(bracket);
 
 	const BackToMenuOverlay = document.createElement("div");
