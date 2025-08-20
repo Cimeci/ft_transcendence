@@ -410,3 +410,8 @@ h2 {
 ul::-webkit-scrollbar { width: 6px; }
 ul::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 9999px; }
 ul::-webkit-scrollbar-track { background: transparent; }
+
+.scroll_bar { scrollbar-width: thin; scrollbar-color: #16a34a transparent; } /* Firefox */
+.scroll_bar::-webkit-scrollbar { width: 10px; }                              /* WebKit */
+.scroll_bar::-webkit-scrollbar-thumb { background: #16a34a; border-radius: 9999px; }
+.scroll_bar::-webkit-scrollbar-track { background: transparent; }
