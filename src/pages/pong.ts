@@ -98,7 +98,7 @@ export function PongMenuPage(): HTMLElement {
 
 	const HistoryTitle = document.createElement("h2");
 	HistoryTitle.className = "border-green-400 w-full rounded-xl p-2 text-5xl tracking-widest neon-matrix";
-	HistoryTitle.textContent = "H I S T O R Y";
+	HistoryTitle.textContent = translations[getCurrentLang()].history.toUpperCase();
 	HistoryContainer.appendChild(HistoryTitle);
 
 	const line = document.createElement("p");
