@@ -68,6 +68,12 @@ export const translations = {
 		profile: "Profil",
 		delete: "Supprimer",
 		block: "Bloquer",
+		// Profile
+		history: "Historique",
+		classic: "Classique",
+		Total_game: "Total partie",
+		Win: "Gagnée",
+		Lose: "Perdue",
 	},
 	en: {
 		// Login
@@ -138,6 +144,12 @@ export const translations = {
 		profile: "Profile",
 		delete: "Delete",
 		block: "Block",
+		// Profile
+		history: "Historia",
+		classic: "Clásico",
+		Total_game: "Total game",
+		Win: "Win",
+		Lose: "Lose",
 	},
 	es: {
 		// Login
@@ -208,5 +220,11 @@ export const translations = {
 		profile: "Perfil",
 		delete: "Eliminar",
 		block: "Bloque",
+		// Profile
+		history: "Historia",
+		classic: "Clásico",
+		Total_game: "Total juegos",
+		Win: "Victorias",
+		Lose: "Derrotas",
 	}
 };
