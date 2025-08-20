@@ -1,5 +1,6 @@
 import fastify from 'fastify';
 import Database from 'better-sqlite3/lib/database.js';
+import dotenv from 'dotenv'
 
 const app = fastify({ logger: true });
 
@@ -40,7 +41,19 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     const { score1, score2, winner } = request.body;
 
     try {
-        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? where uuid = ?').run(score1, score2, winner, gameId);
+        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner, gameId);
+
+        // faire les matchs dans l'oredre avec ce code
+        const tournament = db.prepare('SELECT tournament FROM game WHERE uuid = ?').get(gameId);
+        if (tournament){
+            const nextGame = db.prepare('SELECT * FROM game WHERE tournament = ? AND (player1 IS NULL OR player2 IS NULL) LIMIT 1').get(tournament.tournament);
+            if (nextGame){
+                if (nextGame.player1 === null)
+                    db.prepare('UPDATE game SET player1 = ? WHERE uuid = ?').run(winner, nextGame.uuid);
+                else
+                    db.prepare('UPDATE game SET player2 = ? WHERE uuid = ?').run(winner, nextGame.uuid);
+            }
+        }
 
         return 'game updated';
     } catch (err) {
@@ -49,6 +62,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     }
 });
 
+// app.patch('')
 app.get('/game', async(request, reply) => {
     return 'game';
 })

@@ -1,9 +1,19 @@
 import fastify from 'fastify';
 import Database from 'better-sqlite3/lib/database.js';
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcrypt';
+import fastifyOauth2 from '@fastify/oauth2';
+import dotenv from 'dotenv';
+import jwt from '@fastify/jwt';
+
+dotenv.config();
+console.log('URL:', process.env.GLOBAL_URL);
 
 const app = fastify({ logger: true });
 
+await app.register(jwt, {
+  secret: process.env.JWT_SECRET,
+  sign: { expiresIn: '2h' }
+});
 // Creation de la db et de la table 
 const db = new Database('./data/user.sqlite');
 
@@ -106,6 +116,58 @@ app.post('/login', async (request, reply) => {
     }
 });
 
+app.register(fastifyOauth2, {
+    name: 'google',
+    scope: ['email', 'profile'],
+    credentials: {
+        client: {
+            id: process.env.GOOGLE_CLIENT_ID,
+            secret: process.env.GOOGLE_CLIENT_SECRET
+        },
+        auth : fastifyOauth2.GOOGLE_CONFIGURATION
+        /*utilise la configuration predefinie pour google, ca vaut ca en general:
+        tokenHost: 'https://accounts.google.com',
+        authorizePath: '/o/oauth2/v2/auth',
+        tokenPath: '/o/oauth2/token'*/
+    },
+    startRedirectPath: '/google/login',
+    callbackUri: `${process.env.GLOBAL_URL}/auth/google/callback`
+});
+
+// route pour initier la redirection vers Google OAuth2
+// app.get('/google/login', async (request, reply) => {
+//   const url = await app.googleOAuth2.getAuthorizationUrl();
+//   reply.redirect(url);
+// });
+
+app.get('/google/callback', async(request, reply) => {
+    if (!app.google) {
+        console.error('google is not initialized');
+        return reply.code(500).send({ error: 'Internal Server Error' });
+    }
+    try {
+        //recuperation du token d'acces et du token de rafraichisement
+        const { token } = await app.google.getAccessTokenFromAuthorizationCodeFlow(request);
+        
+        //requete HTTP pour recuperer la data
+        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token.access_token}`
+            }
+        });
+
+        //mettre en json pour ensuite mettre dans la db
+        const {id: google_id, email, name } = await response.json();
+
+        reply.send({ message: 'logged in successfully', google_id });
+    } catch (err) {
+        console.error(err);
+        reply.code(500).send({ error: 'internal Server Error' 
+
+        });
+    }
+});
 
 app.setErrorHandler((error, request, reply) => {
     console.error('Error:', error);

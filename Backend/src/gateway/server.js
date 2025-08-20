@@ -1,7 +1,11 @@
 import Fastify from 'fastify'
 import fastifyHttpProxy from '@fastify/http-proxy'
 import { port } from './config/index.js'
+import dotenv from 'dotenv'
 
+
+dotenv.config();
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
 const app = Fastify({ logger: true});
 
 // enregistre le plugin database.js dans Fastify

@@ -12,6 +12,8 @@ services:
       - tournament
       - user
     restart: on-failure
+    env_file:
+      - .env
   auth:
     container_name: auth_container
     build: ./src/auth
@@ -20,6 +22,8 @@ services:
     volumes:
       - ./src/auth/data:/app/data
     restart: on-failure
+    env_file:
+      - .env
   game:
     container_name: game_container
     build: ./src/game
@@ -28,6 +32,8 @@ services:
     volumes:
       - ./src/game/data:/app/data
     restart: on-failure
+    env_file:
+      - .env
   tournament:
     container_name: tournament_container
     build: ./src/tournament
@@ -36,6 +42,8 @@ services:
     volumes:
       - ./src/tournament/data:/app/data
     restart: on-failure
+    env_file:
+      - .env
   user:
     container_name: user_container
     build: ./src/user
@@ -44,6 +52,8 @@ services:
     volumes:
       - ./src/user/data:/app/data
     restart: on-failure
+    env_file:
+      - .env
 
 networks:
   backend:

@@ -1,5 +1,6 @@
 import fastify from "fastify";
 import Database from 'better-sqlite3/lib/database.js';
+import dotenv from 'dotenv'
 
 const app = fastify({ logger : true });
 
