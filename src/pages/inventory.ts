@@ -25,6 +25,9 @@ export const userInventory: Inventory = {
 		{ id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar'},
 		{ id: 'avatar/rgramati.jpg', name: 'rgramati avatar', type: 'avatar'},
 		{ id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar'},
+		{ id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar'},
+		{ id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar'},
+
     ],
 	background: [
 		{ id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
