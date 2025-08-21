@@ -1,7 +1,7 @@
 import { getCurrentLang } from "../pages/settings";
 import { translations } from '../i18n';
 import { navigateTo } from '../routes'
-import { userInventory } from "../pages/inventory"
+import { userInventory, userName } from "../pages/inventory"
 
 export const gameHistory: string[] = [];
 
@@ -75,17 +75,17 @@ export function PongMenuPage(): HTMLElement {
 
 	const PlayContainer = CreateWrappedButton(mainContainer, translations[getCurrentLang()].play, "/pong/game", 7)
 
-	const getName1 = document.createElement("input");
-	getName1.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
-	getName1.placeholder = translations[getCurrentLang()].username1;
-	getName1.maxLength = 16;
-	getName1.addEventListener("input", () => {
-		user1.name = getName1.value;
-	});
-	PlayContainer.appendChild(getName1);
+	// const getName1 = document.createElement("input");
+	// getName1.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
+	// getName1.placeholder = translations[getCurrentLang()].username1;
+	// getName1.maxLength = 16;
+	// getName1.addEventListener("input", () => {
+	// 	user1.name = getName1.value;
+	// });
+	// PlayContainer.appendChild(getName1);
 
 	const getName2 = document.createElement("input");
-	getName2.className = "relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
+	getName2.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
 	getName2.placeholder = translations[getCurrentLang()].username2;
 	getName2.maxLength = 16;
 	getName2.addEventListener("input", () => {
@@ -130,7 +130,7 @@ export interface User {
 }
 
 export const user1: User = {
-	name: "user1",
+	name: userName,
 	score: 0,
 };
 

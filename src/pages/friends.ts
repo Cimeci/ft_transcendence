@@ -15,26 +15,36 @@ export function FriendsPage(): HTMLElement {
 	mainContainer.appendChild(title);
 
 	const PageContainer = document.createElement("div");
-	PageContainer.className = "w-full flex lg:flex-row flex-col gap-15 justify-between items-center";
+	PageContainer.className = "w-full flex lg:flex-row flex-col xl:gap-12 gap-8 transition-all duration-300 justify-between items-center";
 
 	{
 		const profileContainer = document.createElement("div");
-		profileContainer.className = "lg:w-[25vw] w-[80vw] h-[70vh] flex flex-col p-10 border-3 rounded-xl items-center gap-[10vh]";
+		profileContainer.className = "lg:w-[25vw] w-[80vw] h-[70vh] flex flex-col border-3 p-10 rounded-xl items-center justify-around";
+
+		const imgBox = document.createElement("div");
+		imgBox.className = "max-h-60 w-50 sm:w-60 lg:w-50 duration-300 aspect-square";
+		profileContainer.appendChild(imgBox);
 
 		const imgProfile = document.createElement("img");
 		imgProfile.src = userInventory.avatar[0].id;
-		imgProfile.className = "w-40 h-40 hover:scale-110 duration-300 transtion-all p-1 border-2 rounded-xl";
-		profileContainer.appendChild(imgProfile);
+		imgProfile.alt = "profile";
+		imgProfile.className = "w-full h-full object-cover hover:scale-105 transition-transform duration-300 p-1 border-2 rounded-xl";
+		imgBox.appendChild(imgProfile);
+
+		const txtBox = document.createElement("div");
+		txtBox.className = "text-xl sm:text-2xl text-center whitespace-nowrap w-full gap-10 flex flex-col";
+		profileContainer.appendChild(txtBox);
 
 		const NameProfile = document.createElement("h1");
 		NameProfile.textContent = userName;
-		NameProfile.className = "whitespace-nowrap text-xl sm:text-2xl w-full border-2 rounded-xl p-3 overflow-x-auto";
-		profileContainer.appendChild(NameProfile);
+		NameProfile.className = "object-cover hover:scale-105 transition-transform duration-300 w-full border-2 rounded-xl p-3";
+		txtBox.appendChild(NameProfile);
 
 		const IdProfile = document.createElement("h1");
 		IdProfile.textContent = "id";
-		IdProfile.className = "whitespace-nowrap text-xl sm:text-2xl w-full border-2 rounded-xl p-3 overflow-x-auto";
-		profileContainer.appendChild(IdProfile);
+		IdProfile.className = "object-cover hover:scale-105 transition-transform duration-300 w-full border-2 rounded-xl p-3";
+		txtBox.appendChild(IdProfile);
+
 
 		PageContainer.appendChild(profileContainer);
 	}
@@ -211,7 +221,7 @@ export function FriendsPage(): HTMLElement {
 				const input = document.createElement("input");
 				input.type = "search";
 				input.id = "friends-search";
-				input.className = "block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500";
+				input.className = "block w-full p-3 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500";
 				input.placeholder = `${translations[getCurrentLang()].search} username, id...`;
 				input.required = true;
 				container.appendChild(input);
@@ -219,7 +229,7 @@ export function FriendsPage(): HTMLElement {
 
 				const button = document.createElement("button");
 				button.type = "submit";
-				button.className = "text-white absolute end-2.5 bottom-2.5 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800";
+				button.className = "text-white absolute end-1.5 bottom-1.5 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800";
 				button.textContent = translations[getCurrentLang()].search;
 				container.appendChild(button);
 				FriendContainer.appendChild(form);
@@ -369,7 +379,7 @@ export function FriendsPage(): HTMLElement {
 				const input: HTMLInputElement = document.createElement("input");
 				input.type = "search";
 				input.id = "search-dropdown";
-				input.className = "block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-green-500";
+				input.className = "block p-3 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg border-s-gray-50 border-s-2 border border-gray-300 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-s-gray-700  dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-green-500";
 				input.placeholder = `${translations[getCurrentLang()].search} ${translations[getCurrentLang()].username}, ${translations[getCurrentLang()].user_id}...`;
 				input.required = true;
 				inputRef = input;
@@ -452,7 +462,7 @@ export function FriendsPage(): HTMLElement {
 
 						const add_btn = document.createElement("btn");
 						add_btn.textContent = translations[getCurrentLang()].add;
-						add_btn.className = "cursor-pointer justify-self-end shrink-0 rounded-lg px-3 py-1 bg-green-500 duration-300 transition-all hover:scale-102 hover:bg-green-600 onclick:scale-104";
+						add_btn.className = "cursor-pointer justify-self-end shrink-0 rounded-lg px-2.5 py-1 bg-green-500 duration-300 transition-all hover:scale-102 hover:bg-green-600 onclick:scale-104";
 
 						li.appendChild(name);
 						li.appendChild(uid);
@@ -478,6 +488,113 @@ export function FriendsPage(): HTMLElement {
 				// @ts-ignore
 				window.__invSection = InvitationContainer;
 				FriendMenu.appendChild(InvitationContainer);
+
+				// Search bar + liste dans FriendContainer
+				const form = document.createElement("form");
+				form.className = "w-full";
+
+				const label = document.createElement("label");
+				label.htmlFor = "friends-search";
+				label.className = "mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white";
+				label.textContent = "Search";
+				form.appendChild(label);
+
+				const container = document.createElement("div");
+				container.className = "relative";
+				form.appendChild(container);
+
+				const iconWrapper = document.createElement("div");
+				iconWrapper.className = "absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none";
+
+				const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+				svg.setAttribute("class", "w-4 h-4 text-gray-500 dark:text-gray-400");
+				svg.setAttribute("aria-hidden", "true");
+				svg.setAttribute("fill", "none");
+				svg.setAttribute("viewBox", "0 0 20 20");
+				svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+				const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+				path.setAttribute("stroke", "currentColor");
+				path.setAttribute("stroke-linecap", "round");
+				path.setAttribute("stroke-linejoin", "round");
+				path.setAttribute("stroke-width", "2");
+				path.setAttribute("d", "m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z");
+				svg.appendChild(path);
+				iconWrapper.appendChild(svg);
+				container.appendChild(iconWrapper);
+
+				const input = document.createElement("input");
+				input.type = "search";
+				input.id = "friends-search";
+				input.className = "block w-full p-3 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500";
+				input.placeholder = `${translations[getCurrentLang()].search} username, id...`;
+				input.required = true;
+				container.appendChild(input);
+				inputRef = input;
+
+				const button = document.createElement("button");
+				button.type = "submit";
+				button.className = "text-white absolute end-1.5 bottom-1.5 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800";
+				button.textContent = translations[getCurrentLang()].search;
+				container.appendChild(button);
+				InvitationContainer.appendChild(form);
+
+				const InvitationList = document.createElement("ul");
+				InvitationList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
+				InvitationContainer.appendChild(InvitationList);
+
+				const renderInvitation = () => {
+                    const q = input.value.trim().toLowerCase();
+					const filtered = data.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+                    InvitationList.innerHTML = "";
+                    if (filtered.length === 0) {
+                        const li = document.createElement("li");
+                        li.className = "p-3 text-center text-gray-400";
+                        // @ts-ignore
+                        li.textContent = translations[getCurrentLang()].no_result ?? "No result";
+                        InvitationList.appendChild(li);
+                        return;
+                    }
+                    for (const u of filtered) {
+                        const li = document.createElement("li");
+                        li.className = "p-3 min-w-0 grid grid-cols-[1fr_1fr_auto] items-center lg:gap-3 sm:gap-2 gap-1";
+
+                        const name = document.createElement("span");
+                        name.className = "font-medium truncate";
+                        name.textContent = u.username;
+
+                        const uid = document.createElement("span");
+                        uid.className = "text-sm text-gray-400 truncate";
+                        uid.textContent = u.id;
+
+						const btndiv = document.createElement("div");
+						btndiv.className = "flex gap-2 truncate";
+
+						const refuse = document.createElement("button");
+						refuse.className = "w-[1/2] cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-1 py-1 bg-red-500 duration-300 transition-all hover:bg-red-600 onclick:scale-104";
+						// refuse.textContent = "X";
+						const imgrefuse = document.createElement("img");
+						imgrefuse.src = "cross.svg"; imgrefuse.className = "duration-300 transition-all hover:scale-110";
+						refuse.appendChild(imgrefuse);
+						btndiv.appendChild(refuse);
+
+						const accept = document.createElement("button");
+						accept.className = "w-[1/2] cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-1 py-1 bg-green-500 duration-300 transition-all hover:bg-green-600 onclick:scale-104";
+						// accept.textContent = "V";
+						const imgaccept = document.createElement("img");
+						imgaccept.src = "check.svg"; imgaccept.className = "duration-300 transition-all hover:scale-110";
+						accept.appendChild(imgaccept);
+						btndiv.appendChild(accept);
+
+                        li.appendChild(name);
+                        li.appendChild(uid);
+                        li.appendChild(btndiv);
+                        InvitationList.appendChild(li);
+                    }
+                };
+				input.addEventListener("input", renderInvitation);
+				form.addEventListener("submit", (e) => { e.preventDefault(); renderInvitation(); });
+				renderInvitation();
 			}
 
 			PageContainer.appendChild(FriendMenu);
