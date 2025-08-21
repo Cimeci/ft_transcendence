@@ -1,6 +1,7 @@
 import { getCurrentLang } from "./settings";
 import { translations } from "../i18n";
 import { userInventory, userName } from "./inventory";
+import { navigateTo } from "../routes";
 
 export function UserPage(): HTMLElement {
     const main = document.createElement("div");
@@ -98,42 +99,59 @@ export function UserPage(): HTMLElement {
         grid.appendChild(center);
 
         const right = document.createElement("div");
-        right.className = "w-full sm:w-auto flex items-center justify-between sm:justify-end gap-6 sm:gap-8 text-white/90";
+        right.className = "w-full sm:w-auto flex flex-col items-end justify-center gap-3 sm:gap-4 text-white/90";
+
+        // Ligne Bar + Ball
+        const itemsRow = document.createElement("div");
+        itemsRow.className = "flex items-center justify-between sm:justify-end gap-6 sm:gap-8 w-full";
 
         // Barre active
         const barWrap = document.createElement("div");
-        barWrap.className = "flex items-center gap-2";
-
+        barWrap.className = "flex flex-col items-center sm:flex-row sm:items-center gap-1 sm:gap-2";
         const barLabel = document.createElement("span");
-        barLabel.className = "text-xs uppercase text-white/60 hidden sm:block";
-        barLabel.textContent = translations[getCurrentLang()].bar;
-
+        barLabel.className = "text-xs uppercase text-white/60";
+        barLabel.textContent = "Bar";
         const barImg = document.createElement("img");
         barImg.src = userInventory.bar?.[0]?.id || "/bar/default_bar.png";
         barImg.alt = "bar";
         barImg.className = "h-6 sm:h-8 object-contain drop-shadow";
 
         barWrap.appendChild(barLabel); barWrap.appendChild(barImg);
-
+ 
         // Balle active
         const ballWrap = document.createElement("div");
-        ballWrap.className = "flex items-center gap-2";
-
+        ballWrap.className = "flex flex-col items-center sm:flex-row sm:items-center gap-1 sm:gap-2";
         const ballLabel = document.createElement("span");
-        ballLabel.className = "text-xs uppercase text-white/60 hidden sm:block";
-        ballLabel.textContent = translations[getCurrentLang()].ball;
-
+        ballLabel.className = "text-xs uppercase text-white/60";
+        ballLabel.textContent = "Ball";
         const ballImg = document.createElement("img");
         ballImg.src = userInventory.ball?.[0]?.id || "/ball/default_ball.png";
         ballImg.alt = "ball";
         ballImg.className = "w-6 h-6 sm:w-8 sm:h-8 object-contain drop-shadow";
 
         ballWrap.appendChild(ballLabel); ballWrap.appendChild(ballImg);
+ 
+        itemsRow.appendChild(barWrap);
+        itemsRow.appendChild(ballWrap);
+        right.appendChild(itemsRow);
 
-        right.appendChild(barWrap);
-        right.appendChild(ballWrap);
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
+        addBtn.textContent = (translations[getCurrentLang()].add);
+
+        const plus = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        plus.setAttribute("class", "w-4 h-4");
+        plus.setAttribute("viewBox", "0 0 20 20");
+        plus.setAttribute("fill", "currentColor");
+        plus.innerHTML = `<path d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 1 1 0-2h5V4a1 1 0 0 1 1-1z"/>`;
+        addBtn.prepend(plus);
+        addBtn.addEventListener("click", () => navigateTo("/friends"));
+        right.appendChild(addBtn);
+ 
         grid.appendChild(right);
     }
+    
     { // bottom layout: Inventory (left) + History (right)
         const bottom = document.createElement("div");
         bottom.className = "w-full mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6";
