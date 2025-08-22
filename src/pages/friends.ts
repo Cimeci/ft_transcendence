@@ -11,7 +11,7 @@ export function FriendsPage(): HTMLElement {
 
 	const title = document.createElement("h2");
 	title.textContent = translations[getCurrentLang()].friends;
-	title.className = "fixed top-0 p-6 z-1000";
+	title.className = "tracking-widest fixed top-0 p-6 z-1000";
 	mainContainer.appendChild(title);
 
 	const PageContainer = document.createElement("div");
