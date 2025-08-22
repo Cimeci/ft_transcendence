@@ -4,365 +4,281 @@ import { translations } from '../i18n';
 export type CosmeticType = 'avatar' | 'background' | 'bar' | 'ball';
 
 export interface CosmeticItem {
-	src?: string;
+    src?: string;
     id: string;
     name: string;
-	type: CosmeticType;
+    type: CosmeticType;
 };
-
-export interface Inventory {
-    [type: string]: CosmeticItem[];
-}
+export interface Inventory { [type: string]: CosmeticItem[]; }
 
 export let userName: string = "default";
 
 export const userInventory: Inventory = {
-	avatar: [
+    avatar: [
+        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar'},
         { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar'},
         { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar'},
-		{ id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar'},
-		{ id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar'},
-		{ id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar'},
-		{ id: 'avatar/rgramati.jpg', name: 'rgramati avatar', type: 'avatar'},
-		{ id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar'},
-		{ id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar'},
-		{ id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar'},
-
+        { id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar'},
+        { id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar'},
+        { id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar'},
+        { id: 'avatar/rgramati.jpg', name: 'rgramati avatar', type: 'avatar'},
+        { id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar'},
+        { id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar'},
+        { id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar'},
     ],
-	background: [
-		{ id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
-		{ id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
+    background: [
+        { id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
+        { id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
         { id: 'bg/default_bg.png', name: 'default bg', type: 'background'},
-		{ id: 'bg/matrix_bg.gif', name: 'matrix bg', type: 'background'},
+        { id: 'bg/matrix_bg.gif', name: 'matrix bg', type: 'background'},
     ],
     bar: [
         { src: 'playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
         { src: 'playbar/default_bar.png', id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
         { src: 'playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar'},
         { src: 'playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar'},
-		{ src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-		{ src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-
-
+        { src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar'},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
     ],
-	ball: [
-		{ id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
-		{ id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
-		{ id: 'ball/tennis_ball.png', name: 'tennis_ball', type: 'ball'},
-	],
+    ball: [
+        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
+        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
+        { id: 'ball/tennis_ball.png', name: 'tennis_ball', type: 'ball'},
+    ],
 };
 
-// Gestion exclusive des pages (une ouverte à la fois)
-const pagesRegistry: HTMLElement[] = [];
-const registerPage = (p: HTMLElement) => pagesRegistry.push(p);
-const togglePageExclusive = (target: HTMLElement) => {
-	// ouvre target et ferme toutes les autres
-	const willOpen = target.style.display !== "grid";
-	pagesRegistry.forEach(p => (p.style.display = "none"));
-	target.style.display = willOpen ? "grid" : "none";
-};
-
-function CreateAvatarContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
-	const  AvatarContainer = document.createElement("div");
-	AvatarContainer.className = "transition-all duration-300 hover:scale-105 z-2 flex border-6 rounded grid justify-center text-center m-5";
-	
-	const TypeContainer = document.createElement("p");
-	TypeContainer.textContent = inventory.avatar[0].type;
-	TypeContainer.className = "border-3 tracking-widest text-2xl p-2"
-	AvatarContainer.appendChild(TypeContainer);
-
-	const PrincipalImgAvatar = document.createElement("img");
-	PrincipalImgAvatar.src = inventory.avatar[0].id;
-	PrincipalImgAvatar.className = "cursor-pointer size-80 p-2 object-cover";
-	AvatarContainer.appendChild(PrincipalImgAvatar);
-
-	inventoryContainer.appendChild(AvatarContainer);
-
-	const AvatarPage = document.createElement("div");
-	AvatarPage.className = "inventory-grid gap-8";
-	AvatarPage.style.display = "none";
-	registerPage(AvatarPage);
-
-	for (let i = 1; i < inventory.avatar.length; i++)
-	{
-		const itemAvatar = document.createElement("div");
-		itemAvatar.className = "border-8 justify-center text-center items-center gap-2";
-
-		const imgAvatar = document.createElement("img");
-		imgAvatar.src = inventory.avatar[i].id;
-		imgAvatar.className = "border-2 cursor-pointer size-90 m-2 object-cover"
-
-		const nameAvatar = document.createElement("p");
-		nameAvatar.textContent = inventory.avatar[i].name;
-		nameAvatar.className = "tracking-widest text-2xl p-2";
-
-		itemAvatar.appendChild(imgAvatar);
-		itemAvatar.appendChild(nameAvatar);
-		AvatarPage.appendChild(itemAvatar);
-
-		
-		imgAvatar.addEventListener("click", () => {
-			if (i != 0)
-			{
-        	    inventory.avatar[0] = inventory.avatar[i];
-
-        	    PrincipalImgAvatar.src = inventory.avatar[0].id;
-        	    TypeContainer.textContent = inventory.avatar[0].type;
-
-        	    AvatarPage.style.display = "none";
-			}
-    	});
-	}
-
-	PrincipalImgAvatar.addEventListener("click", () => {
-		togglePageExclusive(AvatarPage);
-	})
-	return AvatarPage;
+/* ---- Événement profil (navbar / user page) ---- */
+function emitProfileUpdate() {
+    window.dispatchEvent(new CustomEvent('profile:update', {
+        detail: {
+            userName,
+            avatar: userInventory.avatar?.[0]?.id,
+            background: userInventory.background?.[0]?.id,
+            bar: userInventory.bar?.[0]?.id,
+            ball: userInventory.ball?.[0]?.id
+        }
+    }));
 }
 
-function CreateBackgroundContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
-
-	const  backgroundContainer = document.createElement("div");
-	backgroundContainer.className = "transition-all duration-300 hover:scale-105 z-2 flex border-6 rounded grid justify-center text-center m-5";
-	
-	const TypeContainer = document.createElement("p");
-	TypeContainer.textContent = inventory.background[0].type;
-	TypeContainer.className = "border-3 tracking-widest text-2xl p-2"
-	backgroundContainer.appendChild(TypeContainer);
-
-	const PrincipalImgbackground = document.createElement("img");
-	PrincipalImgbackground.src = inventory.background[0].id;
-	PrincipalImgbackground.className = "cursor-pointer size-80 p-2 object-cover";
-	backgroundContainer.appendChild(PrincipalImgbackground);
-
-	inventoryContainer.appendChild(backgroundContainer);
-
-	const backgroundPage = document.createElement("div");
-	backgroundPage.className = "inventory-grid gap-8";
-	backgroundPage.style.display = "none";
-	registerPage(backgroundPage);
-
-	for (let i = 1; i < inventory.background.length; i++)
-	{
-		const itembackground = document.createElement("div");
-		itembackground.className = "border-8 justify-center text-center items-center gap-2";
-
-		const imgbackground = document.createElement("img");
-		imgbackground.src = inventory.background[i].id;
-		imgbackground.className = "border-2 cursor-pointer size-90 m-2 object-cover"
-
-		const namebackground = document.createElement("p");
-		namebackground.textContent = inventory.background[i].name;
-		namebackground.className = "tracking-widest text-2xl p-2";
-
-		itembackground.appendChild(imgbackground);
-		itembackground.appendChild(namebackground);
-		backgroundPage.appendChild(itembackground);
-
-		
-		imgbackground.addEventListener("click", () => {
-			if (i != 0)
-			{
-        	    inventory.background[0] = inventory.background[i];
-
-        	    PrincipalImgbackground.src = inventory.background[0].id;
-        	    TypeContainer.textContent = inventory.background[0].type;
-
-        	    backgroundPage.style.display = "none";
-			}
-    	});
-	}
-
-	PrincipalImgbackground.addEventListener("click", () => {
-		togglePageExclusive(backgroundPage);
-	})
-	return backgroundPage;
-}
-
-function CreateBarContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
-	const  barContainer = document.createElement("div");
-	barContainer.className = "ftransition-all duration-300 hover:scale-105 lex border-6 rounded grid justify-center text-center m-5";
-	
-	const TypeContainer = document.createElement("p");
-	TypeContainer.textContent = inventory.bar[0].type;
-	TypeContainer.className = "border-4 tracking-widest text-2xl p-2"
-	barContainer.appendChild(TypeContainer);
-
-	const PrincipalImgbar = document.createElement("img");
-	PrincipalImgbar.src = inventory.bar[0].id;
-	PrincipalImgbar.className = "cursor-pointer size-80 p-2 object-cover";
-	barContainer.appendChild(PrincipalImgbar);
-
-	inventoryContainer.appendChild(barContainer);
-
-	const barPage = document.createElement("div");
-	barPage.className = "inventory-grid gap-8";
-	barPage.style.display = "none";
-	registerPage(barPage);
-
-	for (let i = 1; i < inventory.bar.length; i++)
-	{
-		const itembar = document.createElement("div");
-		itembar.className = "border-8 justify-center text-center items-center gap-2";
-
-		const imgbar = document.createElement("img");
-		imgbar.src = inventory.bar[i].id;
-		imgbar.className = "border-2 cursor-pointer size-90 m-2 object-cover"
-
-		const namebar = document.createElement("p");
-		namebar.textContent = inventory.bar[i].name;
-		namebar.className = "tracking-widest text-2xl p-2";
-
-		itembar.appendChild(imgbar);
-		itembar.appendChild(namebar);
-		barPage.appendChild(itembar);
-
-		
-		imgbar.addEventListener("click", () => {
-			if (i != 0)
-			{
-        	    inventory.bar[0] = inventory.bar[i];
-
-        	    PrincipalImgbar.src = inventory.bar[0].id;
-        	    TypeContainer.textContent = inventory.bar[0].type;
-
-        	    barPage.style.display = "none";
-			}
-    	});
-	}
-
-	PrincipalImgbar.addEventListener("click", () => {
-		togglePageExclusive(barPage);
-	})
-	return barPage;
-}
-
-function CreateBallContainer(inventory: Inventory, inventoryContainer: HTMLElement): HTMLElement {
-	const  ballContainer = document.createElement("div");
-	ballContainer.className = "transition-all duration-300 hover:scale-105 z-2 flex border-6 rounded grid justify-center text-center m-5";
-	
-	const TypeContainer = document.createElement("p");
-	TypeContainer.textContent = inventory.ball[0].type;
-	TypeContainer.className = "border-3 tracking-widest text-2xl p-2"
-	ballContainer.appendChild(TypeContainer);
-
-	const PrincipalImgball = document.createElement("img");
-	PrincipalImgball.src = inventory.ball[0].id;
-	PrincipalImgball.className = "cursor-pointer size-80 p-2 object-cover";
-	ballContainer.appendChild(PrincipalImgball);
-
-	inventoryContainer.appendChild(ballContainer);
-
-	const ballPage = document.createElement("div");
-	ballPage.className = "inventory-grid gap-8";
-	ballPage.style.display = "none";
-	registerPage(ballPage);
-
-	for (let i = 1; i < inventory.ball.length; i++)
-	{
-		const itemball = document.createElement("div");
-		itemball.className = "border-4 justify-center text-center items-center gap-2";
-
-		const imgball = document.createElement("img");
-		imgball.src = inventory.ball[i].id;
-		imgball.className = "border-2 cursor-pointer size-90 m-2 object-cover"
-
-		const nameball = document.createElement("p");
-		nameball.textContent = inventory.ball[i].name;
-		nameball.className = "tracking-widest text-2xl p-2";
-
-		itemball.appendChild(imgball);
-		itemball.appendChild(nameball);
-		ballPage.appendChild(itemball);
-
-		
-		imgball.addEventListener("click", () => {
-			if (i != 0)
-			{
-        	    inventory.ball[0] = inventory.ball[i];
-
-        	    PrincipalImgball.src = inventory.ball[0].id;
-        	    TypeContainer.textContent = inventory.ball[0].type;
-
-        	    ballPage.style.display = "none";
-			}
-    	});
-	}
-
-	PrincipalImgball.addEventListener("click", () => {
-		togglePageExclusive(ballPage);
-	})
-	return ballPage;
-}
-
+/* ---- Page ---- */
 export function InventoryPage(): HTMLElement {
-    const mainContainer = document.createElement("div");
-    mainContainer.className = "pt-25 min-h-screen w-full flex flex-col items-center justify-center gap-4 bg-linear-to-t from-green-500 via-black to-green-800"
-	
-	const title = document.createElement("h2");
-	title.textContent = translations[getCurrentLang()].inventory;
-	title.className = "fixed top-0 p-6 z-1000";
-	mainContainer.appendChild(title);
+    const lang = getCurrentLang();
+	// @ts-ignore
+    const t = (k: string, fallback?: string) => (translations[lang] && translations[lang][k]) || fallback || k;
 
-	// Input username compact, centré
-	const nameForm = document.createElement("form");
-	nameForm.className = "w-full max-w-md mx-auto mt-6";
-	const nameWrap = document.createElement("div");
-	nameWrap.className = "relative";
-	const nameLabel = document.createElement("label");
-	nameLabel.htmlFor = "username-input";
-	nameLabel.className = "mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white";
-	nameLabel.textContent = translations[getCurrentLang()].username ?? "Username";
-	nameWrap.appendChild(nameLabel);
-	const nameInput = document.createElement("input");
-	nameInput.type = "text";
-	nameInput.id = "username-input";
-	nameInput.value = userName;
-	nameInput.placeholder = (translations[getCurrentLang()].username ?? "Username") + "...";
-	nameInput.className = "block w-full p-3 pe-24 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 " +
-		"focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 " +
-		"dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500";
-	nameWrap.appendChild(nameInput);
+    const main = document.createElement("div");
+    main.className = "w-full min-h-screen bg-linear-to-t from-green-500 via-black to-green-800 pt-30 flex flex-col items-center";
+
+    /* Titre */
+    const title = document.createElement("h2");
+    title.textContent = t("inventory","Inventory");
+    title.className = "tracking-widest fixed top-0 p-6 z-1000";
+    main.appendChild(title);
+
+    /* Layout principal: gauche (visuel) / droite (liste) */
+    const layout = document.createElement("div");
+    layout.className = "w-8/10 flex flex-col lg:flex-row gap-5";
+    main.appendChild(layout);
+
+    const left = document.createElement("div");
+    left.className = "w-2/5 flex flex-col gap-4";
+
+    /* Form username */
+    const nameForm = document.createElement("form");
+    nameForm.className = "w-full max-w-lg mb-8";
+
+    const nameWrap = document.createElement("div");
+    nameWrap.className = "relative";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = userName;
+    nameInput.placeholder = t("username","Username")+"...";
+    nameInput.className = "block w-full p-3 pe-28 text-sm border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500";
+    
 	const nameBtn = document.createElement("button");
-	nameBtn.type = "submit";
-	nameBtn.className = "text-white absolute end-2.5 top-1/2 -translate-y-1/2 bg-green-700 hover:bg-green-800 " +
-		"focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-3 py-2 " +
-		"dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800";
-	nameBtn.textContent = translations[getCurrentLang()].apply;
-	nameWrap.appendChild(nameBtn);
-	nameForm.appendChild(nameWrap);
-	nameForm.addEventListener("submit", (e) => {
-		e.preventDefault();
-		const v = nameInput.value.trim();
-		if (v) userName = v;
-	});
-	mainContainer.appendChild(nameForm);
+    nameBtn.type = "submit";
+    nameBtn.textContent = t("apply","Apply");
+    nameBtn.className = "absolute top-1/2 -translate-y-1/2 right-2 px-4 py-1.5 rounded-md bg-green-600 hover:bg-green-700 text-sm font-medium";
+    
+   	function applyUserName() {
+   	    const v = nameInput.value.trim();
+   	    if (v && v !== userName) {
+   	        userName = v;
+   	        emitProfileUpdate();
+   	    }
+   	}
 
-    const inventory = userInventory;
-    const inventoryContainer = document.createElement("div");
-    inventoryContainer.className = "inventory-grid z-1";
+	nameWrap.appendChild(nameInput); nameWrap.appendChild(nameBtn); nameForm.appendChild(nameWrap);
+	nameForm.addEventListener("submit",(e)=>{
+		if (nameInput.value.trim() == "") {nameInput.placeholder = translations[getCurrentLang()].empty_input}
+		else {
+        	e.preventDefault();
+        	applyUserName();
+		}
+    });
+    nameInput.addEventListener("keydown", (e)=>{
+        if (e.key === "Enter") {
+			if (nameInput.value.trim() == "") {nameInput.placeholder = translations[getCurrentLang()].empty_input}
+			else {
+            	e.preventDefault();
+            	applyUserName();
+			}
+        }
+    });
+    left.appendChild(nameForm);
 
-    mainContainer.appendChild(CreateAvatarContainer(inventory, inventoryContainer));
+    function makePreviewBox(label: string, type: CosmeticType): {box: HTMLElement, img: HTMLImageElement} {
+        const box = document.createElement("div");
+        box.className = "h-full w-full bg-white/10 border border-white/15 rounded-xl p-2 flex flex-col items-center gap-3";
+    	 
+		const header = document.createElement("div");
+    	header.textContent = label;
+    	header.className = "w-full text-xs sm:text-sm tracking-wide font-semibold text-white text-center bg-white/10 rounded px-2 py-1";
+        	
+		const img = document.createElement("img");
+        img.src = userInventory[type]?.[0]?.id;
+        img.alt = type;
+        img.className = "size-8/10 aspect-square object-cover rounded-lg bg-black/40";
+        
+		box.appendChild(header); box.appendChild(img);
+        return { box, img };
+    }
 
-    mainContainer.appendChild(CreateBackgroundContainer(inventory, inventoryContainer));
+    const previewAvatar = makePreviewBox(t("Avatar","Avatar"),"avatar");
+    const previewBackground = makePreviewBox(t("Background","Background"),"background");
+    const previewBar = makePreviewBox(t("Bar","Bar"),"bar");
+    const previewBall = makePreviewBox(t("Ball","Ball"),"ball");
 
-    mainContainer.appendChild(CreateBarContainer(inventory, inventoryContainer));
+	const actualInventory = document.createElement("div");
+	actualInventory.className = "grid grid-cols-2 grid-rows-2 gap-4"
 
-    mainContainer.appendChild(CreateBallContainer(inventory, inventoryContainer));
+    actualInventory.appendChild(previewAvatar.box);
+    actualInventory.appendChild(previewBackground.box);
+    actualInventory.appendChild(previewBar.box);
+    actualInventory.appendChild(previewBall.box);
+	left.appendChild(actualInventory);
+    layout.appendChild(left);
 
+    function updateLeft() {
+        previewAvatar.img.src = userInventory.avatar?.[0]?.id;
+        previewBackground.img.src = userInventory.background?.[0]?.id;
+        previewBar.img.src = userInventory.bar?.[0]?.id;
+        previewBall.img.src = userInventory.ball?.[0]?.id;
+    }
+    /* ---- Colonne droite: filtres + liste ---- */
+    const right = document.createElement("div");
+    right.className = "w-3/5 flex flex-col bg-white/10 border border-white/15 rounded-xl min-h-0";
 
-    mainContainer.appendChild(inventoryContainer);
-    return (mainContainer);
+    /* Filtres */
+    const filters = document.createElement("div");
+    filters.className = "flex flex-col md:flex-row gap-3 md:items-center px-4 pt-4";
+    const select = document.createElement("select");
+    select.className = "px-3 py-2 rounded-md bg-green-600 border rounded-lg border-white/20 text-sm text-white focus:outline-none";
+    [
+        {v:"all", l:t("all","All")},
+        {v:"avatar", l:t("Avatar","Avatar")},
+        {v:"background", l:t("Background","Background")},
+        {v:"bar", l:t("Bar","Bar")},
+        {v:"ball", l:t("Ball","Ball")},
+    ].forEach(o=>{
+        const opt = document.createElement("option");
+        opt.value=o.v; opt.textContent=o.l; select.appendChild(opt);
+    });
+    const search = document.createElement("input");
+    search.type="text";
+    search.placeholder = t("search","Search")+"...";
+    search.className = "flex-1 px-3 py-2 rounded-md bg-black/40 border border-white/20 text-sm text-white placeholder-white/40 focus:outline-none";
+    filters.appendChild(select);
+    filters.appendChild(search);
+    right.appendChild(filters);
+
+    /* Grille */
+    const listWrap = document.createElement("div");
+    listWrap.className = "mt-4 p-4 pt-2 flex-1 overflow-y-auto inventory-scroll min-h-0";
+    const grid = document.createElement("div");
+    grid.className = "grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5";
+    listWrap.appendChild(grid);
+    right.appendChild(listWrap);
+    layout.appendChild(right);
+
+    /* État filtre */
+    let currentType: 'all'|CosmeticType = 'all';
+    let query = "";
+
+    select.addEventListener("change", ()=>{
+        currentType = select.value as any;
+        renderGrid();
+    });
+    search.addEventListener("input", ()=>{
+        query = search.value.toLowerCase();
+        renderGrid();
+    });
+
+    /* Swap d’un item vers index 0 */
+    function equipItem(type: CosmeticType, idx: number) {
+        if (idx <= 0) return;
+        const arr = userInventory[type];
+        if (!arr || idx >= arr.length) return;
+        arr[0] = arr[idx];
+        updateLeft();
+        emitProfileUpdate();
+        renderGrid(); // rafraîchir highlight
+    }
+
+    /* Rendu liste */
+    function renderGrid() {
+        grid.innerHTML = "";
+        const types: CosmeticType[] = ["avatar","background","bar","ball"];
+        types.forEach(type=>{
+            if (currentType !== "all" && currentType !== type) return;
+            const items = userInventory[type];
+            items.forEach((item, i)=>{
+                if (i === 0) return; // Ne pas afficher l'item équipé (index 0)
+                if (query && !item.name.toLowerCase().includes(query)) return;
+                const cell = document.createElement("button");
+                cell.type="button";
+                cell.className = "relative group rounded-lg border border-white/15 bg-black/40 hover:bg-black/60 transition p-1 flex flex-col items-center";
+                const img = document.createElement("img");
+                img.src = item.id;
+                img.alt = item.name;
+                img.className = "w-full aspect-square object-cover rounded-md";
+                const cap = document.createElement("span");
+                cap.textContent = item.name;
+                cap.className = "w-full mt-1 text-[10px] leading-tight text-white/80 text-center truncate";
+                cell.appendChild(img);
+                cell.appendChild(cap);
+                cell.addEventListener("click", ()=> equipItem(type, i));
+                grid.appendChild(cell);
+            });
+        });
+    }
+    renderGrid();
+
+    /* Hauteur dynamique scroll */
+    function adjustListHeight() {
+        // Position actuelle du haut de la zone de liste dans la fenêtre
+        const rect = listWrap.getBoundingClientRect();
+        const top = rect.top;
+        const marginBottom = 32; // marge bas
+        const available = window.innerHeight - top - marginBottom;
+        if (available > 200) {
+            listWrap.style.maxHeight = available + "px";
+        } else {
+            listWrap.style.maxHeight = "200px";
+        }
+    }
+    // Attendre un tick pour que le layout soit stable
+    requestAnimationFrame(adjustListHeight);
+    window.addEventListener("resize", adjustListHeight);
+    window.addEventListener("orientationchange", adjustListHeight);
+
+    /* Expose pour MAJ externe éventuelle */
+    (window as any).refreshInventoryGrid = renderGrid;
+
+    return main;
 }
