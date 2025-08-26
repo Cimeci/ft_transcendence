@@ -20,9 +20,10 @@ const db = new Database('./data/user.sqlite');
 const user = `
     CREATE TABLE IF NOT EXISTS user (
         uuid TEXT PRIMARY KEY,
+        google_id TEXT,
         username TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL
+        password TEXT
     );
 `
 db.exec(user);
@@ -70,6 +71,7 @@ app.post('/register', async (request, reply) => {
 
         db.prepare('INSERT INTO user (uuid, username, email, password) VALUES (?, ?, ?, ?)').run(uuid, username, email, hash);
         const info = { uuid, username, email, hash }
+        const jwtToken = await app.jwt.sign({ userId: uuid });
         
         await fetch('http://user:4000/insert', {
             method: 'POST',
@@ -106,9 +108,8 @@ app.post('/login', async (request, reply) => {
             return reply.code(401).send({ error: 'Invalid identifier or password'});
         }
 
-        return {
-            log: 'you are log'
-        }
+        const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email  });
+        reply.send({ jwtToken })
     }catch {
         console.error(err);
         return reply.code(500).send({ error: 'Internal Server Error' });
@@ -157,10 +158,34 @@ app.get('/google/callback', async(request, reply) => {
             }
         });
 
-        //mettre en json pour ensuite mettre dans la db
-        const {id: google_id, email, name } = await response.json();
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-        reply.send({ message: 'logged in successfully', google_id });
+        //mettre en json pour ensuite mettre dans la db
+        const {id: google_id, email, given_name } = await response.json();
+        let jwtToken;
+
+        const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
+        if (user) {
+            jwtToken = await app.jwt.sign({ userId: user.uuid });
+            reply.send({ message: 'Logged in successfully', token: jwtToken });
+        } else {
+            const uuid = crypto.randomUUID();
+            db.prepare('INSERT INTO user (uuid, google_id, username, email, password) VALUES (?, ?, ?, ?, ?)').run(uuid, google_id, given_name, email, null);
+            jwtToken = await app.jwt.sign({ userId: uuid });
+
+            const info = { uuid: uuid, username: given_name, email: email, hash: null }
+            await fetch('http://user:4000/insert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(info)
+            });
+        }
+
+        reply.send({ message: 'logged in successfully', token: jwtToken });
     } catch (err) {
         console.error(err);
         reply.code(500).send({ error: 'internal Server Error' 

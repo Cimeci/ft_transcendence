@@ -1,55 +1,52 @@
-import Fastify from 'fastify'
-import fastifyHttpProxy from '@fastify/http-proxy'
-import { port } from './config/index.js'
-import dotenv from 'dotenv'
+import Fastify from 'fastify'  // Importe la bibliothèque Fastify pour créer le serveur
+import fastifyHttpProxy from '@fastify/http-proxy' // Importe le plugin Fastify pour le proxy HTTP
+import dotenv from 'dotenv' // Importe la bibliothèque dotenv pour charger les variables d'environnement
 
-
+// Charge les variables d'environnement depuis le fichier .env
 dotenv.config();
-console.log('JWT_SECRET:', process.env.JWT_SECRET);
+
+// Crée une instance de Fastify avec le logger activé
 const app = Fastify({ logger: true});
 
-// enregistre le plugin database.js dans Fastify
-
+// Enregistre le plugin de proxy HTTP pour les services
 await app.register(fastifyHttpProxy, {
-    upstream: 'http://auth:4000',
-    prefix: '/auth',
+    upstream: 'http://auth:4000', // URL du service d'authentification
+    prefix: '/auth', // Préfixe pour les routes du service d'authentification
     rewritePrefix: '' // enleve le prefixe avant d'envoyer
 })
-
 await app.register(fastifyHttpProxy, {
     upstream: 'http://game:4000',
     prefix: '/game',
-    rewritePrefix: '' // enleve le prefixe avant d'envoyer
+    rewritePrefix: ''
 })
-
 await app.register(fastifyHttpProxy, {
     upstream: 'http://tournament:4000',
     prefix: '/tournament',
-    rewritePrefix: '' // enleve le prefixe avant d'envoyer
+    rewritePrefix: ''
 })
-
 await app.register(fastifyHttpProxy, {
     upstream: 'http://user:4000',
     prefix: '/user',
-    rewritePrefix: '' // enleve le prefixe avant d'envoyer
+    rewritePrefix: ''
 })
 
-// Piège global d’erreur
+// Définit un gestionnaire d'erreurs global pour capturer et logger les erreurs
 app.setErrorHandler(async (error, request, reply) => {
   app.log.error(error); // affiche l’erreur dans la console / logs
   reply.status(500).send({ error: 'Internal server error' });
 });
 
-//page de base quand on met http://localhost:443 dans le navigateur
+// Définit une route de base pour tester le serveur
 app.get('/', (request, reply) => {
     return {message: 'Salut'}
 })
 
+// Lance le serveur sur le port spécifié
 app.listen({ port: 443, host: '0.0.0.0'})
     .then(() => {
         console.log(`✅ Serveur Fastify démarré sur http://localhost:443`);
     })
     .catch ((err) => {
-        console.error(err)
-        process.exit(1)
+        console.error(err) // Affiche l'erreur en cas d'échec
+        process.exit(1) // Termine le processus en cas d'erreur
     });
