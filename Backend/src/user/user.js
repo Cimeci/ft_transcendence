@@ -69,6 +69,40 @@ app.post('/insert', async(request, reply) => {
     }
 })
 
+app.patch('/update-info', async(request, reply) => {
+    const { email, username } = request.body;
+
+    if (!email && !username){
+        reply.code(300).send('There are nothing change');
+    }
+
+    if (email){
+        const validationEmail = (email) => {
+            return /^[^@]+@[^@]+\.[^@]+$/i.test(email);
+        };
+        if (!validationEmail(email)) {
+            return reply.code(400).send({
+                error: 'Invalid email'
+            });
+        }
+        const emailExist = db.prepare('SELECT email FROM user WHERE email = ?').get(email);
+        if (emailExist) {
+            return reply.code(400).send({
+                error: 'Email already in use'
+            });
+        }
+    }
+    if (username){
+        const usernameExist = db.prepare('SELECT username FROM user WHERE username = ?').get(username);;
+        if (usernameExist) {
+            return reply.code(400).send({
+                error: 'Username already in use'
+            });
+        }
+    }
+    db.prepare('UPDATE ')
+});
+
 app.post('/friendship', async(request, reply) => {
     const { user_id, friend_id } = request.body;
     const uuid = crypto.randomUUID();
