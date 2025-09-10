@@ -9,8 +9,8 @@ volumes:
    #driver: local
  #filebeatdata01:
    #driver: local
- #logstashdata01:
-   #driver: local
+ logstashdata01:
+   driver: local
 
 
 networks:
@@ -55,6 +55,7 @@ services:
          "    ip:\n"\
          "      - 127.0.0.1\n"\
          > config/certs/instances.yml;
+         mkdir -p /usr/share/elasticsearch/config/certs;
          bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
          unzip config/certs/certs.zip -d config/certs;
        fi;
@@ -62,6 +63,11 @@ services:
        chown -R root:root config/certs;
        find . -type d -exec chmod 750 \{\} \;;
        find . -type f -exec chmod 640 \{\} \;;
+      
+       echo "Setting permissions for Logstash user (1000)";
+       chown -R 1000:1000 config/certs/ca/;
+       chmod 644 config/certs/ca/ca.crt;
+
        echo "Waiting for Elasticsearch availability";
        until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
        echo "Setting kibana_system password";
@@ -151,3 +157,24 @@ services:
       timeout: 10s
       retries: 120
 
+  logstash01:
+    depends_on:
+      es01:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
+    labels:
+      co.elastic.logs/module: logstash
+    #user: "logstash"
+    volumes:
+      - certs:/usr/share/logstash/config/certs
+      - logstashdata01:/usr/share/logstash/data
+      - "./logstash_ingest_data/:/usr/share/logstash/ingest_data/"
+      - "./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
+    environment:
+      - xpack.monitoring.enabled=false
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_HOSTS=https://es01:9200
+    #mem_limit: ${LS_MEM_LIMIT}
