@@ -5,9 +5,9 @@
 
 [ ] Ports 9200/5601 non exposés sur 0.0.0.0 en production ? [ss -tulnp]
 [x] TLS 1.2+ et certificats sha256
-[x] Auth obligatoire sur ES + Kibana
-[ ] Audit logging activé
-[ ] Use a Logstash Keystore
+[x] Auth obligatoire sur ES + Kibanax
+[x] Audit logging -> Only available on trial
+[x] Use a Logstash Keystore
 [x] Droits 640/750 sur les certificats
 [ ] Backup & retention documentés
 
@@ -19,7 +19,7 @@
 
 ## Functionnality
 [ ] Add a fake web app and handle logs
-[ ] Multi Node system
+
 
 ## Adds
 [ ] Rename services (Logstash01 why ?)
