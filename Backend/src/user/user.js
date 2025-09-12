@@ -11,7 +11,9 @@ const user = `
         uuid TEXT PRIMARY KEY,
         username TEXT NOT NULL,
         email TEXT NOT NULL,
-        password TEXT
+        password TEXT,
+        avatar TEXT,
+        is_online INTERGER
     );
 `
 
@@ -57,22 +59,39 @@ app.addHook('onClose', async (instance) => {
 });
 
 app.post('/insert', async(request, reply) => {
-    const { uuid, username, email, hash } = request.body;
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+
+    const { uuid, username, email, hash, avatar } = request.body;
 
     try{
-        db.prepare('INSERT INTO user (uuid, username, email, password) VALUES (?, ?, ?, ?)').run(uuid, username, email, hash);
+        db.prepare('INSERT INTO user (uuid, username, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
         db.prepare('INSERT INTO historic (uuid, user_uuid, games, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').run(historic_uuid, uuid, null, Date.now(), Date.now());
+        return reply.code(201).send({ succes: true})
     } catch (err) {
         console.error(err);
         return reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
 
-app.patch('/update-info', async(request, reply) => {
-    const { email, username } = request.body;
+app.patch('/online', async(request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
 
-    if (!email && !username){
+    const { uuid, online } = request.body;
+    console.log(online);
+    db.prepare('UPDATE user set is_online = ? WHERE uuid = ?').run(online, uuid);
+})
+
+app.patch('/update-info', async(request, reply) => {
+    const { uuid, email, username, avatar} = request.body;
+
+    if (!email && !username && !avatar){
         reply.code(300).send('There are nothing change');
     }
 
@@ -91,6 +110,7 @@ app.patch('/update-info', async(request, reply) => {
                 error: 'Email already in use'
             });
         }
+        db.prepare('UPDATE user set email = ? WHERE uuid = ?').run(email, uuid);
     }
     if (username){
         const usernameExist = db.prepare('SELECT username FROM user WHERE username = ?').get(username);;
@@ -99,8 +119,13 @@ app.patch('/update-info', async(request, reply) => {
                 error: 'Username already in use'
             });
         }
+        db.prepare('UPDATE user set username = ? WHERE uuid = ?').run(username, uuid);
     }
-    db.prepare('UPDATE ')
+
+    if (avatar)
+        db.prepare('UPDATE user set avatar = ? WHERE uuid = ?').run(avatar, uuid);
+
+    reply.send('Profile update')
 });
 
 app.post('/friendship', async(request, reply) => {
@@ -124,6 +149,11 @@ app.patch('/friendship', async(request, reply) => {
 });
 
 app.patch('/historic', async (request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+
     const game = request.body;
 
     const player1 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player1_uuid)
@@ -147,6 +177,24 @@ app.patch('/historic', async (request, reply) => {
         return reply.status(500).send('Erreur interne du serveur');
     }
     return { player1: game1JSON, player2: game2JSON };
+});
+
+// Middleware pour vérifier le JWT et récupérer le uuid
+('preHandler', async (request, reply) => {
+    const authHeader = request.headers.authorization;
+    console.log('Auth Header:', authHeader);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    // const token = authHeader.slice(7);
+    // try {
+    //     // Utilise la même clé secrète que dans le service auth
+    //     const payload = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+    //     request.user = payload; // Ajoute le payload à la requête
+    // } catch (err) {
+    //     return reply.code(401).send({ error: 'Invalid token' });
+    // }
 });
 
 app.get('/:id' , async (request, reply) => {

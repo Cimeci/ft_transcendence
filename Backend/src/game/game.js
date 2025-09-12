@@ -60,7 +60,8 @@ app.patch('/update-game/:gameId', async (request, reply) => {
         await fetch('http://user:4000/historic', {
             method: 'PATCH',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET
             },
             body: JSON.stringify(game)
         });
