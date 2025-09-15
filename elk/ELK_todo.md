@@ -10,6 +10,7 @@
 [x] Use a Logstash Keystore
 [x] Droits 640/750 sur les certificats
 [ ] Backup & retention documentés
+[x] HTTPS KIbana
 
 
 ## Completing setup

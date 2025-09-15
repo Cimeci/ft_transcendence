@@ -28,3 +28,7 @@ curl -sk https://localhost:9200/ | grep -q "missing authentication credentials" 
 
 echo "=== 4. Kibana_system user ==="
 curl -sk -u "kibana_system:$KIBANA_PASSWORD" https://localhost:9200/ >/dev/null && echo "✅ kibana_system OK" || echo "❌ kibana_system FAIL"
+
+
+echo "=== Kibana https certificate (🔒sudo required) ==="
+sudo curl -sf --cacert /var/lib/docker/volumes/trans_elkstack_certs/_data/ca/ca.crt https://localhost:5601/ >/dev/null && echo "✅ Certificate OK" || echo "❌ Certificate FAIL"
