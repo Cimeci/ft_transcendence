@@ -129,6 +129,49 @@ app.post('/login', async (request, reply) => {
     }
 });
 
+app.patch('/update-password', async(request, reply) => {
+    const { oldPassword, newPassword } = request.body;
+    let uuid
+    try{
+        uuid = checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    if (!oldPassword || !newPassword){
+        return reply.code(400).send({ error: 'Missing passwords' });
+    }
+
+    const user = db.prepare('SELECT * FROM user WHERE uuid = ?').get(uuid);
+    if (!user) {
+        return reply.code(401).send({ error: 'User not found' });
+    }
+    if (!user.password)
+        return reply.code(401).send({ error: 'user registered with google or github'});
+
+    const pass = await bcrypt.compare(oldPassword, user.password);
+    if (!pass) {
+        return reply.code(401).send({ error: 'it\'s the same password' });
+    }
+
+    const validationPassword = (password) => {
+        return /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password);
+    };
+    if (!validationPassword(newPassword)) {
+        return reply.code(400).send({
+            error: 'Password must be at least 8 characters, include one uppercase letter, one number, and one special character.'
+        });
+    }
+    try {
+        const hash = await bcrypt.hash(newPassword, 10);
+        db.prepare('UPDATE user set password = ? WHERE uuid = ?').run(hash, uuid);
+        reply.send('Password update');
+    } catch (err) {
+        console.error(err);
+        return reply.code(500).send({ error: 'Internal Server Error' });
+    }
+}); 
+
 app.register(fastifyOauth2, {
     name: 'google',
     scope: ['email', 'profile'],
@@ -349,6 +392,19 @@ app.get('/github/verifyAccessToken', function (request, reply) {
     }
   )
 })
+
+// Middleware pour vérifier le JWT et récupérer le uuid
+async function checkToken(request) {
+    const authHeader = request.headers.authorization;
+    console.log('Auth Header:', authHeader);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
+    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    return payload.uuid;
+}
 
 app.setErrorHandler((error, request, reply) => {
     console.error('Error:', error);

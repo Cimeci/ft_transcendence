@@ -1,8 +1,16 @@
 import fastify from "fastify";
 import Database from 'better-sqlite3/lib/database.js';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
+import jwt from '@fastify/jwt'
+
+dotenv.config();
 
 const app = fastify({ logger: true });
+
+await app.register(jwt, {
+  secret: process.env.JWT_SECRET,
+  sign: { expiresIn: '2h' }
+});
 
 const db = new Database('./data/user.sqlite');
 
@@ -89,8 +97,13 @@ app.patch('/online', async(request, reply) => {
 })
 
 app.patch('/update-info', async(request, reply) => {
-    const { uuid, email, username, avatar} = request.body;
-
+    const { email, username, avatar} = request.body;
+    let uuid
+    try{
+        uuid = checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
     if (!email && !username && !avatar){
         reply.code(300).send('There are nothing change');
     }
@@ -113,12 +126,6 @@ app.patch('/update-info', async(request, reply) => {
         db.prepare('UPDATE user set email = ? WHERE uuid = ?').run(email, uuid);
     }
     if (username){
-        const usernameExist = db.prepare('SELECT username FROM user WHERE username = ?').get(username);;
-        if (usernameExist) {
-            return reply.code(400).send({
-                error: 'Username already in use'
-            });
-        }
         db.prepare('UPDATE user set username = ? WHERE uuid = ?').run(username, uuid);
     }
 
@@ -130,6 +137,7 @@ app.patch('/update-info', async(request, reply) => {
 
 app.post('/friendship', async(request, reply) => {
     const { user_id, friend_id } = request.body;
+    
     const uuid = crypto.randomUUID();
 
     try{
@@ -180,22 +188,17 @@ app.patch('/historic', async (request, reply) => {
 });
 
 // Middleware pour vérifier le JWT et récupérer le uuid
-('preHandler', async (request, reply) => {
+async function checkToken(request) {
     const authHeader = request.headers.authorization;
     console.log('Auth Header:', authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    // const token = authHeader.slice(7);
-    // try {
-    //     // Utilise la même clé secrète que dans le service auth
-    //     const payload = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
-    //     request.user = payload; // Ajoute le payload à la requête
-    // } catch (err) {
-    //     return reply.code(401).send({ error: 'Invalid token' });
-    // }
-});
+    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
+    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    return payload.uuid;
+}
 
 app.get('/:id' , async (request, reply) => {
     const user = db.prepare('SELECT * FROM user WHERE id = ?').get(request.params.id);
