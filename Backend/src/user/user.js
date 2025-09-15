@@ -135,6 +135,28 @@ app.patch('/update-info', async(request, reply) => {
     reply.send('Profile update')
 });
 
+app.get('/friendship', async(request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    try {
+        const accept = db.prepare(`SELECT * FROM friendships WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'`).all(uuid, uuid);
+        const sentRequest = db.prepare(`SELECT * FROM friendships WHERE user_id = ? AND status = 'pending'`).all(uuid);
+        const receivedRequest = db.prepare(`SELECT * FROM friendships WHERE friend_id = ? AND status = 'pending'`).all(uuid);
+    return reply.send({
+        friendship: accept,
+        sentRequest: sentRequest,
+        receivedRequest: receivedRequest
+    })
+    } catch(err) {
+        return reply.code(401).send({ error: '/GET friendship'});
+    }
+});
+
 app.post('/friendship', async(request, reply) => {
     const { user_id, friend_id } = request.body;
     
