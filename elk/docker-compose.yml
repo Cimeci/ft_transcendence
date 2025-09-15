@@ -141,11 +141,11 @@ services:
       - ELASTICSEARCH_HOSTS=https://es01:9200
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
-      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/kibana/config/certs/ca/ca.crt
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
       - SERVER_SSL_ENABLED=true
       - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/certs/kibana/kibana.crt
-      - SERVER_SSL_KEY=/usr/share/kibana/config/certs/kibana/kibana.key
+      - SERVER_SSL_CERTIFICATE=config/certs/kibana/kibana.crt
+      - SERVER_SSL_KEY=config/certs/kibana/kibana.key
       - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
       - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
     mem_limit: ${KB_MEM_LIMIT}
@@ -153,7 +153,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -sk -I https://localhost:5601 | grep -q '302 Found'",
+          "curl -I -s --cacert /usr/share/kibana/config/certs/ca/ca.crt https://localhost:5601 | grep -q 'HTTP/2 302'",
         ]
       interval: 10s
       timeout: 10s
