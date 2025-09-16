@@ -4,54 +4,9 @@ import { CreateWrappedButton } from "./pong";
 import { createInputWithEye, togglePassword } from "./register"; 
 import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
+import { CreateSlider } from "../components/utils";
 
 let nb_players = {value: 16};
-
-export function CreateSlider(ref: { value: number }, txt: string, minValue: number, maxValue: number, onChange?: (v: number) => void) : HTMLElement
-{
-	const SliderContainer = document.createElement("div");
-	SliderContainer.className = "bg-slate-200 rounded-lg shadow-lg p-6 w-full max-w-lg";
-
-	const TopSlider = document.createElement("div");
-	TopSlider.className = `justify-center items-center text-center mb-4`;
-
-	const labelSlider = document.createElement("label");
-	labelSlider.textContent = txt;
-	labelSlider.className = "tracking-widest block text-gray-700 font-bold mb-2"
-	TopSlider.appendChild(labelSlider);
-
-	const Slider = document.createElement("div");
-	Slider.className = "flex justify-between text-gray-700";
-
-	const min = document.createElement("span");
-	min.textContent = String(minValue);
-
-	const max = document.createElement("span");
-	max.textContent = String(maxValue);
-
-	const InputSlider = document.createElement("input");
-	InputSlider.type = "range";
-	InputSlider.className = "rounded-range w-full";
-	if (ref.value > 0)
-		InputSlider.className += " pl-2"; // espace pour éviter la concat invalide
-	InputSlider.min = String(minValue);
-	InputSlider.max = String(maxValue);
-	InputSlider.value = String(ref.value);
-	InputSlider.oninput = (event) => {
-		const v = Number((event.target as HTMLInputElement).value);
-		ref.value = v;
-		min.textContent = String(v);
-		onChange?.(v);
-	};
-	TopSlider.appendChild(InputSlider);
-
-	SliderContainer.appendChild(TopSlider);
-	Slider.appendChild(min);
-	Slider.appendChild(max);
-	SliderContainer.appendChild(Slider);
-
-	return (SliderContainer);
-}
 
 export type TournamentVisibility = 'public' | 'private';
 export interface Tournament {
@@ -201,7 +156,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 			if (!tournament.password || PasswordInputJoin.value === tournament.password) {
 				currentTournament = tournament;                // get memorise tournament selected ! Getting it from BD ! //
 				mainContainer.classList.add("fade-out");
-				setTimeout(() => navigateTo("/tournament"), 1000);
+				setTimeout(() => navigateTo("/tournament/join"), 1000);
 			} else {
 				ConfirmJoinBtn.classList.add("shake")
 				setTimeout(() => {ConfirmJoinBtn.classList.remove("shake")}, 600)
@@ -269,7 +224,7 @@ export function PongTournamentMenuPage(): HTMLElement {
                 } else {
                     currentTournament = tournament;                 // ← mémorise le tournoi choisi (public)
                     mainContainer.classList.add("fade-out");
-                    setTimeout(() => navigateTo("/tournament"), 1000);
+                    setTimeout(() => navigateTo("/tournament/join"), 1000);
                 }
       			setTimeout(renderLabel, 1000);
     		});
@@ -331,7 +286,86 @@ export function PongTournamentMenuPage(): HTMLElement {
 	return (mainContainer);
 }
 
-export function PongTournamentPage(): HTMLElement {
+export function PongTournamentPageJoin(): HTMLElement {
+
+    const mainContainer = document.createElement("div");
+    mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
+
+    const Title = document.createElement("h1");
+    Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
+    Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
+    mainContainer.appendChild(Title);
+
+    const size = currentTournament?.maxPlayers ?? nb_players.value;
+    const players = Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`);
+    // const players = Array.from({ length: size }, (_, i) => ``);
+	
+
+    const bracket = createTournamentBracket(players);
+    bracket.classList.add("mt-15", "pl-5");
+    mainContainer.appendChild(bracket);
+
+	const BackToMenuOverlay = document.createElement("div");
+	BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+
+	const BackToMenuSure = document.createElement("div");
+	BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+
+	const BackToMenuTitle = document.createElement("h1");
+	BackToMenuTitle.className = "text-5xl neon-matrix";
+	BackToMenuTitle.textContent = translations[getCurrentLang()].title_leave;
+	BackToMenuSure.appendChild(BackToMenuTitle);
+
+	const BackToMenuTxt = document.createElement("p");
+	BackToMenuTxt.className = "";
+	BackToMenuTxt.textContent = translations[getCurrentLang()].txt_leave;
+	BackToMenuSure.appendChild(BackToMenuTxt);
+
+	const actions = document.createElement("div");
+	actions.className = "flex gap-4 justify-center";
+
+	const CancelBtn = document.createElement("button");
+	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
+	CancelBtn.textContent = translations[getCurrentLang()].cancel;
+	CancelBtn.onclick = () => {
+		BackToMenuOverlay.classList.add("hidden")
+	};
+	actions.appendChild(CancelBtn);
+
+	const ConfirmBtn = document.createElement("button");
+	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
+	ConfirmBtn.textContent = translations[getCurrentLang()].back;
+	ConfirmBtn.onclick = () => {
+		mainContainer.classList.add("fade-out");
+		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
+	};
+	actions.appendChild(ConfirmBtn);
+
+	BackToMenuSure.appendChild(actions);
+	BackToMenuOverlay.appendChild(BackToMenuSure);
+	mainContainer.appendChild(BackToMenuOverlay);
+
+	const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "null", 1);
+	BackToMenuBtn.className = "absolute bottom-2 right-2";
+	BackToMenuBtn.addEventListener("click", (e) => {
+		e.preventDefault();
+		BackToMenuOverlay.classList.remove("hidden");
+	})
+    mainContainer.appendChild(BackToMenuBtn);
+
+	BackToMenuOverlay.addEventListener("click", (e) => {
+  		if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
+	});
+
+	const onEsc = (e: KeyboardEvent) => {
+  		if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
+	};
+	document.addEventListener("keydown", onEsc);
+
+    return (mainContainer);
+}
+
+export function PongTournamentPageHost(): HTMLElement {
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
