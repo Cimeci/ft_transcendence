@@ -8,6 +8,7 @@ export interface CosmeticItem {
     id: string;
     name: string;
     type: CosmeticType;
+    price: number;
 };
 export interface Inventory { [type: string]: CosmeticItem[]; }
 
@@ -15,40 +16,40 @@ export let userName: string = "default";
 
 export const userInventory: Inventory = {
     avatar: [
-        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar'},
-        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar'},
-        { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar'},
-        { id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar'},
-        { id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar'},
-        { id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar'},
-        { id: 'avatar/rgramati.jpg', name: 'rgramati avatar', type: 'avatar'},
-        { id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar'},
-        { id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar'},
-        { id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar'},
-        { id: 'avatar/rgodet.jpg', name: 'rgodet avatar', type: 'avatar'},
+        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar', price: 250},
+        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar', price: 250},
+        { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar', price: 250},
+        { id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar', price: 250},
+        { id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar', price: 250},
+        { id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar', price: 250},
+        { id: 'avatar/xavierchad.gif', name: 'xavierchad avatar', type: 'avatar', price: 250},
+        { id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar', price: 250},
+        { id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar', price: 250},
+        { id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar', price: 250},
+        { id: 'avatar/rgodet.jpg', name: 'rgodet avatar', type: 'avatar', price: 250},
     ],
     background: [
-        { id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
-        { id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
-        { id: 'bg/default_bg.png', name: 'default bg', type: 'background'},
-        { id: 'bg/matrix_bg.gif', name: 'matrix bg', type: 'background'},
+        { id: 'bg/default_bg.png', name: 'default bg', type: 'background', price: 250},
+        { id: 'bg/default_bg.png', name: 'default bg', type: 'background', price: 250},
+        { id: 'bg/transcendence_bg.png', name: 'transcendence bg', type: 'background', price: 250},
+        { id: 'bg/matrix_bg.gif', name: 'matrix bg', type: 'background', price: 250},
     ],
     bar: [
-        { src: 'playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
-        { src: 'playbar/default_bar.png', id: 'bar/default_bar.png', name: 'default bar', type: 'bar'},
-        { src: 'playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar'},
-        { src: 'playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar'},
-        { src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar'},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar'},
+        { src: 'playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar', price: 250},
+        { src: 'playbar/default_bar.png', id: 'bar/default_bar.png', name: 'default bar', type: 'bar', price: 250},
+        { src: 'playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar', price: 250},
+        { src: 'playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250},
+        { src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250},
     ],
     ball: [
-        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
-        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball'},
-        { id: 'ball/tennis_ball.png', name: 'tennis_ball', type: 'ball'},
+        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball', price: 250},
+        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball', price: 250},
+        { id: 'ball/tennis_ball.png', name: 'tennis_ball', type: 'ball', price: 250},
     ],
 };
 
