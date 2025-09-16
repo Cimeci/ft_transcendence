@@ -183,10 +183,9 @@ function fillToPowerOfTwo(players: string[]): (string | null)[] {
   return filled;
 }
 
-// Retourne la paire (haut, bas) seedée pour le match j du round 0
+// Retourne la paire (haut, bas) pour le match j du round 0: (1vs2, 3vs4, …)
 function seedPair(filled: (string | null)[], matchIndex: number): [string | null, string | null] {
-  const m = filled.length;
-  const i1 = matchIndex + 1;
-  const i2 = m - matchIndex;
-  return [filled[i1 - 1], filled[i2 - 1]];
+  const idx1 = 2 * matchIndex;
+  const idx2 = 2 * matchIndex + 1;
+  return [filled[idx1] ?? null, filled[idx2] ?? null];
 }
