@@ -14,6 +14,7 @@ await app.register(jwt, {
 
 const db = new Database('./data/user.sqlite');
 
+// penser a enlever password, juste le laisser dans auth
 const user = `
     CREATE TABLE IF NOT EXISTS user (
         uuid TEXT PRIMARY KEY,
@@ -157,12 +158,24 @@ app.get('/friendship', async(request, reply) => {
     }
 });
 
-app.post('/friendship', async(request, reply) => {
-    const { user_id, friend_id } = request.body;
+app.post('/friendship/:uuid', async(request, reply) => {
+    let user_id;
+    try {
+        user_id = await checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+    const friend_id  = request.params.uuid;
     
-    const uuid = crypto.randomUUID();
+    if (user_id === friend_id)
+        return reply.code(401).send({ error: 'You can\'t send invite himself'})
 
+    const uuid = crypto.randomUUID();
     try{
+        const friend = db.prepare('SELECT * FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)').get(user_id, friend_id, friend_id, user_id);
+        if (friend)
+            return reply.code(402).send({ error: 'this invite exists'});
+
         db.prepare('INSERT INTO friendships (uuid, user_id, friend_id, status) VALUES (?, ?, ?, ?)').run(uuid, user_id, friend_id, 'pending');
 
         return { message: 'Friendship request sent' }
@@ -172,11 +185,43 @@ app.post('/friendship', async(request, reply) => {
     }
 });
 
-app.patch('/friendship', async(request, reply) => {
-    const { statut, uuid } = request.body;
+app.patch('/friendship/:uuid', async(request, reply) => {
+    let friend_id;
+    try {
+        friend_id = await checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+    const { statut } = request.body;
+    const user_id = request.params.uuid;
 
-    db.prepare('UPDATE friendships set status = ? WHERE uuid = ?').run(statut, uuid);
+    try {
+        db.prepare('UPDATE friendships set status = ? WHERE (user_id = ? AND friend_id = ?)').run(statut, user_id, friend_id);
+
+    } catch(err) {
+        console.log(err);
+        return reply.code(500).send({ error: 'update friendship', user_id, friend_id })
+    }
 });
+
+app.delete('/friendship/:uuid', async(request, reply) => {
+    let user_id;
+    try {
+        user_id = await checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const friend_id = request.params.uuid;
+
+    try {
+        db.prepare('DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)').run(user_id, friend_id, friend_id, user_id);
+    
+    } catch(err) {
+        console.log('error /DELETE friendship');
+        return reply.code(500).send({ error: 'Internal Server Error' });
+    }
+})
 
 app.patch('/historic', async (request, reply) => {
     const key = request.headers['x-internal-key'];
@@ -209,6 +254,53 @@ app.patch('/historic', async (request, reply) => {
     return { player1: game1JSON, player2: game2JSON };
 });
 
+app.get('/me', async(request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const user = db.prepare(`
+        SELECT
+            u.uuid,
+            u.username,
+            u.email,
+            u.avatar,
+            u.is_online,
+            h.games
+        FROM user u
+        JOIN historic h ON u.uuid = h.user_uuid
+        WHERE u.uuid = ?`).get(uuid);
+
+    if (!user) {
+        return reply.code(404).send({ error: 'User not found' });
+    }
+
+    return reply.send({ user })
+})
+
+
+app.get('/:uuid', async(request, reply) => {
+    const uuid  = request.params.uuid;
+
+    const user = db.prepare(`
+    SELECT
+        uuid,
+        username,
+        email,
+        avatar,
+        is_online
+    FROM user WHERE uuid = ?`).get(uuid);
+
+    if (!user) {
+        return reply.code(404).send({ error: 'User not found' });
+    }
+
+    return reply.send({ user })
+})
+
 // Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization;
@@ -221,12 +313,5 @@ async function checkToken(request) {
     const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
     return payload.uuid;
 }
-
-app.get('/:id' , async (request, reply) => {
-    const user = db.prepare('SELECT * FROM user WHERE id = ?').get(request.params.id);
-    if (!user)
-        return reply.status(404).send({error: 'User not found'});
-    return user;
-});
 
 app.listen({ port: 4000, host: '0.0.0.0' })
