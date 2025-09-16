@@ -15,6 +15,8 @@ export interface Tournament {
   activePlayers: number;
   visibility: TournamentVisibility;
   password?: string; // only in private
+  players?: string[];  // liste courante des joueurs
+  started?: boolean;   // état démarré
 }
 
 export const tournamentList: Tournament[] = [];
@@ -261,21 +263,28 @@ export function PongTournamentMenuPage(): HTMLElement {
 			const visibility: TournamentVisibility = toggleInput.checked ? "private" : "public";
 			if (visibility === "public" || visibility === "private" && GamePassword.value)
 			{
-				const t: Tournament = {
-    				name: GameName.value,
-    				maxPlayers: nb_players.value,
-    				activePlayers: 1,
-    				visibility,
-    				...(visibility === "private" ? { password: GamePassword.value } : {}),
-  				};
-				tournamentList.unshift(t);
-				renderJoinList();
+                const t: Tournament = {
+                    name: GameName.value,
+                    maxPlayers: nb_players.value,
+                    activePlayers: 1,
+                    visibility,
+                    ...(visibility === "private" ? { password: GamePassword.value } : {}),
+                    players: Array.from({ length: nb_players.value }, (_, i) =>
+                        `${translations[getCurrentLang()].player} ${i + 1}`
+                    ),
+                    started: false,
+                };
+                tournamentList.unshift(t);
+                currentTournament = t; // pointer vers le tournoi créé
+                renderJoinList();
 
-				GameName.value = "";
-  					GamePassword.value = "";
-  				PasswordWrapper.classList.toggle("hidden", !toggleInput.checked);
-			}
-		}
+                GameName.value = "";
+                GamePassword.value = "";
+                PasswordWrapper.classList.toggle("hidden", !toggleInput.checked);
+                mainContainer.classList.add("fade-out");
+                setTimeout(() => { navigateTo("/tournament/host"); }, 1000);
+            }
+        }
     });
     HostContainer.appendChild(HostBtn);
 	
@@ -297,8 +306,9 @@ export function PongTournamentPageJoin(): HTMLElement {
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
-    const players = Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`);
-    // const players = Array.from({ length: size }, (_, i) => ``);
+    const players = (currentTournament?.players?.length
+        ? currentTournament.players.slice()
+        : Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`));
 	
 
     const bracket = createTournamentBracket(players);
@@ -376,8 +386,125 @@ export function PongTournamentPageHost(): HTMLElement {
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
-    const players = Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`);
-    // const players = Array.from({ length: size }, (_, i) => ``);
+    // Utilise la liste des joueurs du tournoi si présente
+    const players = (currentTournament?.players?.length
+        ? currentTournament.players
+        : Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`));
+    // Conteneur pour (re)rendre le bracket
+    const bracketContainer = document.createElement("div");
+    bracketContainer.className = "mt-15 pl-5 w-full";
+    const renderBracket = () => {
+        bracketContainer.innerHTML = "";
+        const b = createTournamentBracket(players);
+        b.classList.add("mt-0", "pl-0");
+        bracketContainer.appendChild(b);
+    };
+
+    // Barre d’actions (colonne en bas à droite)
+    const actionsCol = document.createElement("div");
+    actionsCol.className = "border-1 border-white/20 bg-white/10 p-3 rounded-xl fixed bottom-3 right-3 z-[2100] flex flex-col items-end gap-3";
+
+    const startBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].host, "/tournament/game", 1);
+    startBtn.className = "hover:scale-105 transition";
+
+    const shuffleBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].shuffle, "null", 1);
+    shuffleBtn.className = "hover:scale-105 transition";
+    shuffleBtn.onclick = () => {
+        for (let i = players.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [players[i], players[j]] = [players[j], players[i]];
+        }
+        if (currentTournament) currentTournament.players = players.slice();
+        renderBracket();
+    };
+
+    actionsCol.appendChild(startBtn);
+    actionsCol.appendChild(shuffleBtn);
+    mainContainer.appendChild(actionsCol);
+
+    mainContainer.appendChild(bracketContainer);
+    renderBracket();
+
+    const BackToMenuOverlay = document.createElement("div");
+    BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+
+	const BackToMenuSure = document.createElement("div");
+	BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+
+	const BackToMenuTitle = document.createElement("h1");
+	BackToMenuTitle.className = "text-5xl neon-matrix";
+	BackToMenuTitle.textContent = translations[getCurrentLang()].title_leave;
+	BackToMenuSure.appendChild(BackToMenuTitle);
+
+	const BackToMenuTxt = document.createElement("p");
+	BackToMenuTxt.className = "";
+	BackToMenuTxt.textContent = translations[getCurrentLang()].txt_leave;
+	BackToMenuSure.appendChild(BackToMenuTxt);
+
+	const actions = document.createElement("div");
+	actions.className = "flex gap-4 justify-center";
+
+	const CancelBtn = document.createElement("button");
+	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
+	CancelBtn.textContent = translations[getCurrentLang()].cancel;
+	CancelBtn.onclick = () => {
+		BackToMenuOverlay.classList.add("hidden")
+	};
+	actions.appendChild(CancelBtn);
+
+	const ConfirmBtn = document.createElement("button");
+	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
+	ConfirmBtn.textContent = translations[getCurrentLang()].back;
+	ConfirmBtn.onclick = () => {
+		mainContainer.classList.add("fade-out");
+		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
+	};
+	actions.appendChild(ConfirmBtn);
+
+	BackToMenuSure.appendChild(actions);
+	BackToMenuOverlay.appendChild(BackToMenuSure);
+	// L’overlay doit être au niveau du container principal
+	mainContainer.appendChild(BackToMenuOverlay);
+
+    const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "null", 1);
+    BackToMenuBtn.className = "mt-6 px-4 py-2 rounded-xl text-white duration-300 hover:scale-110 transition";
+    BackToMenuBtn.addEventListener("click", (e) => {
+         e.preventDefault();
+         BackToMenuOverlay.classList.remove("hidden");
+     });
+    actionsCol.appendChild(BackToMenuBtn);
+
+	BackToMenuOverlay.addEventListener("click", (e) => {
+  		if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
+	});
+
+	const onEsc = (e: KeyboardEvent) => {
+  		if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
+	};
+	document.addEventListener("keydown", onEsc);
+
+    return (mainContainer);
+}
+
+export function PongTournamentPageCurrentGame(): HTMLElement {
+
+    const mainContainer = document.createElement("div");
+    mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
+
+	const game = document.createElement("h1");
+	game.textContent = "current game";
+	game.className = "absolute left-0 top-0"
+	mainContainer.appendChild(game);
+
+    const Title = document.createElement("h1");
+    Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
+    Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
+    mainContainer.appendChild(Title);
+
+    const size = currentTournament?.maxPlayers ?? nb_players.value;
+    const players = (currentTournament?.players?.length
+        ? currentTournament.players.slice()
+        : Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`));
 	
 
     const bracket = createTournamentBracket(players);
