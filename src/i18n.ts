@@ -145,8 +145,8 @@ export const translations = {
 		delete: "Delete",
 		block: "Block",
 		// Profile
-		history: "Historia",
-		classic: "Clásico",
+		history: "History",
+		classic: "Classic",
 		Total_game: "Total game",
 		Win: "Win",
 		Lose: "Lose",
