@@ -78,6 +78,22 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
     profileBox.appendChild(nameSpan);
     rightBox.appendChild(profileBox);
     rightBox.appendChild(hamburgerBtn);
+
+    rightBox.addEventListener("click", () => {
+        const root =
+            (document.getElementById('app') as HTMLElement) ||
+            (document.body as HTMLElement) ||
+            (document.documentElement as HTMLElement);
+        if (root) {
+            root.classList.add('fade-out');
+            root.addEventListener('animationend', () => navigateTo("/user"), { once: true });
+            // Fallback si l’animation ne se déclenche pas
+            setTimeout(() => {navigateTo("/user"); root.classList.remove('fade-out');}, 1200);
+        } else {
+            navigateTo("/user");
+        }
+    });
+
     nav.appendChild(rightBox);
 
     // Accessibilité: empêcher le focus quand la navbar est fermée
