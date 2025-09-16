@@ -38,13 +38,14 @@ export function UserPage(): HTMLElement {
         wrap.appendChild(card);
 
         const grid = document.createElement("div");
-        grid.className = "grid grid-cols-1 sm:grid-cols-[1.2fr_auto_1.2fr] items-center gap-6 sm:gap-8";
+        grid.className = "grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-6 sm:gap-8";
         card.appendChild(grid);
 
         const stats = document.createElement("div");
-        stats.className = "flex items-center justify-between sm:justify-start gap-6 text-white/90";
+        stats.className = "grid grid-cols-3 w-full text-white/90";
 
         const s1 = document.createElement("div");
+        s1.className = "flex flex-col items-left sm:items-center justify-center text-left sm:text-center  gap-1";
 
         const s1a = document.createElement("p");
 	    s1a.className = "text-xs uppercase text-white/60";
@@ -57,6 +58,7 @@ export function UserPage(): HTMLElement {
         s1.appendChild(s1a); s1.appendChild(s1b);
 
         const s2 = document.createElement("div");
+        s2.className = "flex flex-col items-center justify-center text-center gap-1";
 
         const s2a = document.createElement("p");
 	    s2a.className = "text-xs uppercase text-white/60";
@@ -69,6 +71,8 @@ export function UserPage(): HTMLElement {
         s2.appendChild(s2a); s2.appendChild(s2b);
 
         const s3 = document.createElement("div");
+        s3.className = "flex flex-col items-right sm:items-center justify-center text-right sm:text-center gap-1";
+
         const s3a = document.createElement("p");
 	    s3a.className = "text-xs uppercase text-white/60";
 	    s3a.textContent = translations[getCurrentLang()].Lose;
@@ -83,7 +87,7 @@ export function UserPage(): HTMLElement {
         grid.appendChild(stats);
 
         const center = document.createElement("div");
-        center.className = "flex flex-col items-center gap-2";
+        center.className = "flex flex-col items-center gap-2 justify-self-center";
 
         const avatar = document.createElement("img");
         avatar.src = userInventory.avatar?.[0]?.id || "/avatar/default_avatar.png";
