@@ -25,6 +25,7 @@ export const userInventory: Inventory = {
         { id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar'},
         { id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar'},
         { id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar'},
+        { id: 'avatar/rgodet.jpg', name: 'rgodet avatar', type: 'avatar'},
     ],
     background: [
         { id: 'bg/transparent_bg.png', name: 'transparent bg', type: 'background'},
@@ -71,7 +72,7 @@ export function InventoryPage(): HTMLElement {
     const t = (k: string, fallback?: string) => (translations[lang] && translations[lang][k]) || fallback || k;
 
     const main = document.createElement("div");
-    main.className = "w-full min-h-screen bg-linear-to-t from-green-500 via-black to-green-800 pt-30 flex flex-col items-center";
+    main.className = "w-full min-h-screen bg-linear-to-t from-green-500 via-black to-green-800 pt-30 flex flex-col items-center lg:overflow-hidden";
 
     /* Titre */
     const title = document.createElement("h2");
@@ -81,15 +82,15 @@ export function InventoryPage(): HTMLElement {
 
     /* Layout principal: gauche (visuel) / droite (liste) */
     const layout = document.createElement("div");
-    layout.className = "w-8/10 flex flex-col lg:flex-row gap-5";
+    layout.className = "w-19/20 lg:w-9/10 xl:w-8/10 flex flex-col xl:flex-row gap-5 items-center xl:items-stretch min-h-0 justify-center";
     main.appendChild(layout);
 
     const left = document.createElement("div");
-    left.className = "w-2/5 flex flex-col gap-4";
+    left.className = "items-center w-8/10 xl:w-2/6 min-h-0 h-full flex flex-col overflow-hidden mx-auto xl:mx-0";
 
     /* Form username */
     const nameForm = document.createElement("form");
-    nameForm.className = "w-full max-w-lg mb-8";
+    nameForm.className = "w-full max-w mb-4 xl:mb-8";
 
     const nameWrap = document.createElement("div");
     nameWrap.className = "relative";
@@ -98,7 +99,7 @@ export function InventoryPage(): HTMLElement {
     nameInput.type = "text";
     nameInput.value = userName;
     nameInput.placeholder = t("username","Username")+"...";
-    nameInput.className = "block w-full p-3 pe-28 text-sm border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500";
+    nameInput.className = "block w-full p-3 pe-28 text-sm border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/40 focus:placeholder-green-400  hover:border-green-500";
     
 	const nameBtn = document.createElement("button");
     nameBtn.type = "submit";
@@ -138,12 +139,13 @@ export function InventoryPage(): HTMLElement {
     	 
 		const header = document.createElement("div");
     	header.textContent = label;
-    	header.className = "w-full text-xs sm:text-sm tracking-wide font-semibold text-white text-center bg-white/10 rounded px-2 py-1";
-        	
+        header.className = "w-full max-w-full text-xs sm:text-sm tracking-wide font-semibold text-white text-center bg-white/10 rounded px-2 py-1 truncate";
+        header.title = label;
+
 		const img = document.createElement("img");
         img.src = userInventory[type]?.[0]?.id;
         img.alt = type;
-        img.className = "size-8/10 aspect-square object-cover rounded-lg bg-black/40";
+        img.className = "w-full aspect-square object-cover rounded-lg bg-black/40 mt-2 sm:mt-5 xl:mt-10";
         
 		box.appendChild(header); box.appendChild(img);
         return { box, img };
@@ -154,8 +156,8 @@ export function InventoryPage(): HTMLElement {
     const previewBar = makePreviewBox(t("Bar","Bar"),"bar");
     const previewBall = makePreviewBox(t("Ball","Ball"),"ball");
 
-	const actualInventory = document.createElement("div");
-	actualInventory.className = "grid grid-cols-2 grid-rows-2 gap-4"
+    const actualInventory = document.createElement("div");
+    actualInventory.className = "grid grid-cols-4 xl:grid-cols-2 grid-rows-1 xl:grid-rows-2 gap-4 h-full";
 
     actualInventory.appendChild(previewAvatar.box);
     actualInventory.appendChild(previewBackground.box);
@@ -172,7 +174,7 @@ export function InventoryPage(): HTMLElement {
     }
     /* ---- Colonne droite: filtres + liste ---- */
     const right = document.createElement("div");
-    right.className = "w-3/5 flex flex-col bg-white/10 border border-white/15 rounded-xl min-h-0";
+    right.className = "w-8/10 xl:w-4/6 flex flex-col min-h-0 bg-white/10 border border-white/15 rounded-xl mx-auto xl:mx-0";
 
     /* Filtres */
     const filters = document.createElement("div");
@@ -259,23 +261,31 @@ export function InventoryPage(): HTMLElement {
     }
     renderGrid();
 
-    /* Hauteur dynamique scroll */
-    function adjustListHeight() {
-        // Position actuelle du haut de la zone de liste dans la fenêtre
-        const rect = listWrap.getBoundingClientRect();
-        const top = rect.top;
-        const marginBottom = 32; // marge bas
-        const available = window.innerHeight - top - marginBottom;
-        if (available > 200) {
-            listWrap.style.maxHeight = available + "px";
+    /* Hauteur dynamique scroll + égalisation des colonnes */
+    function adjustHeights() {
+        // hauteur dispo pour le layout (sans scroll de page)
+        const layoutTop = layout.getBoundingClientRect().top;
+        const marginBottom = 20; // px de marge en bas
+        const H = Math.max(300, window.innerHeight - layoutTop - marginBottom);
+        // En ≥ lg on force le layout à tenir dans l'écran
+        if (window.innerWidth >= 1024) {
+            layout.style.height = H + "px";
         } else {
-            listWrap.style.maxHeight = "200px";
+            layout.style.height = "auto";
         }
+        // left/right prennent la même hauteur (h-full)
+        left.style.height  = (window.innerWidth >= 1024) ? "100%" : "auto";
+        right.style.height = (window.innerWidth >= 1024) ? "100%" : "auto";
+
+        // Calcule la hauteur maxi pour la zone scrollable à droite
+        const listTop = listWrap.getBoundingClientRect().top;
+        const available = window.innerHeight - listTop - marginBottom;
+        listWrap.style.maxHeight = (available > 160 ? available : 160) + "px";
     }
-    // Attendre un tick pour que le layout soit stable
-    requestAnimationFrame(adjustListHeight);
-    window.addEventListener("resize", adjustListHeight);
-    window.addEventListener("orientationchange", adjustListHeight);
+    // premier calcul après layout
+    requestAnimationFrame(adjustHeights);
+    window.addEventListener("resize", adjustHeights);
+    window.addEventListener("orientationchange", adjustHeights);
 
     /* Expose pour MAJ externe éventuelle */
     (window as any).refreshInventoryGrid = renderGrid;
