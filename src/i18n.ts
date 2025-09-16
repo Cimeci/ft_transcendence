@@ -38,6 +38,7 @@ export const translations = {
 		title_leave: "ÊTES-VOUS SÛR DE VOULOIR QUITTER LA PAGE ?",
 		txt_leave: "Si vous quittez, votre place dans ce tournoi ne sera plus garantie.",
 		final: "FINALE",
+		shuffle: "Mélanger",
 		// ShopPage
 		default_bar: "Barre de base",
 		fire_bar: "Barre en feu",
@@ -114,6 +115,7 @@ export const translations = {
 		title_leave: "ARE YOU SURE TO LEAVE ?",
 		txt_leave: "If you leave, your place in this tournament will no longer be guaranteed.",
 		final: "FINAL",
+		shuffle: "Shuffle",
 		// ShopPage
 		default_bar: "Default bar",
 		fire_bar: "Fire bar",
@@ -190,6 +192,7 @@ export const translations = {
 		title_leave: "¿ESTÁ SEGURO DE QUE QUIERE SALIR?",
 		txt_leave: "Si abandona, su plaza en este torneo ya no estará garantizada.",
 		final: "FINAL",
+		shuffle: "Mezclar",
 		// ShopPage
 		default_bar: "Barra básica",
 		fire_bar: "Barra en llamas",
