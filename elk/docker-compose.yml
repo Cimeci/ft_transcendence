@@ -184,32 +184,6 @@ services:
       retries: 120
 
 
-  # Service de debug pour voir les certificats
-  #debug-certs:
-    #depends_on:
-      #setup:
-        #condition: service_healthy
-    #image: busybox
-    #volumes:
-      #- certs:/certs
-    #command: >
-      #sh -c '
-        #echo "=== DEBUG: Contents of /certs ===";
-        #ls -la /certs/;
-        #echo "=== DEBUG: Contents of /certs/ca/ ===";
-        #ls -la /certs/ca/;
-        #echo "=== DEBUG: CA certificate content ===";
-        #if [ -f /certs/ca/ca.crt ]; then
-          #head -5 /certs/ca/ca.crt;
-          #echo "Certificate file exists and is readable";
-        #else
-          #echo "Certificate file NOT found!";
-        #fi;
-        #echo "=== DEBUG: Permissions ===";
-        #stat /certs/ca/ca.crt;
-        #sleep 10;
-      #'
-
   ## LOGSTASH Service // Filter logs from the Filebeat Collector
   logstash:
     container_name: elk_logstash
@@ -229,11 +203,6 @@ services:
       - logstash-keystore:/usr/share/logstash/config
       - "./logstash_ingest_data/:/usr/share/logstash/ingest_data/"
       - "./logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
-    ports:
-      - "5044:5044"
-      - "5000:5000/tcp"
-      - "5000:5000/udp"
-      - "9600:9600"
     environment:
       - xpack.monitoring.enabled=false
       - ELASTIC_USER=elastic
@@ -276,8 +245,6 @@ services:
       - "./logs_data:/var/log/app:ro" # <= provisory fakes logs
       - "./filebeat/conf/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
       #- "./filebeat_ingest_data/:/usr/share/filebeat/ingest_data/"
-      #- "/var/lib/docker/containers:/var/lib/docker/containers:ro"
-      #- "/var/run/docker.sock:/var/run/docker.sock:ro"
     environment:
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
