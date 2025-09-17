@@ -3,7 +3,6 @@ filebeat.inputs:
     enabled: true
     id: trans-input
     paths:
-      #- /var/log/app/*.log
       - /var/log/app/*-service.log
       - /var/log/app/*-service-error.log
     fields:
@@ -13,18 +12,18 @@ filebeat.inputs:
     fields_under_root: true
 
 output.logstash:
-  hosts: ["logstash:5044"]
+  hosts: ${LOGSTASH_HOSTS}
   ssl.enabled: true
-  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
-  ssl.certificate: "/usr/share/filebeat/certs/filebeat/filebeat.crt"
-  ssl.key: "/usr/share/filebeat/certs/filebeat/filebeat.key" 
+  ssl.certificate_authorities: ${CA_CERT}
+  ssl.certificate: ${SSL_CERTIFICATE}
+  ssl.key: ${SSL_KEY}
 
 setup.kibana:
-  host: "https://kibana:5601"
-  username: "elastic"
-  password: '123456!a'
+  host: ${KIBANA_HOSTS}
+  username: ${ELASTIC_USER}
+  password: ${ELASTIC_PASSWORD}
   ssl.enabled: true
-  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
+  ssl.certificate_authorities: ${CA_CERT}
 
 logging.level: debug
 logging.to_stderr: true
