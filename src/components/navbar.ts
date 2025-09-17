@@ -60,7 +60,7 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 
     // Profile box (à gauche du burger)
     const rightBox = document.createElement('div');
-    rightBox.className = 'ml-auto flex items-center gap-3 mr-14 md:mr-14';
+    rightBox.className = 'z-2000 ml-auto flex items-center gap-3 mr-14 md:mr-14';
 
     const profileBox = document.createElement('div');
     profileBox.className = 'flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-white/10 cursor-default transition-opacity duration-200 md:opacity-100';
