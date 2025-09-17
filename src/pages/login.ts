@@ -49,10 +49,10 @@ export function LoginPage(): HTMLElement {
 	function togglePassword(input: HTMLInputElement, icon: HTMLImageElement) {
 		if (input.type === "password") {
 			input.type = "text";
-			icon.src = "/eye.svg";
+			icon.src = "/icons/eye.svg";
 		} else {
 			input.type = "password";
-			icon.src = "/eye-off.svg";
+			icon.src = "/icons/eye-off.svg";
 		}
 	}
 
@@ -66,7 +66,7 @@ export function LoginPage(): HTMLElement {
 
 	const EyePassword = document.createElement("img");
 	EyePassword.className = "absolute right-2 top-1/6 cursor-pointer w-7 h-7 duration-500 transtion-all hover:scale-110";
-	EyePassword.src = "/eye-off.svg";
+	EyePassword.src = "/icons/eye-off.svg";
 	EyePassword.alt = "Show/Hide";
 	EyePassword.onclick = () => togglePassword(InputPassword, EyePassword);
 
@@ -158,11 +158,11 @@ export function LoginPage(): HTMLElement {
 
 	const GithubBtn = document.createElement("button");
 	GithubBtn.className = "px-8 py-3 rounded-xl bg-gray-800 text-white text-2xl hover:bg-gray-900 duration-300 transtion-all focus:scale-103 w-full flex items-center justify-center gap-2";
-	GithubBtn.innerHTML = `<img src="/github.svg" class="w-8 h-8" /> GitHub`;
+	GithubBtn.innerHTML = `<img src="/icons/github.svg" class="w-8 h-8" /> GitHub`;
 
 	const GoogleBtn = document.createElement("button");
 	GoogleBtn.className = "mt-10 px-8 py-3 rounded-xl bg-white text-black text-2xl hover:bg-gray-200 duration-300 transtion-all focus:scale-103 w-full flex items-center justify-center gap-2";
-	GoogleBtn.innerHTML = `<img src="/google.svg" class="w-8 h-8" /> Google`;
+	GoogleBtn.innerHTML = `<img src="/icons/google.svg" class="w-8 h-8" /> Google`;
 
 	SocialLogin.appendChild(GithubBtn);
 	SocialLogin.appendChild(GoogleBtn);

@@ -6,16 +6,14 @@ type ShopType = 'avatar' | 'background' | 'bar' | 'ball';
 interface ShopItem { id: string; name: string; type: ShopType; price: number; }
 
 export function ShopPage(): HTMLElement {
-    // Helper i18n
-    const lang = getCurrentLang();
     // @ts-ignore
-    const t = (k: string, fallback?: string) => (translations[lang] && translations[lang][k]) || fallback || k;
+    const t = translations[getCurrentLang()];
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "w-full min-h-screen bg-linear-to-t from-green-500 via-black to-green-800 pt-30 flex flex-col items-center";
 
     const title = document.createElement("h2");
-    title.textContent = t("shop", "Shop");
+    title.textContent = t.shop;
     title.className = "tracking-widest fixed top-0 p-6 z-1000";
     mainContainer.appendChild(title);
 
@@ -28,23 +26,94 @@ export function ShopPage(): HTMLElement {
     toolbar.className = "w-full flex items-center gap-3";
     wrapper.appendChild(toolbar);
 
-    const select = document.createElement("select");
-    select.className = "matrix-select px-4 py-2 rounded-lg border border-green-500/40 text-green-400 focus:outline-none focus:ring-2 focus:ring-green-500";
-    [
-        { v: "all", l: t("all", "All") },
-        { v: "avatar", l: t("Avatar", "Avatar") },
-        { v: "background", l: t("Background", "Background") },
-        { v: "bar", l: t("Bar", "Bar") },
-        { v: "ball", l: t("Ball", "Ball") },
-    ].forEach(o => {
-        const opt = document.createElement("option");
-        opt.value = o.v; opt.textContent = o.l; select.appendChild(opt);
+    // Dropdown "Filter" comme dans Friends (Search)
+    const filterWrap = document.createElement("div");
+    filterWrap.className = "relative";
+    
+    const filterBtn = document.createElement("button");
+    filterBtn.type = "button";
+    filterBtn.className =
+        "shrink-0 inline-flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg border border-green-500/40 " +
+        "text-green-400 hover:bg-white/10 focus:ring-2 focus:ring-green-500 " +
+        "max-[600px]:w-10 max-[600px]:px-0 max-[600px]:py-3.5 max-[600px]:px-4 max-[600px]:justify-center";
+    filterBtn.setAttribute("aria-haspopup", "listbox");
+    filterBtn.setAttribute("aria-expanded", "false");
+    filterBtn.setAttribute("aria-label", "filter");
+    
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "tracking-wide max-[600px]:hidden";
+    labelSpan.textContent = t.all;
+    
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "w-2.5 h-2.5");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("viewBox", "0 0 10 6");
+   
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("stroke", "currentColor");
+    path.setAttribute("stroke-linecap", "round");
+    path.setAttribute("stroke-linejoin", "round");
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("d", "m1 1 4 4 4-4");
+    svg.appendChild(path);
+    filterBtn.appendChild(labelSpan);
+    filterBtn.appendChild(svg);
+
+    const filterMenu = document.createElement("div");
+    filterMenu.className = "absolute z-20 mt-2 w-44 bg-[#242424] text-white rounded-lg shadow border border-green-700 hidden";
+    
+    const ul = document.createElement("ul");
+    ul.className = "py-2 text-sm";
+
+    const filterItems: { v: "all" | ShopType; l: string }[] = [
+        { v: "all", l: t.all },
+        { v: "avatar", l: t.avatar },
+        { v: "background", l: t.gamebackground },
+        { v: "bar", l: t.bar },
+        { v: "ball", l: t.ball },
+    ];
+    filterItems.forEach(o => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "inline-flex w-full px-4 py-2 text-left hover:bg-green-700 rounded-lg";
+        btn.textContent = o.l;
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            currentType = o.v;
+            labelSpan.textContent = o.l;
+            filterMenu.classList.add("hidden");
+            filterBtn.setAttribute("aria-expanded", "false");
+            render();
+        });
+        li.appendChild(btn);
+        ul.appendChild(li);
     });
-    toolbar.appendChild(select);
+    filterMenu.appendChild(ul);
+    filterBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hidden = filterMenu.classList.contains("hidden");
+        document.querySelectorAll(".shop-filter-open").forEach(el => el.classList.add("hidden"));
+        filterMenu.classList.toggle("hidden", !hidden);
+        filterMenu.classList.toggle("shop-filter-open", hidden);
+        filterBtn.setAttribute("aria-expanded", hidden ? "true" : "false");
+    });
+    document.addEventListener("click", (e) => {
+        if (!filterWrap.contains(e.target as Node)) {
+            filterMenu.classList.add("hidden");
+            filterBtn.setAttribute("aria-expanded", "false");
+        }
+    });
+    filterWrap.appendChild(filterBtn);
+    filterWrap.appendChild(filterMenu);
+    toolbar.appendChild(filterWrap);
 
     const search = document.createElement("input");
     search.type = "text";
-    search.placeholder = t("search", "Search") + "...";
+    search.placeholder = t.search + "...";
     search.className = "flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500";
     toolbar.appendChild(search);
 
@@ -79,7 +148,6 @@ export function ShopPage(): HTMLElement {
         ) as ShopItem[];
     }
 
-    select.addEventListener("change", () => { currentType = select.value as any; render(); });
     search.addEventListener("input", () => { query = search.value.toLowerCase(); render(); });
 
     function makeCard(it: ShopItem): HTMLElement {

@@ -57,7 +57,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
     const EyePassword = document.createElement("img");
     EyePassword.className = "absolute right-12 top-1/5 cursor-pointer w-7 h-7 duration-300 transition-all hover:scale-110";
-    EyePassword.src = "/eye-off.svg";
+    EyePassword.src = "/icons/eye-off.svg";
     EyePassword.alt = "Show/Hide";
     EyePassword.onclick = () => togglePassword(GamePassword, EyePassword);
 
@@ -131,7 +131,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 		const closeBtn = document.createElement("button");
 		closeBtn.type = "button";
 		closeBtn.setAttribute("aria-label", "Close");
-		closeBtn.innerHTML = '<img src="/cross.svg"></img>';
+		closeBtn.innerHTML = '<img src="/icons/cross.svg"></img>';
 		closeBtn.className = "absolute top-0 right-0 w-8 h-8 leading-7 text-center text-white/80 hover:text-white hover:scale-110 transition";
 		closeBtn.addEventListener("click", () => {
 			currentJoinForm = null;
@@ -146,7 +146,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 		const EyePasswordJoin = document.createElement("img");
 		EyePasswordJoin.className = "absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer w-7 h-7 duration-300 transition-all hover:scale-110";
-		EyePasswordJoin.src = "/eye-off.svg";
+		EyePasswordJoin.src = "/icons/eye-off.svg";
 		EyePasswordJoin.alt = "Show/Hide";
 		EyePasswordJoin.onclick = () => togglePassword(PasswordInputJoin, EyePasswordJoin);
 		JoinForm.appendChild(createInputWithEye(PasswordInputJoin, EyePasswordJoin));	

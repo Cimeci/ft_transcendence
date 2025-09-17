@@ -5,7 +5,7 @@ import { getCurrentLang, createLangSection } from './settings';
 
 export function LandingPage(): HTMLElement {
 	const mainContainer = document.createElement('div');
-	mainContainer.className = 'z-2000 min-h-screen w-full flex items-center justify-center gap-4 bg-[linear-gradient(rgba(10,10,10,0.3),rgba(0,0,0,0.8)),url("bg_matrix.gif")] bg-cover bg-center';
+	mainContainer.className = 'z-2000 min-h-screen w-full flex items-center justify-center gap-4 bg-[linear-gradient(rgba(10,10,10,0.3),rgba(0,0,0,0.8)),url("/bg/matrix_bg.gif")] bg-cover bg-center';
 	mainContainer.tabIndex = 0;
 	mainContainer.focus();
 

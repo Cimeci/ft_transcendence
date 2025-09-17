@@ -14,10 +14,10 @@ export interface User {
 export function togglePassword(input: HTMLInputElement, icon: HTMLImageElement) {
 	if (input.type === "password") {
 		input.type = "text";
-		icon.src = "/eye.svg";
+		icon.src = "/icons/eye.svg";
 	} else {
 		input.type = "password";
-		icon.src = "/eye-off.svg";
+		icon.src = "/icons/eye-off.svg";
 	}
 }
 
@@ -78,7 +78,7 @@ export function RegisterPage(): HTMLElement {
 	});
 	const EyePassword = document.createElement("img");
 	EyePassword.className = "absolute right-2 top-1/5 cursor-pointer w-7 h-7 duration-500 transtion-all hover:scale-110";
-	EyePassword.src = "/eye-off.svg";
+	EyePassword.src = "/icons/eye-off.svg";
 	EyePassword.alt = "Show/Hide";
 	EyePassword.onclick = () => togglePassword(InputPassword, EyePassword);
 	RegisterContainer.appendChild(createInputWithEye(InputPassword, EyePassword));
@@ -95,7 +95,7 @@ export function RegisterPage(): HTMLElement {
 	});
 	const EyeConfirm = document.createElement("img");
 	EyeConfirm.className = "absolute right-2 top-1/5 cursor-pointer w-7 h-7 duration-500 transtion-all hover:scale-110";
-	EyeConfirm.src = "/eye-off.svg";
+	EyeConfirm.src = "/icons/eye-off.svg";
 	EyeConfirm.alt = "Show/Hide";
 	EyeConfirm.onclick = () => togglePassword(InputPassword, EyeConfirm);
 	RegisterContainer.appendChild(createInputWithEye(InputConfirmPassword, EyeConfirm));

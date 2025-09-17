@@ -308,13 +308,16 @@ export function FriendsPage(): HTMLElement {
 					"shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 " +
 					"bg-green-100 border border-green-300 rounded-s-lg hover:bg-green-200 focus:ring-4 focus:outline-none " +
 					"focus:ring-green-100 dark:bg-green-700 dark:hover:bg-green-600 dark:focus:ring-green-700 dark:text-white " +
-					"dark:border-green-600";
+					"dark:border-green-600 max-[600px]:w-10 max-[600px]:px-0 max-[600px]:justify-center";
+				dropdown_btn.setAttribute("aria-label", "filter");
+    			
 				const dropdown_label = document.createElement("span");
-				dropdown_label.textContent = "All categories";
-				dropdown_btn.appendChild(dropdown_label);
+				dropdown_label.className = "max-[600px]:hidden";
+				dropdown_label.textContent = translations[getCurrentLang()].all;
+                dropdown_btn.appendChild(dropdown_label);
 
 				const svg: SVGSVGElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-				svg.setAttribute("class", "w-2.5 h-2.5 ms-2.5");
+				svg.setAttribute("class", "w-2.5 h-2.5 ms-2.5 max-[600px]:ms-0");
 				svg.setAttribute("aria-hidden", "true");
 				svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
 				svg.setAttribute("fill", "none");
@@ -574,7 +577,7 @@ export function FriendsPage(): HTMLElement {
 						refuse.className = "w-[1/2] cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-1 py-1 bg-red-500 duration-300 transition-all hover:bg-red-600 onclick:scale-104";
 						// refuse.textContent = "X";
 						const imgrefuse = document.createElement("img");
-						imgrefuse.src = "cross.svg"; imgrefuse.className = "duration-300 transition-all hover:scale-110";
+						imgrefuse.src = "/icons/cross.svg"; imgrefuse.className = "duration-300 transition-all hover:scale-110";
 						refuse.appendChild(imgrefuse);
 						btndiv.appendChild(refuse);
 
@@ -582,7 +585,7 @@ export function FriendsPage(): HTMLElement {
 						accept.className = "w-[1/2] cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-1 py-1 bg-green-500 duration-300 transition-all hover:bg-green-600 onclick:scale-104";
 						// accept.textContent = "V";
 						const imgaccept = document.createElement("img");
-						imgaccept.src = "check.svg"; imgaccept.className = "duration-300 transition-all hover:scale-110";
+						imgaccept.src = "/icons/check.svg"; imgaccept.className = "duration-300 transition-all hover:scale-110";
 						accept.appendChild(imgaccept);
 						btndiv.appendChild(accept);
 
