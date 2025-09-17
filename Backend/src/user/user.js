@@ -98,7 +98,7 @@ app.patch('/online', async(request, reply) => {
 })
 
 app.patch('/update-info', async(request, reply) => {
-    const { email, username, avatar} = request.body;
+    const { email, username, avatar } = request.body;
     let uuid
     try{
         uuid = checkToken(request);
@@ -154,7 +154,8 @@ app.get('/friendship', async(request, reply) => {
         receivedRequest: receivedRequest
     })
     } catch(err) {
-        return reply.code(401).send({ error: '/GET friendship'});
+        console.error( 'GET /friendship', err );
+        return reply.code(500).send({ error: 'Internal Server Error' })
     }
 });
 
@@ -168,13 +169,14 @@ app.post('/friendship/:uuid', async(request, reply) => {
     const friend_id  = request.params.uuid;
     
     if (user_id === friend_id)
+        // regarder pour le code erreur
         return reply.code(401).send({ error: 'You can\'t send invite himself'})
 
     const uuid = crypto.randomUUID();
     try{
         const friend = db.prepare('SELECT * FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)').get(user_id, friend_id, friend_id, user_id);
         if (friend)
-            return reply.code(402).send({ error: 'this invite exists'});
+            return reply.code(409).send({ error: 'this invite exists'});
 
         db.prepare('INSERT INTO friendships (uuid, user_id, friend_id, status) VALUES (?, ?, ?, ?)').run(uuid, user_id, friend_id, 'pending');
 
@@ -200,7 +202,7 @@ app.patch('/friendship/:uuid', async(request, reply) => {
 
     } catch(err) {
         console.log(err);
-        return reply.code(500).send({ error: 'update friendship', user_id, friend_id })
+        return reply.code(500).send({ error: 'Internal Server Error' })
     }
 });
 
@@ -218,7 +220,7 @@ app.delete('/friendship/:uuid', async(request, reply) => {
         db.prepare('DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)').run(user_id, friend_id, friend_id, user_id);
     
     } catch(err) {
-        console.log('error /DELETE friendship');
+        console.log('DELETE /friendship/:uuid');
         return reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
@@ -249,7 +251,7 @@ app.patch('/historic', async (request, reply) => {
         db.prepare('UPDATE historic SET games = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, game.player2_uuid);
     } catch (error) {
         console.error('Erreur lors de la mise à jour de la base de données:', error);
-        return reply.status(500).send('Erreur interne du serveur');
+        return reply.status(500).send({ error: 'Internal Server Error' });
     }
     return { player1: game1JSON, player2: game2JSON };
 });
@@ -300,6 +302,25 @@ app.get('/:uuid', async(request, reply) => {
 
     return reply.send({ user })
 })
+
+app.delete('/delete-user', async(request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+
+    const uuid = request.body;
+
+    try {
+        await db.prepare('DELETE FROM friendships WHERE user_id = ? OR friend_id = ?').run(uuid, uuid);
+        await db.prepare('DELETE FROM historic WHERE user_uuid = ?').run(uuid);
+        await db.prepare('DELETE FROM user WHERE uuid = ?').run(uuid);
+    } catch(err) {
+        console.error('DELETE /delete-user', err);
+        return reply.code(500).send({ error: 'Internal Server Error' });
+    }
+})
+
 
 // Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {

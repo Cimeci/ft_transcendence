@@ -393,6 +393,46 @@ app.get('/github/verifyAccessToken', function (request, reply) {
   )
 })
 
+app.delete('/account', async (request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    await fetch('http://game:4000/delete-game', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-internal-key': process.env.JWT_SECRET
+        },
+        body: JSON.stringify(uuid)
+    })
+
+    await fetch('http://tournament:4000/delete-tournament', {
+        method: 'DELETE',
+        headers: {
+            'Content-type': 'application/json',
+            'x-internal-key': process.env.JWT_SECRET
+        },
+        body: JSON.stringify(uuid)
+    })
+
+    await fetch('http://user:4000/delete-user', {
+        method: 'DELETE',
+        headers: {
+            'Content-type': 'application/json',
+            'x-internal-key': process.env.JWT_SECRET
+        },
+        body: JSON.stringify(uuid)
+    })
+
+    db.prepare('DELETE FROM user WHERE uuid = ?').run(uuid);
+
+    return reply.send('User delete with success');
+});
+
 // Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization;

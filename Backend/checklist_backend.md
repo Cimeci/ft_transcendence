@@ -4,7 +4,7 @@
 - [x] Authentification JWT pour toutes les routes utilisateur (hors internes)
 - [x] Vérification du token sur chaque endpoint sensible
 - [ ] Gestion des erreurs JWT (token expiré, invalide, etc.)
-- [ ] Protection contre brute-force/login abuse (rate limiting, éventuellement)
+- [ ] Protection contre brute-force/login abuse (rate limiting, éventuellement) (on le fait pas)
 
 ## 2. Utilisateur
 - [x] Création d’utilisateur (avec historique associé)
@@ -14,7 +14,7 @@
 - [?] Endpoint pour récupérer le profil d’un utilisateur (GET /user/:uuid)
 (fait mais voir pour rajouter des choses)
 - [ ] Endpoint pour récupérer la liste des utilisateurs (pour recherche/ajout d’amis)
-- [ ] Endpoint pour suppression de compte
+- [x] Endpoint pour suppression de compte
 
 ## 3. Amis (Friendship)
 - [x] Envoi de demande d’ami (POST /friendship/:uuid)
@@ -24,7 +24,7 @@
 - [x] Vérification que l’utilisateur ne peut pas s’ajouter lui-même
 - [x] Vérification que la demande n’existe pas déjà
 - [ ] Gestion des erreurs et statuts HTTP cohérents
-- [ ] Pagination sur la liste des amis/demandes si besoin
+- [x] Pagination sur la liste des amis/demandes si besoin
 
 ## 4. Historique
 - [x] Mise à jour de l’historique de jeu (PATCH /historic, interne)

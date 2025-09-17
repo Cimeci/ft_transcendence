@@ -22,22 +22,24 @@ app.addHook('onClose', async (instance) => {
   db.close();
 });
 
+
 app.post('/tournament', async (request, reply) => {
-    const { host, name, players } = request.body;
+    const { host, name, players_uuid } = request.body;
     const uuid = crypto.randomUUID();
 
-    if (!host || !name || !Array.isArray(players) || players.length < 2)
+    if (!host || !name || !Array.isArray(players_uuid) || players_uuid.length < 2)
+        // regarder pour le code erreur
         return reply.code(400).send({ error: 'Invalid input' });
 
     try {
-        const round1Game = Math.floor(players.length / 2);
+        const round1Game = Math.floor(players_uuid.length / 2);
         const matches = [];
 
         for (let i = 0; i < round1Game; i++) {
-            const players1 = players[i * 2];
-            const players2 = players[i * 2 + 1];
+            const players1_uuid = players_uuid[i * 2];
+            const players2_uuid = players_uuid[i * 2 + 1];
 
-            let uuidGame = await createGame(players1, players2, name);
+            let uuidGame = await createGame(players1_uuid, players2_uuid, name);
             matches.push({uuid: uuidGame, round: 1});
         }
 
@@ -54,21 +56,21 @@ app.post('/tournament', async (request, reply) => {
             nextRound++
         }
 
-        const playerJSON = JSON.stringify(players);
+        const playerJSON = JSON.stringify(players_uuid);
         const matchJSON = JSON.stringify(matches);
 
-        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host, name, players.length, playerJSON, matchJSON, null);
+        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host, name, players_uuid.length, playerJSON, matchJSON, null);
         return { message: 'Tournament created successfully', matches };
     } catch(err){
-        console.error(err);
+        console.error('POST /tournament', err);
         return reply.code(500).send({ error: 'Internal Server Error' });
     }
     });
 
-async function createGame (player1 = null, player2 = null, tournament = null ){
+async function createGame (player1_uuid = null, player2_uuid = null, tournament = null ){
     const infoplay = {
-        player1,
-        player2,
+        player1_uuid,
+        player2_uuid,
         tournament
     };
 
@@ -87,9 +89,25 @@ async function createGame (player1 = null, player2 = null, tournament = null ){
     // const data = await res.json();
     // const uuid = data.uuid;
     const { uuid } = await res.json();
+    console.log({ gameuuid: uuid })
     return uuid;
 }
 
+app.delete('/delete-tournament', async(request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+
+    const uuid = request.body;
+
+    try {
+        await db.prepare('DELETE FROM tournament WHERE host = ?').run(uuid);
+    } catch(err) {
+        console.error('DELETE /delete-tournamen', err);
+        return reply.code(500).send({ error: 'Internal Server Error' });
+    }
+})
 
 app.get('/tournament', async (request, reply) => {
     return("page tournament");

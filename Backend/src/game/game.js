@@ -68,10 +68,26 @@ app.patch('/update-game/:gameId', async (request, reply) => {
 
         return game;
     } catch (err) {
-        console.error(err);
+        console.error('PATCH /update-game/:gameId', err);
         return reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
+
+app.delete('/delete-game', async(request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+
+    const uuid = request.body;
+
+    try {
+        await db.prepare('DELETE FROM game WHERE player1_uuid = ? OR player2_uuid = ?').run(uuid, uuid);
+    } catch(err) {
+        console.error('DELETE /delete-game', err);
+        return reply.code(500).send({ error: 'Internal Server Error' });
+    }
+})
 
 app.get('/game', async(request, reply) => {
     return 'game';
