@@ -1,0 +1,61 @@
+filebeat.inputs:
+  - type: filestream
+    enabled: true
+    id: trans-input
+    paths:
+      #- /var/log/app/*.log
+      - /var/log/app/*-service.log
+      - /var/log/app/*-service-error.log
+    fields:
+      log_type: application
+      service_type: microservice
+      collection_method: volume
+    fields_under_root: true
+
+output.logstash:
+  hosts: ["logstash:5044"]
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
+  ssl.certificate: "/usr/share/filebeat/certs/filebeat/filebeat.crt"
+  ssl.key: "/usr/share/filebeat/certs/filebeat/filebeat.key" 
+
+setup.kibana:
+  host: "https://kibana:5601"
+  username: "elastic"
+  password: '123456!a'
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca/ca.crt"]
+
+logging.level: debug
+logging.to_stderr: true
+#logging.to_files: true
+#logging.files:
+  #path: /var/log/filebeat
+  #name: filebeat
+  #keepfiles: 7
+  #permissions: 0644
+
+#queue.mem:
+  #events: 4096
+  #bulk_max_size: 512
+  #flush.timeout: 1s
+
+#max_procs: 1
+#
+
+
+# ############################# #
+# DEBUG MINAL FUCNTIONAL LAUNCH #
+# ############################# #
+
+#filebeat.inputs:
+#- type: filestream
+  #enabled: true
+  ##paths:
+    #- /var/log/app/*.log
+
+#output.console:
+  #pretty: true
+
+#logging.level: info
+#logging.to_stderr: true

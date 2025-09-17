@@ -1,25 +1,31 @@
 volumes:
- certs:
-   driver: local
- esdata01:
-   driver: local
- kibanadata:
-   driver: local
- logstashdata01:
-   driver: local
- logstash-keystore:
+  certs:
+    driver: local
+  esdata01:
+    driver: local
+  kibanadata:
+    driver: local
+  logstashdata:
+    driver: local
+  logstash-keystore:
+  filebeatdata:
+    driver: local
+  logs_volumes:
+    driver: local
 
 
 networks:
- default:
-   name: ELKstack
-   external: false
+  elk:
+   driver: bridge
 
 
 services:
 
   ## SETUP Service // Handle certificates
   setup:
+   container_name: elk_setup
+   networks:
+     - elk
    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
    volumes:
      - certs:/usr/share/elasticsearch/config/certs
@@ -54,6 +60,18 @@ services:
          "      - localhost\n"\
          "    ip:\n"\
          "      - 127.0.0.1\n"\
+         "  - name: logstash\n"\
+         "    dns:\n"\
+         "      - logstash\n"\
+         "      - localhost\n"\
+         "    ip:\n"\
+         "      - 127.0.0.1\n"\
+         "  - name: filebeat\n"\
+         "    dns:\n"\
+         "      - filebeat\n"\
+         "      - localhost\n"\
+         "    ip:\n"\
+         "      - 127.0.0.1\n"\
          > config/certs/instances.yml;
          mkdir -p /usr/share/elasticsearch/config/certs;
          bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
@@ -80,6 +98,9 @@ services:
 
   ## One Node Elasticsearch service
   es01:
+    container_name: elk_es01
+    networks:
+      - elk
     depends_on:
       setup:
         condition: service_healthy
@@ -125,6 +146,9 @@ services:
 
   ## KIBANA Service, graphical part
   kibana:
+    container_name: elk_kibana
+    networks:
+      - elk
     depends_on:
       es01:
         condition: service_healthy
@@ -186,8 +210,11 @@ services:
         #sleep 10;
       #'
 
-  ## LOGSTASH Service // Handle logs frm the app
-  logstash01:
+  ## LOGSTASH Service // Filter logs from the Filebeat Collector
+  logstash:
+    container_name: elk_logstash
+    networks:
+      - elk
     depends_on:
       es01:
         condition: service_healthy
@@ -198,10 +225,15 @@ services:
       co.elastic.logs/module: logstash
     volumes:
       - certs:/usr/share/logstash/certs
-      - logstashdata01:/usr/share/logstash/data
+      - logstashdata:/usr/share/logstash/data
       - logstash-keystore:/usr/share/logstash/config
       - "./logstash_ingest_data/:/usr/share/logstash/ingest_data/"
       - "./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro"
+    ports:
+      - "5044:5044"
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
     environment:
       - xpack.monitoring.enabled=false
       - ELASTIC_USER=elastic
@@ -219,3 +251,37 @@ services:
           fi
           exec /usr/share/logstash/bin/logstash
         '
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f http://localhost:9600 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 120
+
+  ## FILEBEAT Service // Collect logs from dedicated volume
+  filebeat:
+    container_name: elk_filebeat
+    networks:
+      - elk
+    depends_on:
+      es01:
+        condition: service_healthy
+      logstash:
+        condition: service_healthy
+    image: docker.elastic.co/beats/filebeat:${STACK_VERSION}
+    user: root
+    volumes:
+      - certs:/usr/share/filebeat/certs
+      - filebeatdata:/usr/share/filebeat/data
+      #- logs_volumes:/var/log/app:ro
+      - "./logs_data:/var/log/app:ro"
+      - "./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      #- "./filebeat_ingest_data/:/usr/share/filebeat/ingest_data/"
+      #- "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+      #- "/var/run/docker.sock:/var/run/docker.sock:ro"
+    environment:
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_HOSTS=https://es01:9200
+      - KIBANA_HOSTS=https://kibana:5601
+      #- LOGSTASH_HOSTS=logstash:5044
+      - CA_CERT=/usr/share/filebeat/certs/ca/ca.crt
