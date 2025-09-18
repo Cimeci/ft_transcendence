@@ -1,4 +1,10 @@
 import { translations } from '../i18n';
+import { CreateWrappedButton } from './pong';
+
+const t = translations[getCurrentLang()];
+
+let email:string = "ilan@42angouleme.fr";
+let password:string = "1234";
 
 export function getCurrentLang(): 'fr' | 'en' | 'es' {
 	return (localStorage.getItem('lang') as 'fr' | 'en' | 'es') || 'en';
@@ -15,7 +21,7 @@ export function createLangSection(): HTMLElement {
 
 	const langButton = document.createElement('button');
 	langButton.type = 'button';
-	langButton.className = 'p-1 bg-transparent border-none cursor-pointer flex items-center justify-center';
+	langButton.className = 'p-5 bg-transparent border-none cursor-pointer flex items-center justify-center';
 
 	const imgBtn = document.createElement("img");
 	imgBtn.src = "/icons/translate.svg";
@@ -24,7 +30,7 @@ export function createLangSection(): HTMLElement {
 	langButton.appendChild(imgBtn);
 
 	const langMenu = document.createElement('ul');
-	langMenu.className = 'mr-2 gap-5 w-[2rem] flex-1 bg-[#242424] rounded-xl shadow-lg z-50 text-white border border-green-700';
+	langMenu.className = 'm-2 gap-5 w-full min-w-20 max-w-25 flex-1 bg-[#242424] rounded-xl shadow-lg z-50 text-white border border-green-700';
 	langMenu.style.display = 'none';
 	langMenu.style.listStyle = 'none';
 	langMenu.style.padding = '0';
@@ -41,7 +47,7 @@ export function createLangSection(): HTMLElement {
 
 	languages.forEach(lang => {
 		const li = document.createElement('li');
-		li.className = 'px-4 py-2 rounded-xl duration-300 hover:scale-105 transition-all hover:bg-green-700 cursor-pointer h-1/3 flex items-center';
+		li.className = 'text-xs sm:text-lg px-3 py-0.5 sm:py-1 rounded-xl duration-300 hover:scale-101 transition-all hover:bg-green-700 cursor-pointer h-1/3 flex items-center';
 		li.textContent = lang.label;
 		li.onclick = () => {
 			setLanguage(lang.code);
@@ -80,7 +86,7 @@ export function createLangSection(): HTMLElement {
 	document.addEventListener('click', () => closeMenu());
 
 	const langSection = document.createElement("div");
-	langSection.className = "p-3 rounded-xl flex items-center justify-center";
+	langSection.className = "p-2 rounded-xl flex items-center justify-center";
 	langSection.style.maxWidth = "100%";
 	langSection.style.boxSizing = "border-box";
 	langSection.appendChild(langButton);
@@ -89,9 +95,107 @@ export function createLangSection(): HTMLElement {
 	return langSection;
 }
 
+function PopUpChangeInformation(title:string, maininfo:string, newinfo:string, confnewinfo:string, value:string): HTMLElement {
+    const overlay = document.createElement("div");
+    overlay.className = "fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4";
+
+    // Fermeture propre (retire aussi l’écouteur Escape)
+    const close = () => {
+      document.removeEventListener("keydown", onEsc);
+      overlay.remove();
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onEsc);
+
+    const modal = document.createElement("div");
+    modal.className = "w-full max-w-md glass-blur text-white rounded-xl p-6";
+    overlay.appendChild(modal);
+
+    const Title = document.createElement("h2");
+    Title.textContent = title;
+    Title.className = "text-xl md:text-2xl mb-4";
+    modal.appendChild(Title);
+
+    const InfoContainer = document.createElement("div");
+    InfoContainer.className = "flex flex-col gap-3";
+    modal.appendChild(InfoContainer);
+
+    const Info = document.createElement("input");
+    Info.placeholder = maininfo;
+    Info.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
+    Info.maxLength = 30;
+    InfoContainer.appendChild(Info);
+
+    const NewInfo = document.createElement("input");
+    NewInfo.placeholder = newinfo;
+    NewInfo.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
+    NewInfo.maxLength = 30;
+    InfoContainer.appendChild(NewInfo);
+
+    const ConfirmNewInfo = document.createElement("input");
+    ConfirmNewInfo.placeholder = confnewinfo;
+    ConfirmNewInfo.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
+    ConfirmNewInfo.maxLength = 30;
+    InfoContainer.appendChild(ConfirmNewInfo);
+
+
+    const actions = document.createElement("div");
+    actions.className = "mt-5 flex justify-end gap-3";
+    modal.appendChild(actions);
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg border border-white/40 hover:bg-white/10 focus:scale-105 hover:scale-105 transition-all duration-200";
+    cancelBtn.textContent = t.cancel;
+    cancelBtn.onclick = close;
+    actions.appendChild(cancelBtn);
+
+    const BtnConfirm = document.createElement("button");
+    BtnConfirm.type = "button";
+    BtnConfirm.className = "text-xs md:text-base px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 focus:scale-105 hover:scale-105 transition-all duration-200";
+    BtnConfirm.textContent = title;
+    actions.appendChild(BtnConfirm);
+
+    BtnConfirm.addEventListener("click", () => {
+      	let hasErr = false;
+      	if (Info.value !== value) { hasErr = true; Info.classList.add("shake", "placeholder:text-red-500"); }
+      	if (NewInfo.value !== ConfirmNewInfo.value) { hasErr = true; NewInfo.classList.add("shake","placeholder:text-red-500"); ConfirmNewInfo.classList.add("shake","placeholder:text-red-500"); }
+      	if (!hasErr) { value = NewInfo.value; close(); }
+
+      	setTimeout(() => {
+      	    [Info, NewInfo, ConfirmNewInfo].forEach(i => { i.classList.remove("shake","placeholder:text-red-500"); });
+      	}, 800);
+    });
+
+    return overlay;
+}
+
+function CreateFlagSection(lang: string, IconPath: string, code:string): HTMLButtonElement {
+    const LangBtn = document.createElement("button");
+    LangBtn.className = "p-2 rounded-xl border-1 border-white/30 flex items-center gap-3 transition-all duration-300 hover:bg-white/10 group";
+
+    const LangTxt = document.createElement("p");
+    LangTxt.textContent = lang;
+    LangTxt.className = "hidden sm:flex text-xs md:text-lg tracking-wide transition-transform duration-300 group-hover:scale-105";
+    LangBtn.appendChild(LangTxt);
+
+    const LangImg = document.createElement("img");
+    LangImg.className = "w-10 h-6 sm:w-12 sm:h-8 rounded-md object-cover flex-none shrink-0 select-none pointer-events-none";
+    LangImg.src = IconPath;
+    LangBtn.appendChild(LangImg);
+
+    LangBtn.addEventListener(("click"), () => {
+        setLanguage(code);
+    })
+
+    return (LangBtn);
+}
+
 export function SettingsPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
-	mainContainer.className = "flex flex-col justify-center items-center bg-linear-to-br from-green-500 via-black to-green-800 pt-40 h-screen gap-4";
+	mainContainer.className = "flex flex-col justify-center items-center bg-linear-to-br from-green-500 via-black to-green-800 pt-20 h-screen gap-4";
 
 	const title = document.createElement("h2");
 	title.textContent = translations[getCurrentLang()].settings;
@@ -99,32 +203,85 @@ export function SettingsPage(): HTMLElement {
 	mainContainer.appendChild(title);
 
 	const settingsContainer = document.createElement("div");
-	settingsContainer.className = "rounded-xl flex justify-around items-center border-2 border-white w-9/10 h-9/10";
+	settingsContainer.className = "rounded-xl flex flex-col pt-2 items-center border-2 border-white w-6/10 h-8/10";
 
 	const langSettingsSection = document.createElement("div");
-	langSettingsSection.className = "w-1/2"
+	langSettingsSection.className = "pb-10 pt-10 gap-1 flex justify-around w-full"
 
-	const langSection = createLangSection();
-	langSection.className += "p-20 items-center justify-center";
-	langSettingsSection.appendChild(langSection);
+	langSettingsSection.appendChild(CreateFlagSection("Français", "/icons/France.svg", "fr"));
+	langSettingsSection.appendChild(CreateFlagSection("English", "/icons/United_Kingdom.svg", "en"));
+	langSettingsSection.appendChild(CreateFlagSection("Español", "/icons/Spain.svg", "es"));
+
 
 	const line = document.createElement('div');
-	line.className = "w-[0.2rem] self-stretch bg-white/70 mx-6";
+	line.className = "h-[0.2rem] w-8/10 ml-auto mr-auto rounded self-stretch bg-white/70 mt-5 mb-15";
 
 	const changeInfoSection = document.createElement("div");
-	changeInfoSection.className = "rounded-xl flex flex-col items-center justify-between w-full gap-6";
+	changeInfoSection.className = "rounded-xl flex flex-col items-center justify-between w-9/10 sm:w-2/3 gap-15";
 
 	const changeMailSection = document.createElement("div");
-	changeMailSection.className = "rounded-xl flex flex-col items-center justify-between w-full";
-	changeMailSection.textContent = "mail";
+	changeMailSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+
+	const Mailimg = document.createElement("img");
+	Mailimg.className = "hidden sm:flex";
+	Mailimg.src = "/icons/mail.svg";
+	changeMailSection.appendChild(Mailimg);
+
+	const MailContent = document.createElement("input");
+	MailContent.readOnly = true;
+	MailContent.value = email;
+	MailContent.className = "text-auto md:text-xl w-full p-1"
+	changeMailSection.appendChild(MailContent);
+
+	const ChangeMailBtn = document.createElement("button");
+	ChangeMailBtn.type = "button";
+	ChangeMailBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+
+	ChangeMailBtn.addEventListener(("click"), () => {
+		const overlay = PopUpChangeInformation(t.changeEmail, t.currentEmail, t.newEmail, t.confirmNewEmail, email);
+		mainContainer.appendChild(overlay);
+	});
+
+ 	const ChangeMailBtnImg = document.createElement("img");
+ 	ChangeMailBtnImg.src = "/icons/pen-line.svg";
+ 	ChangeMailBtnImg.alt = "Edit";
+	ChangeMailBtnImg.className = "w-9/10"
+ 	ChangeMailBtn.appendChild(ChangeMailBtnImg);
+
+	changeMailSection.appendChild(ChangeMailBtn);
 	changeInfoSection.appendChild(changeMailSection);
 
 	const changePasswordSection = document.createElement("div");
-	changePasswordSection.className = "rounded-xl flex flex-col items-center justify-between w-full";
-	changePasswordSection.textContent = "mail";
+	changePasswordSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+
+	const Passwordimg = document.createElement("img");
+	Passwordimg.className = "hidden sm:flex";
+	Passwordimg.src = "/icons/key-round.svg";
+	changePasswordSection.appendChild(Passwordimg);
+
+	const PasswordContent = document.createElement("input");
+	PasswordContent.readOnly = true;
+	PasswordContent.type = "password";
+	PasswordContent.value = "1234";
+	PasswordContent.className = "text-auto md:text-xl w-full p-1"
+	changePasswordSection.appendChild(PasswordContent);
+
+	const ChangePasswordBtn = document.createElement("btn");
+	ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+
+	ChangePasswordBtn.addEventListener(("click"), () => {
+		const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, password);
+		mainContainer.appendChild(overlay);
+	});
+
+	const ChangePasswordBtnImg = document.createElement("img");
+	ChangePasswordBtnImg.src = "/icons/pen-line.svg";
+	ChangePasswordBtnImg.alt = "Edit";
+	ChangePasswordBtnImg.className = "w-9/10"
+	ChangePasswordBtn.appendChild(ChangePasswordBtnImg);
+
+	changePasswordSection.appendChild(ChangePasswordBtn);
 	changeInfoSection.appendChild(changePasswordSection);
-
-
 
 	settingsContainer.appendChild(langSettingsSection);
 	settingsContainer.appendChild(line);
