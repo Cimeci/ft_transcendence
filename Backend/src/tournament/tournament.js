@@ -22,12 +22,26 @@ app.addHook('onClose', async (instance) => {
   db.close();
 });
 
+app.get('tournament/:uuid', async (request, reply) => {
+    const { uuid } = request.params;
+
+    try {
+        const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
+        if (!tournament) {
+            return reply.code(404).send({ error: 'Tournament not found' });
+        } 
+        reply.send(tournament);
+    } catch(err) {
+        console.error('GET /tournament/:uuid', err);
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
 
 app.post('/tournament', async (request, reply) => {
-    const { host, name, players_uuid } = request.body;
+    const { host_uuid, name, players_uuid } = request.body;
     const uuid = crypto.randomUUID();
 
-    if (!host || !name || !Array.isArray(players_uuid) || players_uuid.length < 2)
+    if (!host_uuid || !name || !Array.isArray(players_uuid) || players_uuid.length < 2)
         // regarder pour le code erreur
         return reply.code(400).send({ error: 'Invalid input' });
 
@@ -59,11 +73,11 @@ app.post('/tournament', async (request, reply) => {
         const playerJSON = JSON.stringify(players_uuid);
         const matchJSON = JSON.stringify(matches);
 
-        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host, name, players_uuid.length, playerJSON, matchJSON, null);
+        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, players_uuid.length, playerJSON, matchJSON, null);
         return { message: 'Tournament created successfully', matches };
     } catch(err){
         console.error('POST /tournament', err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
     });
 
@@ -105,7 +119,7 @@ app.delete('/delete-tournament', async(request, reply) => {
         await db.prepare('DELETE FROM tournament WHERE host = ?').run(uuid);
     } catch(err) {
         console.error('DELETE /delete-tournamen', err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
 

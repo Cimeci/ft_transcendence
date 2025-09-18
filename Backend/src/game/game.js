@@ -34,7 +34,7 @@ app.post('/game', async (request, reply) => {
         reply.send({ uuid });
     } catch (err) {
         console.error(err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
 
@@ -66,12 +66,27 @@ app.patch('/update-game/:gameId', async (request, reply) => {
             body: JSON.stringify(game)
         });
 
-        return game;
+        reply.send(game);
     } catch (err) {
         console.error('PATCH /update-game/:gameId', err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
+
+app.get('/game/:uuid', async(request, reply) => {
+    const { uuid } = request.params;
+    
+    try {
+        const game = db.prepare('SELECT * FROM game WHERE uuid = ?').get(uuid);
+        if (!game) {
+            return reply.code(404).send({ error: 'Game not found' });
+        }
+        reply.send(game);
+    } catch(err) {
+        console.error('GET /game/:uuid', err);
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
+})
 
 app.delete('/delete-game', async(request, reply) => {
     const key = request.headers['x-internal-key'];
@@ -85,12 +100,8 @@ app.delete('/delete-game', async(request, reply) => {
         await db.prepare('DELETE FROM game WHERE player1_uuid = ? OR player2_uuid = ?').run(uuid, uuid);
     } catch(err) {
         console.error('DELETE /delete-game', err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
-})
-
-app.get('/game', async(request, reply) => {
-    return 'game';
 })
 
 app.listen({ port: 4000, host: '0.0.0.0' })

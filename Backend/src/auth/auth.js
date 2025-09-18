@@ -81,10 +81,10 @@ app.post('/register', async (request, reply) => {
         }
         
         db.prepare('INSERT INTO user (uuid, username, email, password, avatar) VALUES (?, ?, ?, ?, ?)').run(uuid, username, email, hash, '');
-        return reply.code(201).send({ success: true, token});
+        reply.code(201).send({ success: true, token});
     } catch (err) {
         console.error(err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
 
@@ -124,7 +124,7 @@ app.post('/login', async (request, reply) => {
         reply.send({ jwtToken })
     }catch (err) {
         console.error(err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
 
     }
 });
@@ -168,7 +168,7 @@ app.patch('/update-password', async(request, reply) => {
         reply.send('Password update');
     } catch (err) {
         console.error(err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 }); 
 
@@ -387,8 +387,8 @@ app.get('/github/verifyAccessToken', function (request, reply) {
       if (err) {
         reply.send(err)
         return
-      }
-      reply.send(data)
+    }
+        reply.send(data)
     }
   )
 })
@@ -398,7 +398,7 @@ app.delete('/account', async (request, reply) => {
     try {
         uuid = await checkToken(request);
     } catch (err) {
-        return reply.code(401).send({ error: 'Unauthorized'});
+        reply.code(401).send({ error: 'Unauthorized'});
     }
 
     await fetch('http://game:4000/delete-game', {
@@ -430,7 +430,7 @@ app.delete('/account', async (request, reply) => {
 
     db.prepare('DELETE FROM user WHERE uuid = ?').run(uuid);
 
-    return reply.send('User delete with success');
+    reply.send('User delete with success');
 });
 
 // Middleware pour vérifier le JWT et récupérer le uuid

@@ -79,10 +79,10 @@ app.post('/insert', async(request, reply) => {
         db.prepare('INSERT INTO user (uuid, username, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
         db.prepare('INSERT INTO historic (uuid, user_uuid, games, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').run(historic_uuid, uuid, null, Date.now(), Date.now());
-        return reply.code(201).send({ succes: true})
+        reply.code(201).send({ succes: true})
     } catch (err) {
         console.error(err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
 
@@ -103,10 +103,10 @@ app.patch('/update-info', async(request, reply) => {
     try{
         uuid = checkToken(request);
     } catch (err) {
-        return reply.code(401).send({ error: 'Unauthorized' });
+        reply.code(401).send({ error: 'Unauthorized' });
     }
     if (!email && !username && !avatar){
-        reply.code(300).send('There are nothing change');
+        return reply.code(300).send('There are nothing change');
     }
 
     if (email){
@@ -141,21 +141,32 @@ app.get('/friendship', async(request, reply) => {
     try {
         uuid = await checkToken(request);
     } catch (err) {
-        return reply.code(401).send({ error: 'Unauthorized'});
+        reply.code(401).send({ error: 'Unauthorized'});
     }
 
     try {
         const accept = db.prepare(`SELECT * FROM friendships WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'`).all(uuid, uuid);
         const sentRequest = db.prepare(`SELECT * FROM friendships WHERE user_id = ? AND status = 'pending'`).all(uuid);
         const receivedRequest = db.prepare(`SELECT * FROM friendships WHERE friend_id = ? AND status = 'pending'`).all(uuid);
-    return reply.send({
+        const notFriend = db.prepare(`
+            SELECT uuid, username, avatar, is_online 
+            FROM user 
+            WHERE uuid != ? 
+            AND uuid NOT IN (
+            SELECT friend_id FROM friendships WHERE user_id = ? 
+            UNION 
+            SELECT user_id FROM friendships WHERE friend_id = ?
+            )`
+        ).all(uuid, uuid, uuid);
+    reply.send({
         friendship: accept,
         sentRequest: sentRequest,
-        receivedRequest: receivedRequest
+        receivedRequest: receivedRequest,
+        notFriend: notFriend
     })
     } catch(err) {
         console.error( 'GET /friendship', err );
-        return reply.code(500).send({ error: 'Internal Server Error' })
+        reply.code(500).send({ error: 'Internal Server Error' })
     }
 });
 
@@ -164,7 +175,7 @@ app.post('/friendship/:uuid', async(request, reply) => {
     try {
         user_id = await checkToken(request);
     } catch (err) {
-        return reply.code(401).send({ error: 'Unauthorized'});
+        reply.code(401).send({ error: 'Unauthorized'});
     }
     const friend_id  = request.params.uuid;
     
@@ -180,10 +191,10 @@ app.post('/friendship/:uuid', async(request, reply) => {
 
         db.prepare('INSERT INTO friendships (uuid, user_id, friend_id, status) VALUES (?, ?, ?, ?)').run(uuid, user_id, friend_id, 'pending');
 
-        return { message: 'Friendship request sent' }
+        reply.send({ message: 'Friendship request sent' })
     } catch (err) {
         console.error(err);
-        return reply.code(500).send({ error: user_id, friend_id });
+        reply.code(500).send({ error: user_id, friend_id });
     }
 });
 
@@ -192,7 +203,7 @@ app.patch('/friendship/:uuid', async(request, reply) => {
     try {
         friend_id = await checkToken(request);
     } catch (err) {
-        return reply.code(401).send({ error: 'Unauthorized'});
+        reply.code(401).send({ error: 'Unauthorized'});
     }
     const { statut } = request.body;
     const user_id = request.params.uuid;
@@ -202,7 +213,7 @@ app.patch('/friendship/:uuid', async(request, reply) => {
 
     } catch(err) {
         console.log(err);
-        return reply.code(500).send({ error: 'Internal Server Error' })
+        reply.code(500).send({ error: 'Internal Server Error' })
     }
 });
 
@@ -211,7 +222,7 @@ app.delete('/friendship/:uuid', async(request, reply) => {
     try {
         user_id = await checkToken(request);
     } catch (err) {
-        return reply.code(401).send({ error: 'Unauthorized'});
+        reply.code(401).send({ error: 'Unauthorized'});
     }
 
     const friend_id = request.params.uuid;
@@ -221,7 +232,7 @@ app.delete('/friendship/:uuid', async(request, reply) => {
     
     } catch(err) {
         console.log('DELETE /friendship/:uuid');
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
 
@@ -251,9 +262,26 @@ app.patch('/historic', async (request, reply) => {
         db.prepare('UPDATE historic SET games = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, game.player2_uuid);
     } catch (error) {
         console.error('Erreur lors de la mise à jour de la base de données:', error);
-        return reply.status(500).send({ error: 'Internal Server Error' });
+        reply.status(500).send({ error: 'Internal Server Error' });
     }
     return { player1: game1JSON, player2: game2JSON };
+});
+
+app.get('/search', async(request, reply) => {
+    const { search } = request.body;
+
+    try {
+        const users = db.prepare('SELECT uuid, username, avatar, is_online FROM user WHERE (username LIKE ? OR uuid LIKE ?)').all(`%${search}%`, `%${search}%`);
+
+        if (users.length === 0) {
+            return reply.send({ error: 'No users found' });
+        }
+
+        reply.send({ users });
+    } catch (err) {
+        console.error('GET /search', err);
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
 });
 
 app.get('/me', async(request, reply) => {
@@ -261,7 +289,7 @@ app.get('/me', async(request, reply) => {
     try {
         uuid = await checkToken(request);
     } catch (err) {
-        return reply.code(401).send({ error: 'Unauthorized'});
+        reply.code(401).send({ error: 'Unauthorized'});
     }
 
     const user = db.prepare(`
@@ -317,7 +345,7 @@ app.delete('/delete-user', async(request, reply) => {
         await db.prepare('DELETE FROM user WHERE uuid = ?').run(uuid);
     } catch(err) {
         console.error('DELETE /delete-user', err);
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
 
