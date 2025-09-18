@@ -1,5 +1,15 @@
 export const translations = {
 	fr: {
+		// Settings
+		email: "Mail",
+		changeEmail: "Modifier le mail",
+		currentEmail: "Mail actuel",
+		newEmail: "Nouveau mail",
+		confirmNewEmail: "Confirmer le nouveau mail",
+		changePassword : "Modifier le mot de passe",
+        currentPassword : "Mot de passe actuel",
+        newPassword : "Nouveau mot de passe",
+        confirmNewPassword : "Confirmer le nouveau mot de passe",
 		// Login
 		login: "Connexion",
 		username: "Pseudonyme",
@@ -77,6 +87,16 @@ export const translations = {
 		Lose: "Perdue",
 	},
 	en: {
+		// Settings
+		email: "Email",
+		changeEmail: "Change email",
+		currentEmail: "Current email",
+		newEmail: "New email",
+		confirmNewEmail: "Confirm new email",
+		changePassword: "Change password",
+		currentPassword: "Current password",
+		newPassword: "New password",
+		confirmNewPassword: "Confirm new password",
 		// Login
 		login: "Login",
 		username: "Username",
@@ -154,6 +174,16 @@ export const translations = {
 		Lose: "Lose",
 	},
 	es: {
+		// Settings
+		email: "Correo electrónico",
+		changeEmail: "Cambio del correo electrónico",
+		currentEmail: "Correo electrónico actual",
+		newEmail: "Nuevo correo electrónico",
+		confirmNewEmail: "Confirmar nuevo correo electrónico",
+		changePassword: "Cambiar contraseña",
+        currentPassword: "Contraseña actual",
+        newPassword: "Nueva contraseña",
+        confirmNewPassword: "Confirmar nueva contraseña",
 		// Login
 		login: "Iniciar sesión",
 		username: "Seudónimo",
