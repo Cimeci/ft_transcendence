@@ -63,7 +63,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
                 'Content-Type': 'application/json',
                 'x-internal-key': process.env.JWT_SECRET
             },
-            body: JSON.stringify(game)
+            body: JSON.stringify({tournament: null, game: game})
         });
 
         reply.send(game);

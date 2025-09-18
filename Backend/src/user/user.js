@@ -45,6 +45,11 @@ const historic = `
         uuid TEXT PRIMARY KEY,
         user_uuid TEXT,
         games JSON,
+        game_win INTEGER DEFAULT 0,
+        game_ratio INTEGER DEFAULT 0,
+        tournament JSON,
+        tournament_win INTEGER DEFAULT 0,
+        tournament_ratio INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_uuid) REFERENCES user(uuid),
@@ -52,12 +57,7 @@ const historic = `
     );
 `
 /*a mettre peut etre dans la db historic
-game_win INTEGER NOT NULL,
-game_ratio INTEGER NOT NULL,
-tournament_id INTEGER NOT NULL,
-tournament_played INTEGER NOT NULL,
-tournament_win INTEGER NOT NULL,
-tournament_ratio INTEGER NOT NULL,*/
+,*/
 
 db.exec(user);
 db.exec(friends);
@@ -78,7 +78,7 @@ app.post('/insert', async(request, reply) => {
     try{
         db.prepare('INSERT INTO user (uuid, username, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
-        db.prepare('INSERT INTO historic (uuid, user_uuid, games, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').run(historic_uuid, uuid, null, Date.now(), Date.now());
+        db.prepare('INSERT INTO historic (uuid, user_uuid, games, tournament, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(historic_uuid, uuid, null, null, Date.now(), Date.now());
         reply.code(201).send({ succes: true})
     } catch (err) {
         console.error(err);
@@ -242,29 +242,55 @@ app.patch('/historic', async (request, reply) => {
         return reply.code(403).send({ error: 'Forbidden' })
     }
 
-    const game = request.body;
+    const {tournament, game} = request.body;
+    console.log({tournament, game});
+    if (game){
+        const player1 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player1_uuid)
+        const player2 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player2_uuid)
+        
+        let player1games = player1.games ? JSON.parse(player1.games) : [];
+        let player2games = player2.games ? JSON.parse(player2.games) : [];
 
-    const player1 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player1_uuid)
-    const player2 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player2_uuid)
-    
-    let player1games = player1.games ? JSON.parse(player1.games) : [];
-    let player2games = player2.games ? JSON.parse(player2.games) : [];
+        player2games.push(game);
+        player1games.push(game);
+        
+        const game1JSON = JSON.stringify(player1games);
+        const game2JSON = JSON.stringify(player2games);
 
-    player2games.push(game);
-    player1games.push(game);
-    
-    const game1JSON = JSON.stringify(player1games);
-    const game2JSON = JSON.stringify(player2games);
+        const game_win1 = player1games.filter(g => g.winner === game.player1_uuid).length;
+        const game_ratio1 = (game_win1 * 100 / player1games.length).toFixed(2);
+        const game_win2 = player2games.filter(g => g.winner === game.player2_uuid).length;
+        const game_ratio2 = (game_win2 * 100 / player2games.length).toFixed(2);
 
-    try {
-        // Mettre à jour la base de données avec les nouveaux tableaux de jeux
-        db.prepare('UPDATE historic SET games = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game1JSON, game.player1_uuid);
-        db.prepare('UPDATE historic SET games = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, game.player2_uuid);
-    } catch (error) {
-        console.error('Erreur lors de la mise à jour de la base de données:', error);
-        reply.status(500).send({ error: 'Internal Server Error' });
+        try {
+            // Mettre à jour la base de données avec les nouveaux tableaux de jeux
+            db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game1JSON, Number(game_win1), Number(game_ratio1), game.player1_uuid);
+            db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, Number(game_win2), Number(game_ratio2), game.player2_uuid);
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour de la base de données:', error);
+            reply.status(500).send({ error: 'Internal Server Error' });
+        }
     }
-    return { player1: game1JSON, player2: game2JSON };
+    if (tournament){
+        try{
+            const players = JSON.parse(tournament.players);
+
+            for (let uuid of players){
+                let player = db.prepare('SELECT tournament FROM historic where user_uuid = ?').get(uuid);
+
+                let tournamentArray = player.tournament ? JSON.parse(player.tournament) : [];
+                tournamentArray.push(tournament);
+
+                const tournamentJSON = JSON.stringify(tournamentArray);
+                const tournament_win = tournamentArray.filter(t => t.winner === uuid).length;
+                const tournament_ratio = (tournament_win * 100 / tournamentArray.length).toFixed(2);
+                db.prepare('UPDATE historic SET tournament = ?, tournament_win = ?, tournament_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(tournamentJSON, Number(tournament_win), Number(tournament_ratio), uuid);
+            }
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour de la base de données:', error);
+            reply.status(500).send({ error: 'Internal Server Error' });
+        }
+    }
 });
 
 app.get('/search', async(request, reply) => {

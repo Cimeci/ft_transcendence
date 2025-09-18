@@ -22,7 +22,7 @@ app.addHook('onClose', async (instance) => {
   db.close();
 });
 
-app.get('tournament/:uuid', async (request, reply) => {
+app.get('/tournament/:uuid', async (request, reply) => {
     const { uuid } = request.params;
 
     try {
@@ -80,6 +80,47 @@ app.post('/tournament', async (request, reply) => {
         reply.code(500).send({ error: 'Internal Server Error' });
     }
     });
+
+app.patch('/tournament/:uuid', async (request, reply) => {
+    const { uuid } = request.params;
+    const { uuid_player } = request.body;
+
+    console.log({ uuid_player: uuid_player });
+    if (!uuid_player)
+        return reply.code(400).send({ error: 'Invalid input' });
+    
+    try {
+        const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
+        if (!tournament) {
+            return reply.code(404).send({ error: 'Tournament not found' });
+        }
+        const players = JSON.parse(tournament.players);
+        const player = players.find(player => player === uuid_player);
+        if (!player) {
+            return reply.code(404).send({ error: 'Player not found in this tournament' });
+        }
+        
+        db.prepare('UPDATE tournament SET winner = ? WHERE uuid = ?').run(uuid_player, uuid);
+        const info = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
+
+        const response = await fetch('http://user:4000/historic', {
+            method: 'PATCH',
+            headers: {
+                'Content-type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET
+            },
+            body: JSON.stringify({tournament: info, game: null})
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        reply.send('Tournament updated');
+    } catch(err) {
+        console.error('PATCH /tournament/:uuid', err);
+        reply.code(500).send({ error: 'Internal Server Error' });   
+    }
+});
 
 async function createGame (player1_uuid = null, player2_uuid = null, tournament = null ){
     const infoplay = {

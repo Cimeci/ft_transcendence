@@ -4,16 +4,16 @@
 - [x] Authentification JWT pour toutes les routes utilisateur (hors internes)
 - [x] Vérification du token sur chaque endpoint sensible
 - [ ] Gestion des erreurs JWT (token expiré, invalide, etc.)
-- [ ] Protection contre brute-force/login abuse (rate limiting, éventuellement) (on le fait pas)
+- [x] Protection contre brute-force/login abuse (rate limiting, éventuellement) (on le fait pas)
 
 ## 2. Utilisateur
 - [x] Création d’utilisateur (avec historique associé)
 - [x] Mise à jour du profil (email, username, avatar)
 - [x] Mise à jour du statut en ligne
-- [?] Validation forte des inputs (username, email, avatar)
-- [?] Endpoint pour récupérer le profil d’un utilisateur (GET /user/:uuid)
+- [x] Validation forte des inputs (username, email, avatar)
+- [x] Endpoint pour récupérer le profil d’un utilisateur (GET /user/:uuid)
 (fait mais voir pour rajouter des choses)
-- [ ] Endpoint pour récupérer la liste des utilisateurs (pour recherche/ajout d’amis)
+- [x] Endpoint pour récupérer la liste des utilisateurs (pour recherche/ajout d’amis)
 - [x] Endpoint pour suppression de compte
 
 ## 3. Amis (Friendship)
