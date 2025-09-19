@@ -1,5 +1,6 @@
 import { getCurrentLang } from "../pages/settings";
 import { translations } from '../i18n';
+import { emitProfileUpdate } from './settings';
 
 export type CosmeticType = 'avatar' | 'background' | 'bar' | 'ball';
 
@@ -11,8 +12,6 @@ export interface CosmeticItem {
     price: number;
 };
 export interface Inventory { [type: string]: CosmeticItem[]; }
-
-export let userName: string = "default";
 
 export const userInventory: Inventory = {
     avatar: [
@@ -50,21 +49,9 @@ export const userInventory: Inventory = {
         { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball', price: 250},
         { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball', price: 250},
         { id: 'ball/tennis_ball.png', name: 'tennis_ball', type: 'ball', price: 250},
+        { id: 'ball/swenn_ball.gif', name: 'swenn_ball', type: 'ball', price: 250},
     ],
 };
-
-/* ---- Événement profil (navbar / user page) ---- */
-function emitProfileUpdate() {
-    window.dispatchEvent(new CustomEvent('profile:update', {
-        detail: {
-            userName,
-            avatar: userInventory.avatar?.[0]?.id,
-            background: userInventory.background?.[0]?.id,
-            bar: userInventory.bar?.[0]?.id,
-            ball: userInventory.ball?.[0]?.id
-        }
-    }));
-}
 
 /* ---- Page ---- */
 export function InventoryPage(): HTMLElement {
@@ -90,49 +77,6 @@ export function InventoryPage(): HTMLElement {
     left.className = "items-center w-8/10 xl:w-2/6 min-h-0 h-full flex flex-col overflow-hidden mx-auto xl:mx-0";
 
     /* Form username */
-    const nameForm = document.createElement("form");
-    nameForm.className = "w-full max-w mb-4 xl:mb-8";
-
-    const nameWrap = document.createElement("div");
-    nameWrap.className = "relative";
-
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.value = userName;
-    nameInput.placeholder = t("username","Username")+"...";
-    nameInput.className = "block w-full p-3 pe-28 text-sm border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/40 focus:placeholder-green-400  hover:border-green-500";
-    
-	const nameBtn = document.createElement("button");
-    nameBtn.type = "submit";
-    nameBtn.textContent = t("apply","Apply");
-    nameBtn.className = "absolute top-1/2 -translate-y-1/2 right-2 px-4 py-1.5 rounded-md bg-green-600 hover:bg-green-700 text-sm font-medium";
-    
-   	function applyUserName() {
-   	    const v = nameInput.value.trim();
-   	    if (v && v !== userName) {
-   	        userName = v;
-   	        emitProfileUpdate();
-   	    }
-   	}
-
-	nameWrap.appendChild(nameInput); nameWrap.appendChild(nameBtn); nameForm.appendChild(nameWrap);
-	nameForm.addEventListener("submit",(e)=>{
-		if (nameInput.value.trim() == "") {nameInput.placeholder = translations[getCurrentLang()].empty_input}
-		else {
-        	e.preventDefault();
-        	applyUserName();
-		}
-    });
-    nameInput.addEventListener("keydown", (e)=>{
-        if (e.key === "Enter") {
-			if (nameInput.value.trim() == "") {nameInput.placeholder = translations[getCurrentLang()].empty_input}
-			else {
-            	e.preventDefault();
-            	applyUserName();
-			}
-        }
-    });
-    left.appendChild(nameForm);
 
     function makePreviewBox(label: string, type: CosmeticType): {box: HTMLElement, img: HTMLImageElement} {
         const box = document.createElement("div");
