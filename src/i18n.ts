@@ -10,6 +10,8 @@ export const translations = {
         currentPassword : "Mot de passe actuel",
         newPassword : "Nouveau mot de passe",
         confirmNewPassword : "Confirmer le nouveau mot de passe",
+		changeName: "Modifier le pseudonyme",
+		newName: "Nouveau Pseudonyme",
 		// Login
 		login: "Connexion",
 		username: "Pseudonyme",
@@ -26,7 +28,7 @@ export const translations = {
 		home: "Accueil",
 		inventory: "Inventaire",
 		shop: "Boutique",
-		settings: "Parametres",
+		settings: "Paramètres",
 		logout: "Déconnexion",
 		// PongPage
 		play: "Jouer",
@@ -97,6 +99,8 @@ export const translations = {
 		currentPassword: "Current password",
 		newPassword: "New password",
 		confirmNewPassword: "Confirm new password",
+		changeName: "Change username",
+		newName: "New username",
 		// Login
 		login: "Login",
 		username: "Username",
@@ -184,6 +188,8 @@ export const translations = {
         currentPassword: "Contraseña actual",
         newPassword: "Nueva contraseña",
         confirmNewPassword: "Confirmar nueva contraseña",
+		changeName: "Cambiar nombre de usuario",
+        newName: "Nuevo nombre de usuario",
 		// Login
 		login: "Iniciar sesión",
 		username: "Seudónimo",
