@@ -1,6 +1,7 @@
 import { translations } from "../i18n";
 import { getCurrentLang } from "./settings";
-import { userInventory, userName } from "./inventory";
+import { userInventory } from "./inventory";
+import { userName } from "./settings"
 
 export let inputRef: HTMLInputElement | null = null;
 
@@ -18,7 +19,25 @@ export function FriendsPage(): HTMLElement {
 	PageContainer.className = "w-full flex lg:flex-row flex-col xl:gap-12 gap-8 transition-all duration-300 justify-between items-center";
 
 	{
-		const profileContainer = document.createElement("div");
+		function enableEllipsisThenScroll(el: HTMLElement, fullText: string) {
+			el.title = fullText;
+			const enter = () => {
+				el.classList.add("overflow-x-auto", "text-clip", "cursor-text");
+				el.classList.remove("truncate");
+			};
+			const leave = () => {
+				el.classList.remove("overflow-x-auto", "text-clip");
+				el.classList.add("truncate");
+				el.scrollLeft = 0;
+			};
+			el.addEventListener("mouseenter", enter);
+			el.addEventListener("mouseleave", leave);
+			el.addEventListener("focus", enter);
+			el.addEventListener("blur", leave);
+			el.tabIndex = 0; // pour focus clavier
+		}
+
+        const profileContainer = document.createElement("div");
 		profileContainer.className = "lg:w-[25vw] w-[80vw] h-[70vh] flex flex-col border-3 p-10 rounded-xl items-center justify-around";
 
 		const imgBox = document.createElement("div");
@@ -35,15 +54,29 @@ export function FriendsPage(): HTMLElement {
 		txtBox.className = "text-xl sm:text-2xl text-center whitespace-nowrap w-full gap-10 flex flex-col";
 		profileContainer.appendChild(txtBox);
 
+		const NameContainer = document.createElement("div");
+		NameContainer.className = "flex flex-col";
+		txtBox.appendChild(NameContainer);
+		const NameProfileTxt = document.createElement("h1");
+		NameProfileTxt.textContent = translations[getCurrentLang()].username;
+		NameContainer.appendChild(NameProfileTxt);
 		const NameProfile = document.createElement("h1");
 		NameProfile.textContent = userName;
-		NameProfile.className = "object-cover hover:scale-105 transition-transform duration-300 w-full border-2 rounded-xl p-3";
-		txtBox.appendChild(NameProfile);
+		NameProfile.className = "w-full border-2 rounded-xl p-3 hover:scale-105 transition-transform duration-300 truncate whitespace-nowrap";
+		enableEllipsisThenScroll(NameProfile, userName);
+		NameContainer.appendChild(NameProfile);
 
+		const IdContainer = document.createElement("div");
+		IdContainer.className = "flex flex-col";
+		txtBox.appendChild(IdContainer);
+		const IdProfileTxt = document.createElement("h1");
+		IdProfileTxt.textContent = translations[getCurrentLang()].user_id;
+		IdContainer.appendChild(IdProfileTxt);
 		const IdProfile = document.createElement("h1");
 		IdProfile.textContent = "id";
-		IdProfile.className = "object-cover hover:scale-105 transition-transform duration-300 w-full border-2 rounded-xl p-3";
-		txtBox.appendChild(IdProfile);
+		IdProfile.className = "w-full border-2 rounded-xl p-3 hover:scale-105 transition-transform duration-300 truncate whitespace-nowrap";
+		enableEllipsisThenScroll(IdProfile, IdProfile.textContent || "");
+		IdContainer.appendChild(IdProfile);
 
 
 		PageContainer.appendChild(profileContainer);
