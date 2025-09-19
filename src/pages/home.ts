@@ -8,8 +8,8 @@ export function HomePage(): HTMLElement {
 	mainContainer.className = 'pt-25 min-h-screen w-full flex items-center justify-center gap-4 bg-linear-to-t from-green-500 via-black to-green-800';
 	
 	const pageTitle = document.createElement('h1');
-	pageTitle.className = ` fixed top-20 p-6 z-1000
-		text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r 
+	pageTitle.className = ` fixed top-17 p-6
+		text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r 
 		from-white via-green-500 to-white 
 		tracking-wide
 		[filter:drop-shadow(0_1px_1px_rgba(0,0,0,0.5))_drop-shadow(0_2px_2px_rgba(0,0,0,0.3))]
@@ -19,14 +19,13 @@ export function HomePage(): HTMLElement {
 	mainContainer.appendChild(pageTitle);
 	
 	const LinkContainer = document.createElement("div");
-	LinkContainer.className = "card-grid flex";
+	LinkContainer.className = "flex flex-col gap-15 md:flex-row lg:mt-0 items-center justify-between h-full w-8/10 xl:w-6/10 2xl:w-5/10";
 
 	const PongLinkContainer = document.createElement("div");
-	PongLinkContainer.className = "";
 
 	const PongImg = document.createElement("img");
 	PongImg.src = "/icons/pong_icone.png"
-	PongImg.className = "size-80 rounded-4xl cursor-pointer transition-all duration-300 hover:scale-110"
+	PongImg.className = "h-auto w-[clamp(8rem,32vw,22rem)] rounded-4xl cursor-pointer transition-all duration-300 hover:scale-110"
 	PongLinkContainer.appendChild(PongImg);
 
 	PongImg.addEventListener("click", () => {
@@ -41,7 +40,7 @@ export function HomePage(): HTMLElement {
 
 	const TournatmentImg = document.createElement("img");
 	TournatmentImg.src = "/icons/tournament_icone.png"
-	TournatmentImg.className = "size-80 rounded-4xl cursor-pointer transition-all duration-300 hover:scale-110"
+	TournatmentImg.className = "h-auto w-[clamp(8rem,32vw,22rem)] rounded-4xl cursor-pointer transition-all duration-300 hover:scale-110"
 	TournamentLinkContainer.appendChild(TournatmentImg);
 
 	TournatmentImg.addEventListener("click", () => {
