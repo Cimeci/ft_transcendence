@@ -14,6 +14,8 @@ import { CreditsPage } from './pages/credits';
 import { FriendsPage } from './pages/friends';
 import { UserPage } from './pages/user';
 
+document.getElementById("jschef")?.remove();
+
 const routes: { [key: string]: () => HTMLElement } = {
 	'/': LandingPage,
 	'/home': HomePage,

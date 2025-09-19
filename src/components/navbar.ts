@@ -2,7 +2,9 @@ import { translations } from '../i18n';
 import { getCurrentLang } from '../pages/settings';
 import { navigateTo } from '../routes';
 import { inputRef } from '../pages/friends';
-import { userInventory, userName } from '../pages/inventory';
+import { userInventory } from '../pages/inventory';
+import { userName } from "../pages/settings"
+
 
 export function createNavbar(routes: { [key: string]: string }): HTMLElement {
     const nav = document.createElement('nav');

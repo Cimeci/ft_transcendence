@@ -1,7 +1,8 @@
 import { getCurrentLang } from "../pages/settings";
 import { translations } from '../i18n';
-import { navigateTo } from '../routes'
-import { userInventory, userName } from "../pages/inventory"
+import { navigateTo } from '../routes';
+import { userInventory } from "../pages/inventory";
+import { userName } from "./settings";
 
 export const gameHistory: string[] = [];
 

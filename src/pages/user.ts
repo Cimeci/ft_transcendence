@@ -1,6 +1,7 @@
 import { getCurrentLang } from "./settings";
 import { translations } from "../i18n";
-import { userInventory, userName } from "./inventory";
+import { userInventory } from "./inventory";
+import { userName } from "./settings"
 import { navigateTo } from "../routes";
 
 export function UserPage(): HTMLElement {
