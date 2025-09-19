@@ -325,7 +325,12 @@ app.get('/me', async(request, reply) => {
             u.email,
             u.avatar,
             u.is_online,
-            h.games
+            h.games,
+            h.game_win,
+            h.game_ratio,
+            h.tournament,
+            h.tournament_win,
+            h.tournament_ratio
         FROM user u
         JOIN historic h ON u.uuid = h.user_uuid
         WHERE u.uuid = ?`).get(uuid);

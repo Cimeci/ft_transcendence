@@ -29,6 +29,11 @@ await app.register(fastifyHttpProxy, {
     prefix: '/user',
     rewritePrefix: ''
 })
+await app.register(fastifyHttpProxy, {
+    upstream: 'http://websocket:4000',
+    prefix: '/websocket',
+    rewritePrefix: ''
+})
 
 // Définit un gestionnaire d'erreurs global pour capturer et logger les erreurs
 app.setErrorHandler(async (error, request, reply) => {
