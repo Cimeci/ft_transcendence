@@ -5,6 +5,8 @@ import { createInputWithEye, togglePassword } from "./register";
 import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
 import { CreateSlider } from "../components/utils";
+import { users } from "./friends";
+import { userName } from "./settings";
 
 let nb_players = {value: 16};
 
@@ -135,7 +137,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 		closeBtn.className = "absolute top-0 right-0 w-8 h-8 leading-7 text-center text-white/80 hover:text-white hover:scale-110 transition";
 		closeBtn.addEventListener("click", () => {
 			currentJoinForm = null;
-			JoinForm.remove(); // !important //
+			JoinForm.remove();
 		});
 		JoinForm.appendChild(closeBtn);
 
@@ -156,7 +158,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 		ConfirmJoinBtn.textContent = translations[getCurrentLang()].join;
 		ConfirmJoinBtn.addEventListener("click", () => {
 			if (!tournament.password || PasswordInputJoin.value === tournament.password) {
-				currentTournament = tournament;                // get memorise tournament selected ! Getting it from BD ! //
+				currentTournament = tournament;
 				mainContainer.classList.add("fade-out");
 				setTimeout(() => navigateTo("/tournament/join"), 1000);
 			} else {
@@ -193,7 +195,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 		JoinList.innerHTML = "";
 		tournamentList.forEach(tournament => {
     		const li = document.createElement("li");
-    		li.className = "justify-around text-center items-center flex tracking-widest cursor-pointer hover:text-green-600 hover:scale-102 duration-300 transition-all";
+    		li.className = "justify-around text-center items-center flex tracking-widest cursor-pointer hover:text-green-600 hover:scale-102 duration-300 transition-all min-h-12 p-2";
 
     		const renderLabel = () => {
 				li.innerHTML = "";
@@ -224,7 +226,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 					JoinList.insertAdjacentElement("afterend", form);
 					form.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 } else {
-                    currentTournament = tournament;                 // ← mémorise le tournoi choisi (public)
+                    currentTournament = tournament;
                     mainContainer.classList.add("fade-out");
                     setTimeout(() => navigateTo("/tournament/join"), 1000);
                 }
@@ -275,7 +277,7 @@ export function PongTournamentMenuPage(): HTMLElement {
                     started: false,
                 };
                 tournamentList.unshift(t);
-                currentTournament = t; // pointer vers le tournoi créé
+                currentTournament = t;
                 renderJoinList();
 
                 GameName.value = "";
@@ -314,6 +316,71 @@ export function PongTournamentPageJoin(): HTMLElement {
     const bracket = createTournamentBracket(players);
     bracket.classList.add("mt-15", "pl-5");
     mainContainer.appendChild(bracket);
+
+	const rightContainer = document.createElement("div");
+	rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
+	rightContainer.classList.add("hidden");
+	mainContainer.appendChild(rightContainer);
+
+	const btnRightBar = document.createElement("button");
+	btnRightBar.className = "top-5 right-5 w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
+	btnRightBar.onclick = () => {
+		if (rightContainer.classList.contains("hidden")) {
+			btnRightBar.classList.remove("right-5");
+    		btnRightBar.classList.add("right-[calc(15%+1.25rem)]");
+			rightContainer.classList.remove("hidden");
+		} else {
+			btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
+   			btnRightBar.classList.add("right-5");
+			btnRightBar.classList.remove("right-3/10");
+			rightContainer.classList.add("hidden");
+		}
+	}
+	mainContainer.appendChild(btnRightBar);
+
+	const iconRightBar = document.createElement("img");
+	iconRightBar.className = "w-full h-full"
+	iconRightBar.src = "/icons/list.svg"
+	btnRightBar.appendChild(iconRightBar);
+
+	const lstFriends = document.createElement("ul");
+	lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
+	rightContainer.appendChild(lstFriends);
+
+	users.forEach(e => {
+		const li: HTMLLIElement = document.createElement("li");
+		li.className = "flex justify-between items-center p-2 w-full min-h-12"
+
+		const profil = document.createElement("div");{
+		profil.className = "flex gap-2 justify-center items-center";
+		li.appendChild(profil);
+
+		const icon = document.createElement("img");
+		icon.src = e.avatar;
+		icon.className = "w-8 h-8 rounded-full object-cover";
+		profil.appendChild(icon);
+
+		const name = document.createElement("p");
+		name.className = "text-base";
+		name.textContent = e.username;
+		profil.appendChild(name);
+		}
+
+		const btn = document.createElement("button");
+		btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
+		btn.textContent = "Invite"; //! trad
+		btn.addEventListener("click", () => {
+			window.showInvite({
+                username: userName,
+                id: "2311",
+                avatar: "/avatar/inowak--.jpg",
+                message: "Invitation to play " + (currentTournament?.name || "tournament"),
+            });
+		});
+		li.appendChild(btn);
+		lstFriends.appendChild(li);
+	});
+
 
 	const BackToMenuOverlay = document.createElement("div");
 	BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
@@ -356,12 +423,11 @@ export function PongTournamentPageJoin(): HTMLElement {
 	mainContainer.appendChild(BackToMenuOverlay);
 
 	const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "null", 1);
-	BackToMenuBtn.className = "absolute bottom-2 right-2";
 	BackToMenuBtn.addEventListener("click", (e) => {
 		e.preventDefault();
 		BackToMenuOverlay.classList.remove("hidden");
 	})
-    mainContainer.appendChild(BackToMenuBtn);
+    rightContainer.appendChild(BackToMenuBtn);
 
 	BackToMenuOverlay.addEventListener("click", (e) => {
   		if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
@@ -381,16 +447,14 @@ export function PongTournamentPageHost(): HTMLElement {
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
     const Title = document.createElement("h1");
-    Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
+    Title.className = "mt-15 md:mt-10 tracking-widest lg:text-6xl md:text-4xl text-2xl neon-matrix";
     Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
-    // Utilise la liste des joueurs du tournoi si présente
     const players = (currentTournament?.players?.length
         ? currentTournament.players
         : Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`));
-    // Conteneur pour (re)rendre le bracket
     const bracketContainer = document.createElement("div");
     bracketContainer.className = "mt-15 pl-5 w-full";
     const renderBracket = () => {
@@ -400,15 +464,81 @@ export function PongTournamentPageHost(): HTMLElement {
         bracketContainer.appendChild(b);
     };
 
-    // Barre d’actions (colonne en bas à droite)
+	const rightContainer = document.createElement("div");
+	rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
+	rightContainer.classList.add("hidden");
+	mainContainer.appendChild(rightContainer);
+
+	const btnRightBar = document.createElement("button");
+	btnRightBar.className = "top-5 right-5 w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
+	btnRightBar.onclick = () => {
+		if (rightContainer.classList.contains("hidden")) {
+			btnRightBar.classList.remove("right-5");
+    		btnRightBar.classList.add("right-[calc(15%+1.25rem)]");
+			rightContainer.classList.remove("hidden");
+		} else {
+			btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
+   			btnRightBar.classList.add("right-5");
+			btnRightBar.classList.remove("right-3/10");
+			rightContainer.classList.add("hidden");
+		}
+	}
+	mainContainer.appendChild(btnRightBar);
+
+	const iconRightBar = document.createElement("img");
+	iconRightBar.className = "w-full h-full"
+	iconRightBar.src = "/icons/list.svg"
+	btnRightBar.appendChild(iconRightBar);
+
+	const lstFriends = document.createElement("ul");
+	lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
+	rightContainer.appendChild(lstFriends);
+
+	users.forEach(e => {
+		const li: HTMLLIElement = document.createElement("li");
+		li.className = "flex justify-between items-center p-2 w-full min-h-12"
+
+		const profil = document.createElement("div");{
+		profil.className = "flex gap-2 justify-center items-center";
+		li.appendChild(profil);
+
+		const icon = document.createElement("img");
+		icon.src = e.avatar;
+		icon.className = "w-8 h-8 rounded-full object-cover";
+		profil.appendChild(icon);
+
+		const name = document.createElement("p");
+		name.className = "text-base";
+		name.textContent = e.username;
+		profil.appendChild(name);
+		}
+
+		const btn = document.createElement("button");
+		btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
+		btn.textContent = "Invite"; //! trad
+		btn.addEventListener("click", () => {
+			window.showInvite({
+                username: userName,
+                id: "2311",
+                avatar: "/avatar/inowak--.jpg",
+                message: "Invitation to play " + (currentTournament?.name || "tournament"),
+            });
+		});
+		li.appendChild(btn);
+		lstFriends.appendChild(li);
+	});
+
     const actionsCol = document.createElement("div");
-    actionsCol.className = "border-1 border-white/20 bg-white/10 p-3 rounded-xl fixed bottom-3 right-3 z-[2100] flex flex-col items-end gap-3";
+    actionsCol.className = "w-9/10 p-3 flex flex-col items-center justify-center gap-3 glass-blur";
 
-    const startBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].host, "/tournament/game", 1);
-    startBtn.className = "hover:scale-105 transition";
+    const startBtn = document.createElement("button");
+	startBtn.textContent = translations[getCurrentLang()].host;
+    startBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
+	startBtn.onclick = () => navigateTo("/tournament/game");
 
-    const shuffleBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].shuffle, "null", 1);
-    shuffleBtn.className = "hover:scale-105 transition";
+    const shuffleBtn = document.createElement("button");
+	shuffleBtn.textContent = translations[getCurrentLang()].shuffle;
+    shuffleBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
     shuffleBtn.onclick = () => {
         for (let i = players.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -420,8 +550,9 @@ export function PongTournamentPageHost(): HTMLElement {
 
     actionsCol.appendChild(startBtn);
     actionsCol.appendChild(shuffleBtn);
-    mainContainer.appendChild(actionsCol);
+    rightContainer.appendChild(actionsCol);
 
+	mainContainer.appendChild(rightContainer);
     mainContainer.appendChild(bracketContainer);
     renderBracket();
 
@@ -466,8 +597,9 @@ export function PongTournamentPageHost(): HTMLElement {
 	// L’overlay doit être au niveau du container principal
 	mainContainer.appendChild(BackToMenuOverlay);
 
-    const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "null", 1);
-    BackToMenuBtn.className = "mt-6 px-4 py-2 rounded-xl text-white duration-300 hover:scale-110 transition";
+    const BackToMenuBtn = document.createElement("button");
+	BackToMenuBtn.textContent = translations[getCurrentLang()].back;
+    BackToMenuBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
     BackToMenuBtn.addEventListener("click", (e) => {
          e.preventDefault();
          BackToMenuOverlay.classList.remove("hidden");
