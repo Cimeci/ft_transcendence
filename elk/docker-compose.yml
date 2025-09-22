@@ -144,6 +144,20 @@ services:
       timeout: 10s
       retries: 120
 
+  ## Launch ILM policies
+  ilm-manager:
+    container_name: elk_ilm-manager
+    networks:
+      - elk
+    depends_on:
+      es01:
+        condition: service_healthy
+    build: ./ilm-manager
+    volumes:
+      - certs:/certs:ro  
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+
   ## KIBANA Service, graphical part
   kibana:
     container_name: elk_kibana
@@ -183,7 +197,6 @@ services:
       timeout: 10s
       retries: 120
 
-
   ## LOGSTASH Service // Filter logs from the Filebeat Collector
   logstash:
     container_name: elk_logstash
@@ -194,6 +207,8 @@ services:
         condition: service_healthy
       kibana:
         condition: service_healthy
+      ilm-manager:
+        condition: service_completed_successfully
     image: docker.elastic.co/logstash/logstash:${STACK_VERSION}
     labels:
       co.elastic.logs/module: logstash
@@ -243,12 +258,11 @@ services:
       - filebeatdata:/usr/share/filebeat/data
       #- logs_volumes:/var/log/app:ro # <= real logs 
       - "./logs_data:/var/log/app:ro" # <= provisory fakes logs
-      - "./filebeat/conf/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
-      #- "./filebeat_ingest_data/:/usr/share/filebeat/ingest_data/"
+      - "./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      #- "./filebeat/ilm/elktrans-policy.json:/usr/share/filebeat/ilm/elktrans-policy.json:ro"
     environment:
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - ELASTIC_HOSTS=https://es01:9200
       - KIBANA_HOSTS=https://kibana:5601
       - LOGSTASH_HOSTS=logstash:5044
       - CA_CERT=/usr/share/filebeat/certs/ca/ca.crt

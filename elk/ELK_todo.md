@@ -1,32 +1,80 @@
-## Security
-
+# Security
 [x] Simple script tester
 [ ] Check leaks from images
-[ ] Ports 9200/5601 non exposés sur 0.0.0.0 en production ? [ss -tulnp]
-[x] TLS 1.2+ et certificats sha256
-[x] Auth obligatoire sur ES + Kibanax
-[x] Audit logging -> Only available on trial
-[x] Use a Logstash Keystore
-[x] Droits 640/750 sur les certificats
-[ ] Backup & retention documentés
-[x] HTTPS KIbana
+[ ] Check if expose port on 0.0.0.0 is a good production idea (ss -tunlp)
+[ ] Backup & retention
 [ ] Filebeat Keystore ?
 [ ] Remove ports settings in the compose
 
 
-## Completing setup
+# Completing setup
 [ ] Kibana.yml
-[ ] Handle filter from Logstash,conf
+[ ] Handle filter from Logstash.conf
 [ ] Add Restart Policy
 [ ] Change volumes logs (not the default one in compose)
+[ ] Persistence queue ?
+[ ] Add Healthcheck to the filebeat service
+[ ] Log4j2 configuration logs for Elastic
 
-## Functionnality
-[ ] Add a fake web app and handle logs
+
+# Functionnality
+[x] Add fake web app logs (check if the harvesters are ok)
+[x] Rotation
+[ ] Issue "Health" index into Kibana
 
 
-## Adds
-[ ] Rename services (Logstash01 why ?)
-[ ] Clean code
-[ ] Write simple documentation
-[ ] Add a Stack Monitoring with MetricBeats /!\ If it's possible without docker sockets
-[ ] Rotation ?
+# Littles Adds
+[ ] Check about labels docker -> specificly into the filebeat
+[ ] If a second node is added => Define 1 shard into the template.json
+[ ] MetricBeats -> If it's possible without docker sockets
+
+
+# Clean Code
+[ ] Remove dev suppressions into entrypoin.sh from bootstrap-ilm
+[ ] Clean Docker compose -> use Dockerfiles and configurations files 
+
+
+
+
+
+
+
+# Documentation Specs
+[ ] Specifications about root
+[ ] Specifications about env
+
+
+
+## Security concern
+
+The `elk_certs` container is builed from an Elasticsearch image, which contianed elastic-certutil and allow to create different certificate.
+Each service (or node from ES) can communicate with a mutually certification (mTLS). Each service as is own certificate, signed by the intern CA `ca.crt` (wich is a way to trust all the differents certificates).
+
+
+## Template and ILM Policies
+
+The "" container wait before the ElasticSearch fonctionement and use the REST API to
+- PUT our policies files settings
+- PUT our index template
+- PUT our first index
+
+
+### Rollover
+
+We create an Alias `transcendence` pointing to the real current index, specified by a number, `transcendence-000001` for the exemple
+That's means we got after a rollover we got
+```
+transcendence (ALIAS) 
+    ↓ pointing to  
+transcendence-000002 (New Index, actif to the writing)
+
+transcendence-000001 (Old Index, read only)
+```
+
+### Retention
+
+We autamtized suppression after to olf indices
+
+
+
+
