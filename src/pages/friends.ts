@@ -5,6 +5,29 @@ import { userName } from "./settings"
 
 export let inputRef: HTMLInputElement | null = null;
 
+export type InvitePayload = {
+  	username: string;
+  	id: string;
+  	avatar: string;
+  	message?: string;
+  	onAccept?: () => void;
+  	onRefuse?: () => void;
+};
+
+type Friend = { id: string; username: string; invitation: string, avatar: string };
+// Démo: remplace par tes données //! DB //! trad invitation
+export const users: Friend[] = [
+	{ id: "u1001", username: "neo", invitation: "Send invitation to play tournament", avatar: "/avatar/default_avatar.png" },
+	{ id: "u1002", username: "trinity", invitation: "Send friend request", avatar: "/avatar/default_avatar.png" },
+	{ id: "u1003", username: "ilan", invitation: "Send 1v1", avatar: "/avatar/inowak--.jpg" },
+	{ id: "u1004", username: "pierre louis", invitation: "Send invitation to play tournament", avatar: "/avatar/pjurdana.jpg" },
+	{ id: "u1005", username: "xavier", invitation: "Send invitation to play tournament", avatar: "/avatar/xavierchad.gif" },
+	{ id: "u1006", username: "timothy", invitation: "Send 1v1", avatar: "/avatar/tcybak.jpg" },
+	{ id: "u1007", username: "amaury", invitation: "Send 1v1", avatar: "/avatar/amblanch.jpg" },
+	{ id: "u1008", username: "manuarii", invitation: "Send friend request", avatar: "/avatar/mdegache.jpg" },
+	{ id: "u1009", username: "remy", invitation: "Send friend request", avatar: "/avatar/rgodet.jpg" },
+];
+
 export function FriendsPage(): HTMLElement {
 
 	const mainContainer = document.createElement("div");
@@ -18,8 +41,12 @@ export function FriendsPage(): HTMLElement {
 	const PageContainer = document.createElement("div");
 	PageContainer.className = "w-full flex lg:flex-row flex-col xl:gap-12 gap-8 transition-all duration-300 justify-between items-center";
 
-	{
-		function enableEllipsisThenScroll(el: HTMLElement, fullText: string) {
+		// Classe commune pour des lignes de même hauteur partout
+		const ROW_CLASS = "min-w-0 grid grid-cols-[1fr_1fr_auto] items-center gap-2 p-2.5 min-h-12";
+		const ACTION_BTN = "inline-flex items-center justify-center h-8 px-3 rounded-lg";
+		const ICON_SM = "w-4 h-4";
+
+        function enableEllipsisThenScroll(el: HTMLElement, fullText: string) {
 			el.title = fullText;
 			const enter = () => {
 				el.classList.add("overflow-x-auto", "text-clip", "cursor-text");
@@ -57,9 +84,11 @@ export function FriendsPage(): HTMLElement {
 		const NameContainer = document.createElement("div");
 		NameContainer.className = "flex flex-col";
 		txtBox.appendChild(NameContainer);
+		
 		const NameProfileTxt = document.createElement("h1");
 		NameProfileTxt.textContent = translations[getCurrentLang()].username;
 		NameContainer.appendChild(NameProfileTxt);
+
 		const NameProfile = document.createElement("h1");
 		NameProfile.textContent = userName;
 		NameProfile.className = "w-full border-2 rounded-xl p-3 hover:scale-105 transition-transform duration-300 truncate whitespace-nowrap";
@@ -69,9 +98,11 @@ export function FriendsPage(): HTMLElement {
 		const IdContainer = document.createElement("div");
 		IdContainer.className = "flex flex-col";
 		txtBox.appendChild(IdContainer);
+
 		const IdProfileTxt = document.createElement("h1");
 		IdProfileTxt.textContent = translations[getCurrentLang()].user_id;
 		IdContainer.appendChild(IdProfileTxt);
+
 		const IdProfile = document.createElement("h1");
 		IdProfile.textContent = "id";
 		IdProfile.className = "w-full border-2 rounded-xl p-3 hover:scale-105 transition-transform duration-300 truncate whitespace-nowrap";
@@ -80,7 +111,6 @@ export function FriendsPage(): HTMLElement {
 
 
 		PageContainer.appendChild(profileContainer);
-	}
 
 		const FriendMenu = document.createElement("div");
 		FriendMenu.className = "lg:w-[70vw] w-[80vw] h-[70vh] flex flex-col border-3 rounded-xl items-center";
@@ -118,20 +148,6 @@ export function FriendsPage(): HTMLElement {
 		line.className = "border-3 border-green-400 w-full";
 		FriendMenu.appendChild(line);
 
-		{
-			type Friend = { id: string; username: string };
-			// Démo: remplace par tes données //! DB
-			const users: Friend[] = [
-				{ id: "u1001", username: "neo" },
-				{ id: "u1002", username: "trinity" },
-				{ id: "u1003", username: "morpheus" },
-				{ id: "u1004", username: "smith" },
-				{ id: "u1005", username: "oracle" },
-				{ id: "u1006", username: "timothy" },
-				{ id: "u1007", username: "amaury" },
-				{ id: "u1008", username: "manuarii" },
-				{ id: "u1009", username: "remy" },
-			];
 
 			let data: Friend[] = users.slice();
 
@@ -141,7 +157,7 @@ export function FriendsPage(): HTMLElement {
 
 				const btn = document.createElement("button");
 				btn.type = "button";
-				btn.className = "shrink-0 inline-flex items-center justify-center rounded-lg px-2.5 py-1 bg-green-600 text-white hover:bg-green-700";
+				btn.className = `shrink-0 ${ACTION_BTN} bg-green-600 text-white hover:bg-green-700`;
 				btn.setAttribute("aria-label", "Actions");
 
 				const sr = document.createElement("span");
@@ -289,7 +305,7 @@ export function FriendsPage(): HTMLElement {
                     }
                     for (const u of filtered) {
                         const li = document.createElement("li");
-                        li.className = "p-3 min-w-0 grid grid-cols-[1fr_1fr_auto] items-center gap-3";
+						li.className = ROW_CLASS;
 
                         const name = document.createElement("span");
                         name.className = "font-medium truncate";
@@ -299,11 +315,11 @@ export function FriendsPage(): HTMLElement {
                         uid.className = "text-sm text-gray-400 truncate";
                         uid.textContent = u.id;
 
-						const menu = createUserActionsDropdown(
-							u,
-							() => { data = data.filter(x => x.id !== u.id); renderFriends(); },
-							() => { data = data.filter(x => x.id !== u.id); renderFriends(); }
-						);
+                        const menu = createUserActionsDropdown(
+                            u,
+                            () => { data = data.filter(x => x.id !== u.id); renderFriends(); },
+                            () => { data = data.filter(x => x.id !== u.id); renderFriends(); }
+                        );
 
                         li.appendChild(name);
                         li.appendChild(uid);
@@ -489,7 +505,7 @@ export function FriendsPage(): HTMLElement {
 					}
 					for (const u of filtered) {
 						const li = document.createElement("li");
-						li.className = "p-3 min-w-0 grid grid-cols-[1fr_1fr_auto] items-center gap-3";
+						li.className = ROW_CLASS;
 
 						const name = document.createElement("span");
 						name.className = "font-medium truncate";
@@ -499,16 +515,17 @@ export function FriendsPage(): HTMLElement {
 						uid.className = "text-sm text-gray-400 truncate";
 						uid.textContent = u.id;
 
-						const add_btn = document.createElement("btn");
+						const add_btn = document.createElement("button");
+						add_btn.type = "button";
 						add_btn.textContent = translations[getCurrentLang()].add;
-						add_btn.className = "cursor-pointer justify-self-end shrink-0 rounded-lg px-2.5 py-1 bg-green-500 duration-300 transition-all hover:scale-102 hover:bg-green-600 onclick:scale-104";
+						add_btn.className = `${ACTION_BTN} justify-self-end bg-green-500 hover:bg-green-600`;
 
-						li.appendChild(name);
-						li.appendChild(uid);
-						li.appendChild(add_btn);
-						Results.appendChild(li);
-					}
-				};
+                        li.appendChild(name);
+                        li.appendChild(uid);
+                        li.appendChild(add_btn);
+                        Results.appendChild(li);
+                    }
+                };
 
 				input.addEventListener("input", render);
 				SearchBar.addEventListener("submit", (e) => { e.preventDefault(); render(); });
@@ -609,20 +626,29 @@ export function FriendsPage(): HTMLElement {
 						btndiv.className = "flex gap-2 truncate";
 
 						const refuse = document.createElement("button");
-						refuse.className = "w-[1/2] cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-1 py-1 bg-red-500 duration-300 transition-all hover:bg-red-600 onclick:scale-104";
-						// refuse.textContent = "X";
-						const imgrefuse = document.createElement("img");
-						imgrefuse.src = "/icons/cross.svg"; imgrefuse.className = "duration-300 transition-all hover:scale-110";
-						refuse.appendChild(imgrefuse);
-						btndiv.appendChild(refuse);
+						refuse.className = `${ACTION_BTN} bg-red-500 hover:bg-red-600`;
+                        const imgrefuse = document.createElement("img");
+						imgrefuse.src = "/icons/cross.svg"; imgrefuse.className = `${ICON_SM}`;
+                        refuse.appendChild(imgrefuse);
+                        btndiv.appendChild(refuse);
 
-						const accept = document.createElement("button");
-						accept.className = "w-[1/2] cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-1 py-1 bg-green-500 duration-300 transition-all hover:bg-green-600 onclick:scale-104";
-						// accept.textContent = "V";
-						const imgaccept = document.createElement("img");
-						imgaccept.src = "/icons/check.svg"; imgaccept.className = "duration-300 transition-all hover:scale-110";
-						accept.appendChild(imgaccept);
-						btndiv.appendChild(accept);
+                        const accept = document.createElement("button");
+						accept.className = `${ACTION_BTN} bg-green-500 hover:bg-green-600`;
+                        const imgaccept = document.createElement("img");
+						imgaccept.src = "/icons/check.svg"; imgaccept.className = `${ICON_SM}`;
+                        accept.appendChild(imgaccept);
+                        btndiv.appendChild(accept);
+
+						//! changer cela pour le add
+
+                        accept.addEventListener("click", () => {
+                          window.showInvite({
+                            username: u.username,
+                            id: u.id,
+                            avatar: u.avatar,
+                            message: u.invitation,
+                          });
+                        });
 
                         li.appendChild(name);
                         li.appendChild(uid);
@@ -714,7 +740,7 @@ export function FriendsPage(): HTMLElement {
 					}
 					for (const u of filtered) {
 						const li = document.createElement("li");
-						li.className = "p-3 min-w-0 grid grid-cols-[1fr_1fr_auto] items-center lg:gap-3 sm:gap-2 gap-1";
+						li.className = ROW_CLASS;
 
 						const name = document.createElement("span");
 						name.className = "font-medium truncate";
@@ -725,22 +751,22 @@ export function FriendsPage(): HTMLElement {
 						uid.textContent = u.id;
 
 						const cancel = document.createElement("button");
-						cancel.className = "cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-2 py-1 bg-red-500 duration-300 transition-all hover:bg-red-600 onclick:scale-104 flex items-center gap-2";
-						const img = document.createElement("img");
-						img.src = "/icons/cross.svg";
-						img.className = "duration-300 transition-all hover:scale-110";
-						cancel.appendChild(img);
-						const span = document.createElement("span");
-						span.textContent = (translations[getCurrentLang()] as any).cancel ?? "Cancel";
-						span.className = "max-[600px]:hidden";
-						cancel.appendChild(span);
-						cancel.addEventListener("click", () => { sentData = sentData.filter(x => x.id !== u.id); renderRequests(); });
+						cancel.className = `${ACTION_BTN} bg-red-500 hover:bg-red-600 flex items-center gap-2`;
+                        const img = document.createElement("img");
+                        img.src = "/icons/cross.svg";
+						img.className = ICON_SM;
+                        cancel.appendChild(img);
+                        const span = document.createElement("span");
+                        span.textContent = (translations[getCurrentLang()] as any).cancel ?? "Cancel";
+                        span.className = "max-[600px]:hidden";
+                        cancel.appendChild(span);
+                        cancel.addEventListener("click", () => { sentData = sentData.filter(x => x.id !== u.id); renderRequests(); });
 
-						li.appendChild(name);
-						li.appendChild(uid);
-						li.appendChild(cancel);
-						RequestsList.appendChild(li);
-					}
+                        li.appendChild(name);
+                        li.appendChild(uid);
+                        li.appendChild(cancel);
+                        RequestsList.appendChild(li);
+                    }
 				};
 				input.addEventListener("input", renderRequests);
 				form.addEventListener("submit", (e) => { e.preventDefault(); renderRequests(); });
@@ -748,7 +774,6 @@ export function FriendsPage(): HTMLElement {
 			}
 
 			PageContainer.appendChild(FriendMenu);
-		}
 	
 	mainContainer.appendChild(PageContainer);
 
