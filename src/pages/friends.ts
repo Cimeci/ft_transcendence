@@ -98,10 +98,15 @@ export function FriendsPage(): HTMLElement {
 		SearchSelector.className = "rounded-xl flex-1 h-full flex items-center justify-center cursor-pointer select-none"
 		SelectContainer.appendChild(SearchSelector);
 
-		const InvitationSelector = document.createElement("btn");
-		InvitationSelector.textContent = translations[getCurrentLang()].invitation.toUpperCase();
-		InvitationSelector.className = "rounded-xl flex-1 h-full flex items-center justify-center cursor-pointer select-none"
-		SelectContainer.appendChild(InvitationSelector);
+		const RequestsRecievedSelector = document.createElement("btn");
+		RequestsRecievedSelector.textContent = translations[getCurrentLang()].requests_received.toUpperCase();
+		RequestsRecievedSelector.className = "rounded-xl flex-1 h-full flex items-center justify-center cursor-pointer select-none"
+		SelectContainer.appendChild(RequestsRecievedSelector);
+
+		const RequestSelector = document.createElement("btn");
+		RequestSelector.textContent = translations[getCurrentLang()].requests_send.toUpperCase();
+		RequestSelector.className = "rounded-xl flex-1 h-full flex items-center justify-center cursor-pointer select-none";
+		SelectContainer.appendChild(RequestSelector);
 
 		const indicator = document.createElement("div");
 		indicator.className = "absolute bottom-0 h-1 bg-green-500 rounded-full transition-all duration-300 pointer-events-none";
@@ -207,7 +212,6 @@ export function FriendsPage(): HTMLElement {
 				return wrap;
 			};
 
-			let FriendContainer!: HTMLDivElement;
 			{
                 const FriendContainer = document.createElement("div");
                 FriendContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8";
@@ -312,7 +316,6 @@ export function FriendsPage(): HTMLElement {
 				renderFriends();
             }
 
-			let SearchContainer!: HTMLDivElement;
 			{
 				const SearchContainer = document.createElement("div");
 				SearchContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8 hidden";
@@ -515,15 +518,14 @@ export function FriendsPage(): HTMLElement {
 				FriendMenu.appendChild(SearchContainer);
 			}
 
-			let InvitationContainer!: HTMLDivElement;
 			{
-				const InvitationContainer = document.createElement("div");
-				InvitationContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8 hidden";
-				InvitationContainer.dataset.section = "invites";
+				const RequestsRecievedContainer = document.createElement("div");
+				RequestsRecievedContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8 hidden";
+				RequestsRecievedContainer.dataset.section = "invites";
 				// expose ref
 				// @ts-ignore
-				window.__invSection = InvitationContainer;
-				FriendMenu.appendChild(InvitationContainer);
+				window.__invSection = RequestsRecievedContainer;
+				FriendMenu.appendChild(RequestsRecievedContainer);
 
 				// Search bar + liste dans FriendContainer
 				const form = document.createElement("form");
@@ -573,22 +575,22 @@ export function FriendsPage(): HTMLElement {
 				button.className = "text-white absolute end-1.5 bottom-1.5 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800";
 				button.textContent = translations[getCurrentLang()].search;
 				container.appendChild(button);
-				InvitationContainer.appendChild(form);
+				RequestsRecievedContainer.appendChild(form);
 
-				const InvitationList = document.createElement("ul");
-				InvitationList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
-				InvitationContainer.appendChild(InvitationList);
+				const RequestsRecievedList = document.createElement("ul");
+				RequestsRecievedList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
+				RequestsRecievedContainer.appendChild(RequestsRecievedList);
 
-				const renderInvitation = () => {
+				const renderRequestsRecieved = () => {
                     const q = input.value.trim().toLowerCase();
 					const filtered = data.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
-                    InvitationList.innerHTML = "";
+                    RequestsRecievedList.innerHTML = "";
                     if (filtered.length === 0) {
                         const li = document.createElement("li");
                         li.className = "p-3 text-center text-gray-400";
                         // @ts-ignore
                         li.textContent = translations[getCurrentLang()].no_result ?? "No result";
-                        InvitationList.appendChild(li);
+                        RequestsRecievedList.appendChild(li);
                         return;
                     }
                     for (const u of filtered) {
@@ -625,54 +627,173 @@ export function FriendsPage(): HTMLElement {
                         li.appendChild(name);
                         li.appendChild(uid);
                         li.appendChild(btndiv);
-                        InvitationList.appendChild(li);
+                        RequestsRecievedList.appendChild(li);
                     }
                 };
-				input.addEventListener("input", renderInvitation);
-				form.addEventListener("submit", (e) => { e.preventDefault(); renderInvitation(); });
-				renderInvitation();
+				input.addEventListener("input", renderRequestsRecieved);
+				form.addEventListener("submit", (e) => { e.preventDefault(); renderRequestsRecieved(); });
+				renderRequestsRecieved();
+			}
+
+			{
+				const RequestsContainer = document.createElement("div");
+				RequestsContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8 hidden";
+				RequestsContainer.dataset.section = "requests";
+				// expose ref
+				// @ts-ignore
+				window.__reqSection = RequestsContainer;
+				FriendMenu.appendChild(RequestsContainer);
+
+				const sent: Friend[] = users.slice(0, 5);
+				let sentData: Friend[] = sent.slice();
+
+				const form = document.createElement("form");
+				form.className = "w-full";
+
+				const label = document.createElement("label");
+				label.htmlFor = "requests-search";
+				label.className = "mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white";
+				label.textContent = "Search";
+				form.appendChild(label);
+
+				const container = document.createElement("div");
+				container.className = "relative";
+				form.appendChild(container);
+
+				const iconWrapper = document.createElement("div");
+				iconWrapper.className = "absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none";
+
+				const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+				svg.setAttribute("class", "w-4 h-4 text-gray-500 dark:text-gray-400");
+				svg.setAttribute("aria-hidden", "true");
+				svg.setAttribute("fill", "none");
+				svg.setAttribute("viewBox", "0 0 20 20");
+				svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+				const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+				path.setAttribute("stroke", "currentColor");
+				path.setAttribute("stroke-linecap", "round");
+				path.setAttribute("stroke-linejoin", "round");
+				path.setAttribute("stroke-width", "2");
+				path.setAttribute("d", "m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z");
+				svg.appendChild(path);
+				iconWrapper.appendChild(svg);
+				container.appendChild(iconWrapper);
+
+				const input = document.createElement("input");
+				input.type = "search";
+				input.id = "requests-search";
+				input.className = "block w-full p-3 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500";
+				input.placeholder = `${translations[getCurrentLang()].search} username, id...`;
+				input.required = true;
+				container.appendChild(input);
+				inputRef = input;
+
+				const button = document.createElement("button");
+				button.type = "submit";
+				button.className = "text-white absolute end-1.5 bottom-1.5 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800";
+				button.textContent = translations[getCurrentLang()].search;
+				container.appendChild(button);
+				RequestsContainer.appendChild(form);
+
+				const RequestsList = document.createElement("ul");
+				RequestsList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
+				RequestsContainer.appendChild(RequestsList);
+
+				const renderRequests = () => {
+					const q = input.value.trim().toLowerCase();
+					const filtered = sentData.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+					RequestsList.innerHTML = "";
+					if (filtered.length === 0) {
+						const li = document.createElement("li");
+						li.className = "p-3 text-center text-gray-400";
+						// @ts-ignore
+						li.textContent = translations[getCurrentLang()].no_result ?? "No result";
+						RequestsList.appendChild(li);
+						return;
+					}
+					for (const u of filtered) {
+						const li = document.createElement("li");
+						li.className = "p-3 min-w-0 grid grid-cols-[1fr_1fr_auto] items-center lg:gap-3 sm:gap-2 gap-1";
+
+						const name = document.createElement("span");
+						name.className = "font-medium truncate";
+						name.textContent = u.username;
+
+						const uid = document.createElement("span");
+						uid.className = "text-sm text-gray-400 truncate";
+						uid.textContent = u.id;
+
+						const cancel = document.createElement("button");
+						cancel.className = "cursor-pointer justify-self-end shrink-0 rounded-lg lg:px-2.5 sm:text_sm text-xs sm:px-2 px-2 py-1 bg-red-500 duration-300 transition-all hover:bg-red-600 onclick:scale-104 flex items-center gap-2";
+						const img = document.createElement("img");
+						img.src = "/icons/cross.svg";
+						img.className = "duration-300 transition-all hover:scale-110";
+						cancel.appendChild(img);
+						const span = document.createElement("span");
+						span.textContent = (translations[getCurrentLang()] as any).cancel ?? "Cancel";
+						span.className = "max-[600px]:hidden";
+						cancel.appendChild(span);
+						cancel.addEventListener("click", () => { sentData = sentData.filter(x => x.id !== u.id); renderRequests(); });
+
+						li.appendChild(name);
+						li.appendChild(uid);
+						li.appendChild(cancel);
+						RequestsList.appendChild(li);
+					}
+				};
+				input.addEventListener("input", renderRequests);
+				form.addEventListener("submit", (e) => { e.preventDefault(); renderRequests(); });
+				renderRequests();
 			}
 
 			PageContainer.appendChild(FriendMenu);
 		}
 	
 	mainContainer.appendChild(PageContainer);
-	// Toggle sections
+
 	const sections = {
 		friends: () => (window as any).__friendSection as HTMLDivElement,
 		search: () => (window as any).__searchSection as HTMLDivElement,
 		invites: () => (window as any).__invSection as HTMLDivElement,
+		requests: () => (window as any).__reqSection as HTMLDivElement,
 	};
-	const selectors: Record<"friends"|"search"|"invites", HTMLElement> = {
-		friends: FriendsSelector, search: SearchSelector, invites: InvitationSelector
+
+	const selectors: Record<"friends"|"search"|"invites"|"requests", HTMLElement> = {
+		friends: FriendsSelector, search: SearchSelector, invites: RequestsRecievedSelector, requests: RequestSelector
 	};
-	let current: "friends"|"search"|"invites" = "friends";
+
+	let current: "friends"|"search"|"invites"|"requests" = "friends";
+
 	const moveIndicator = (el: HTMLElement) => {
 		const left = (el as HTMLElement).offsetLeft;
 		const width = (el as HTMLElement).offsetWidth;
 		indicator.style.left = `${left}px`;
 		indicator.style.width = `${width}px`;
 	};
-	const setActive = (name: "friends"|"search"|"invites") => {
+
+	const setActive = (name: "friends"|"search"|"invites"|"requests") => {
 		current = name;
 		sections.friends().classList.toggle("hidden", name !== "friends");
 		sections.search().classList.toggle("hidden", name !== "search");
 		sections.invites().classList.toggle("hidden", name !== "invites");
+		sections.requests().classList.toggle("hidden", name !== "requests");
 		Object.entries(selectors).forEach(([k, el]) => {
 			el.classList.toggle("text-green-400", k === name);
 			el.classList.toggle("font-semibold", k === name);
 		});
 		moveIndicator(selectors[name]);
 	};
-	// Listeners
+
 	FriendsSelector.addEventListener("click", () => setActive("friends"));
 	SearchSelector.addEventListener("click", () => setActive("search"));
-	InvitationSelector.addEventListener("click", () => setActive("invites"));
-	[FriendsSelector, SearchSelector, InvitationSelector].forEach(el => {
+	RequestsRecievedSelector.addEventListener("click", () => setActive("invites"));
+	RequestSelector.addEventListener("click", () => setActive("requests"));
+	[FriendsSelector, SearchSelector, RequestsRecievedSelector, RequestSelector].forEach(el => {
 		(el as HTMLElement).tabIndex = 0;
 		el.addEventListener("keydown", (e: KeyboardEvent) => {
 			if (e.key === "Enter" || e.key === " ") setActive(
-				el === FriendsSelector ? "friends" : el === SearchSelector ? "search" : "invites"
+				el === FriendsSelector ? "friends" : el === SearchSelector ? "search" : el === RequestsRecievedSelector ? "invites" : "requests"
 			);
 		});
 	});
