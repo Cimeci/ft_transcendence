@@ -1,0 +1,27 @@
+# General Cluster / node settings
+cluster.name: ${CLUSTER_NAME}
+network.host: 0.0.0.0
+discovery.type: single-node
+node.name: es01
+
+# SSL settings (communication with stack)
+xpack.security:
+  enabled: true
+  http:
+    ssl.enabled: true
+    ssl.key: ${SSL_KEY}
+    ssl.certificate: ${SSL_CERTIFICATE}
+    ssl.certificate_authorities: ${CA_CERT}
+  transport:
+    ssl.enabled: true
+    ssl.key: ${SSL_KEY}
+    ssl.certificate: ${SSL_CERTIFICATE}
+    ssl.certificate_authorities: ${CA_CERT}
+    ssl.verification_mode: certificate
+
+# Licence and memory
+xpack.license.self_generated.type: ${LICENSE}
+bootstrap.memory_lock: true
+
+# Unused Services
+xpack.ml.enabled: false

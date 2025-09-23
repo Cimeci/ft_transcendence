@@ -1,0 +1,20 @@
+# Globals Configurations files
+../docker-compose.yml
+../.env
+
+# Documentation
+../ELK_todo.md
+
+# Other Services
+../kibana/
+../elasticsearch/
+../ilm-manager/
+../logstash/
+../logstash_ingest_data/
+
+# Temp and sys files
+.DS_Store
+*.tmp
+*.swp
+*~
+

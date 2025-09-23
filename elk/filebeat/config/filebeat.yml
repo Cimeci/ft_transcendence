@@ -1,0 +1,56 @@
+filebeat.inputs:
+  - type: filestream
+    enabled: true
+    id: trans-input
+    paths:
+      - /var/log/app/*-service.log
+      - /var/log/app/*-service-error.log
+    fields:
+      log_type: application
+      service_type: microservice
+      collection_method: volume
+    fields_under_root: true
+
+logging.level: info
+logging.to_stderr: true
+
+## Secured Com with other services
+output.logstash:
+  hosts: ${LOGSTASH_HOSTS}
+  ssl:
+    enabled: true
+    certificate_authorities: ${CA_CERT}
+    certificate: ${SSL_CERTIFICATE}
+    key: ${SSL_KEY}
+
+setup.kibana:
+  host: ${KIBANA_HOSTS}
+  username: ${ELASTIC_USER}
+  password: ${ELASTIC_PASSWORD}
+  ssl:
+    enabled: true
+    certificate_authorities: ${CA_CERT}
+
+## Memory and Processor optimizations
+queue.mem:
+  events: 4096
+  flush.min_events: 512
+  flush.timeout: 5s
+
+max_procs: 1
+
+# ############################# #
+# DEBUG MINAL FUCNTIONAL LAUNCH #
+# ############################# #
+
+#filebeat.inputs:
+#- type: filestream
+  #enabled: true
+  ##paths:
+    #- /var/log/app/*.log
+
+#output.console:
+  #pretty: true
+
+#logging.level: info
+#logging.to_stderr: true

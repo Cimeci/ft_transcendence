@@ -1,0 +1,79 @@
+# Security
+[x] Simple script tester
+[ ] Check leaks from images
+[ ] Check if expose port on 0.0.0.0 is a good production idea (ss -tunlp)
+[x] Backup & retention
+[ ] Filebeat Keystore ?
+[ ] Remove ports settings in the compose
+
+
+# Completing setup
+[x] Kibana.yml
+[ ] Handle filter from Logstash.conf
+[ ] Add Restart Policy
+[ ] Change volumes logs (not the default one in compose)
+[ ] Persistence queue ?
+[ ] Add Healthcheck to the filebeat service
+[ ] Log4j2 configuration logs for Elastic
+
+
+# Functionnality
+[x] Add fake web app logs (check if the harvesters are ok)
+[x] Rotation
+[x] Issue "Health" index into Kibana
+[x] Verify a docker compose down + docker compose up is working (persistence datas)
+
+
+# Littles Adds
+[x] Check about labels docker -> specificly into the filebeat
+[ ] If a second node is added => Define 1 shard into the template.json
+[ ] MetricBeats -> If it's possible without docker sockets
+[ ] Look how handle keystore with elk-certs container (es-certutil)
+
+
+# Clean Code
+[ ] Remove dev suppressions into entrypoin.sh from bootstrap-ilm =>  /!\ very important to keep a functionnal stack !!!
+[ ] Clean Docker compose -> use Dockerfiles and configurations files 
+[ ] Defined ports into the .env 
+
+
+
+# Documentation Specs
+[ ] Specifications about root
+[ ] Specifications about env
+
+
+
+## Security concern
+
+The `elk_certs` container is builed from an Elasticsearch image, which contianed elastic-certutil and allow to create different certificate.
+Each service (or node from ES) can communicate with a mutually certification (mTLS). Each service as is own certificate, signed by the intern CA `ca.crt` (wich is a way to trust all the differents certificates).
+
+
+## Template and ILM Policies
+
+The "" container wait before the ElasticSearch fonctionement and use the REST API to
+- PUT our policies files settings
+- PUT our index template
+- PUT our first index
+
+
+### Rollover
+
+We create an Alias `transcendence` pointing to the real current index, specified by a number, `transcendence-000001` for the exemple
+That's means we got after a rollover we got
+```
+transcendence (ALIAS) 
+    ↓ pointing to  
+transcendence-000002 (New Index, actif to the writing)
+
+transcendence-000001 (Old Index, read only)
+```
+
+### Retention
+
+We autamtized suppression after to olf indices
+
+
+
+

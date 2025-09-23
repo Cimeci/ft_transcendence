@@ -1,0 +1,29 @@
+server:
+  host: "0.0.0.0"
+  name: "kibana"
+  shutdownTimeout: "5s"
+
+## Handle Elastic Connection
+elasticsearch:
+  hosts: ${ELASTIC_HOSTS}
+  username: ${ELASTIC_USER}
+  password: ${ELASTIC_PASSWORD}
+  ssl.certificateAuthorities: ${CA_CERT}
+
+## SSL Settings
+server.ssl:
+  enabled: true
+  certificateAuthorities: ${CA_CERT}
+  certificate: ${SSL_CERTIFICATE}
+  key: ${SSL_KEY}
+
+## Encryption key settings
+xpack:
+  security.encryptionKey: ${ENCRYPTION_KEY}
+  encryptedSavedObjects.encryptionKey: ${ENCRYPTION_KEY}
+  reporting.encryptionKey: ${ENCRYPTION_KEY}
+
+## Extern plugins and monitoring settings
+xpack.fleet.enabled: false
+xpack.securitySolution.enabled: false
+monitoring.ui.container.elasticsearch.enabled: true
