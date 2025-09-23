@@ -21,7 +21,7 @@
 [x] Add fake web app logs (check if the harvesters are ok)
 [x] Rotation
 [x] Issue "Health" index into Kibana
-[ ] Verify a docker compose down + docker compose up is working (persistence datas)
+[x] Verify a docker compose down + docker compose up is working (persistence datas)
 
 
 # Littles Adds
@@ -32,7 +32,7 @@
 
 
 # Clean Code
-[ ] Remove dev suppressions into entrypoin.sh from bootstrap-ilm
+[ ] Remove dev suppressions into entrypoin.sh from bootstrap-ilm =>  /!\ very important to keep a functionnal stack !!!
 [ ] Clean Docker compose -> use Dockerfiles and configurations files 
 [ ] Defined ports into the .env 
 
