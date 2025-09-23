@@ -102,7 +102,10 @@ services:
     depends_on:
       certs:
         condition: service_healthy
-    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    build:
+      context: elasticsearch/
+      args:
+        STACK_VERSION: ${STACK_VERSION}
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
@@ -111,22 +114,12 @@ services:
     ports:
       - ${ES_PORT}:9200
     environment:
-      - node.name=es01
-      - cluster.name=${CLUSTER_NAME}
-      - discovery.type=single-node
+      - CLUSTER_NAME=${CLUSTER_NAME}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - bootstrap.memory_lock=true
-      - xpack.security.enabled=true
-      - xpack.security.http.ssl.enabled=true
-      - xpack.security.http.ssl.key=certs/es01/es01.key
-      - xpack.security.http.ssl.certificate=certs/es01/es01.crt
-      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
-      - xpack.security.transport.ssl.enabled=true
-      - xpack.security.transport.ssl.key=certs/es01/es01.key
-      - xpack.security.transport.ssl.certificate=certs/es01/es01.crt
-      - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
-      - xpack.security.transport.ssl.verification_mode=certificate
-      - xpack.license.self_generated.type=${LICENSE}
+      - CA_CERT=certs/ca/ca.crt
+      - SSL_CERTIFICATE=certs/es01/es01.crt
+      - SSL_KEY=certs/es01/es01.key
+      - LICENSE=${LICENSE}
     mem_limit: ${ES_MEM_LIMIT}
     ulimits:
       memlock:
