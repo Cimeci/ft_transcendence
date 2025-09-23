@@ -10,11 +10,6 @@ filebeat.inputs:
       service_type: microservice
       collection_method: volume
     fields_under_root: true
-    ## not sure about it
-    #json:
-      #- keys_under_root: true
-      #- add_error_key: true
-      #- message_key: msg
 
 logging.level: info
 logging.to_stderr: true
@@ -35,34 +30,6 @@ setup.kibana:
   ssl:
     enabled: true
     certificate_authorities: ${CA_CERT}
-
-#setup.elastic:
-  #host: ${ELASTIC_HOSTS}
-  #username: ${ELASTIC_USER}
-  #password: ${ELASTIC_PASSWORD}
-  #ssl:
-    #enabled: true
-    #certificate_authorities: ${CA_CERT}
-    #certificate: ${SSL_CERTIFICATE}
-    #key: ${SSL_KEY}
-    #verification_mode: certificate 
-
-### Templates and ILM policies
-#setup.template.settings:
-  #index:
-    #number_of_shards: 1
-    #number_of_replicas: 1
-    #refresh_interval: "5s"
-    #lifecycle.name: "transcendence"
-    #lifecycle.rollover_alias: "transcendence"
-
-#setup.ilm:
-  #enabled: true
-  #policy_name: "transcendence"
-  #policy_file: ${POLICY_FILE}
-  #rollover_alias: "transcendence"
-  #pattern: "transcendence-*"
-
 
 ## Memory and Processor optimizations
 queue.mem:

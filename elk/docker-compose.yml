@@ -21,7 +21,6 @@ networks:
 
 services:
 
-  ## SETUP Service // Handle certificates
   certs:
    container_name: elk_certs
    networks:
@@ -96,7 +95,6 @@ services:
      timeout: 5s
      retries: 120
 
-  ## One Node Elasticsearch service
   es01:
     container_name: elk_es01
     networks:
@@ -144,7 +142,6 @@ services:
       timeout: 10s
       retries: 120
 
-  ## Launch ILM policies
   ilm-manager:
     container_name: elk_ilm-manager
     networks:
@@ -158,7 +155,6 @@ services:
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
 
-  ## KIBANA Service, graphical part
   kibana:
     container_name: elk_kibana
     networks:
@@ -197,14 +193,11 @@ services:
       timeout: 10s
       retries: 120
 
-  ## LOGSTASH Service // Filter logs from the Filebeat Collector
   logstash:
     container_name: elk_logstash
     networks:
       - elk
     depends_on:
-      #es01:
-        #condition: service_healthy
       kibana:
         condition: service_healthy
       ilm-manager:
@@ -241,25 +234,24 @@ services:
       timeout: 5s
       retries: 120
 
-  ## FILEBEAT Service // Collect logs from dedicated volume
   filebeat:
     container_name: elk_filebeat
     networks:
       - elk
     depends_on:
-      #es01:
-        #condition: service_healthy
       logstash:
         condition: service_healthy
-    image: docker.elastic.co/beats/filebeat:${STACK_VERSION}
-    user: root
+    build:
+      context: filebeat/
+      args:
+        STACK_VERSION: ${STACK_VERSION}
+    labels:
+      co.elastic.logs/module: filebeat
     volumes:
       - certs:/usr/share/filebeat/certs
       - filebeatdata:/usr/share/filebeat/data
       #- logs_volumes:/var/log/app:ro # <= real logs 
       - "./logs_data:/var/log/app:ro" # <= provisory fakes logs
-      - "./filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
-      #- "./filebeat/ilm/elktrans-policy.json:/usr/share/filebeat/ilm/elktrans-policy.json:ro"
     environment:
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
