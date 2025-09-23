@@ -90,16 +90,30 @@ export function UserPage(): HTMLElement {
         const center = document.createElement("div");
         center.className = "flex flex-col items-center gap-2 justify-self-center";
 
+        const avatarWrap = document.createElement("div");
+        avatarWrap.className = "relative"
+        
         const avatar = document.createElement("img");
         avatar.src = userInventory.avatar?.[0]?.id || "/avatar/default_avatar.png";
         avatar.alt = "avatar";
         avatar.className = "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-green-500/50";
+        avatarWrap.appendChild(avatar)
+
+        const status = document.createElement("span");
+        status.className = "absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ring-2 ring-black/60";
+        avatarWrap.appendChild(status);
+
+        const setOnline = (v: boolean) => {
+          status.classList.remove("bg-green-600", "bg-gray-500");
+          status.classList.add(v ? "bg-green-600" : "bg-gray-500");
+        };
+        setOnline(Math.random() < 0.5);
 
         const name = document.createElement("h2");
         name.textContent = userName;
         name.className = "text-white font-semibold text-lg";
 
-        center.appendChild(avatar);
+        center.appendChild(avatarWrap);
         center.appendChild(name);
         grid.appendChild(center);
 
@@ -140,20 +154,43 @@ export function UserPage(): HTMLElement {
         itemsRow.appendChild(ballWrap);
         right.appendChild(itemsRow);
 
-        const addBtn = document.createElement("button");
-        addBtn.type = "button";
-        addBtn.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
-        addBtn.textContent = (translations[getCurrentLang()].add);
+        { // CHANGE BTN //! change it by the relation between user and user look
+            const addBtn = document.createElement("button");
+            addBtn.type = "button";
+            addBtn.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
+            addBtn.textContent = (translations[getCurrentLang()].add);
+            addBtn.addEventListener("click", () => navigateTo("/friends"));//! add user + notif
 
-        const plus = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        plus.setAttribute("class", "w-4 h-4");
-        plus.setAttribute("viewBox", "0 0 20 20");
-        plus.setAttribute("fill", "currentColor");
-        plus.innerHTML = `<path d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 1 1 0-2h5V4a1 1 0 0 1 1-1z"/>`;
-        addBtn.prepend(plus);
-        addBtn.addEventListener("click", () => navigateTo("/friends"));
-        right.appendChild(addBtn);
- 
+            const addIcon = document.createElement("img");
+            addIcon.src = "/icons/plus.svg";
+            addBtn.prepend(addIcon);
+            // right.appendChild(addBtn);
+
+            const friendDiv = document.createElement("div");
+            friendDiv.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
+            friendDiv.textContent = (translations[getCurrentLang()].friends);
+            // right.appendChild(friendDiv);
+
+            const friendIcon = document.createElement("img");
+            friendIcon.src = "/icons/contact.svg";
+            friendDiv.prepend(friendIcon);
+
+            const blockDiv = document.createElement("div");
+            blockDiv.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
+            blockDiv.textContent = (translations[getCurrentLang()].block);
+            // right.appendChild(blockDiv);
+
+            const blockIcon = document.createElement("img");
+            blockIcon.src = "/icons/user-lock.svg";
+            blockDiv.prepend(blockIcon);
+
+            const nb = Math.floor(Math.random() * 4);
+            if (nb == 0){}
+            else if (nb == 1){ right.appendChild(addBtn); }
+            else if (nb == 2){ right.appendChild(friendDiv); }
+            else if (nb == 3){ right.appendChild(blockDiv); }
+        }
+
         grid.appendChild(right);
     }
     
