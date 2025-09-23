@@ -2,13 +2,13 @@
 [x] Simple script tester
 [ ] Check leaks from images
 [ ] Check if expose port on 0.0.0.0 is a good production idea (ss -tunlp)
-[ ] Backup & retention
+[x] Backup & retention
 [ ] Filebeat Keystore ?
 [ ] Remove ports settings in the compose
 
 
 # Completing setup
-[ ] Kibana.yml
+[x] Kibana.yml
 [ ] Handle filter from Logstash.conf
 [ ] Add Restart Policy
 [ ] Change volumes logs (not the default one in compose)
@@ -20,22 +20,21 @@
 # Functionnality
 [x] Add fake web app logs (check if the harvesters are ok)
 [x] Rotation
-[ ] Issue "Health" index into Kibana
+[x] Issue "Health" index into Kibana
+[ ] Verify a docker compose down + docker compose up is working (persistence datas)
 
 
 # Littles Adds
-[ ] Check about labels docker -> specificly into the filebeat
+[x] Check about labels docker -> specificly into the filebeat
 [ ] If a second node is added => Define 1 shard into the template.json
 [ ] MetricBeats -> If it's possible without docker sockets
+[ ] Look how handle keystore with elk-certs container (es-certutil)
 
 
 # Clean Code
 [ ] Remove dev suppressions into entrypoin.sh from bootstrap-ilm
 [ ] Clean Docker compose -> use Dockerfiles and configurations files 
-
-
-
-
+[ ] Defined ports into the .env 
 
 
 

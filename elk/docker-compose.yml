@@ -162,7 +162,10 @@ services:
     depends_on:
       es01:
         condition: service_healthy
-    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    build:
+      context: kibana/
+      args:
+        STACK_VERSION: ${STACK_VERSION}
     labels:
       co.elastic.logs/module: kibana
     volumes:
@@ -171,17 +174,13 @@ services:
     ports:
       - ${KIBANA_PORT}:5601
     environment:
-      - SERVERNAME=kibana
-      - ELASTICSEARCH_HOSTS=https://es01:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
-      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
-      - SERVER_SSL_ENABLED=true
-      - XPACK_SECURITY_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-      - SERVER_SSL_CERTIFICATE=config/certs/kibana/kibana.crt
-      - SERVER_SSL_KEY=config/certs/kibana/kibana.key
-      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${ENCRYPTION_KEY}
-      - XPACK_REPORTING_ENCRYPTIONKEY=${ENCRYPTION_KEY}
+      - ELASTIC_HOSTS=https://es01:9200
+      - ELASTIC_USER=kibana_system
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - CA_CERT=config/certs/ca/ca.crt
+      - SSL_CERTIFICATE=config/certs/kibana/kibana.crt
+      - SSL_KEY=config/certs/kibana/kibana.key
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     mem_limit: ${KB_MEM_LIMIT}
     healthcheck:
       test:
