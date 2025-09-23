@@ -9,8 +9,7 @@
 ../kibana/
 ../elasticsearch/
 ../ilm-manager/
-../logstash/
-../logstash_ingest_data/
+../filebeat/
 
 # Temp and sys files
 .DS_Store
