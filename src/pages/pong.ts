@@ -41,7 +41,7 @@ export function PongMenuPage(): HTMLElement {
 	mainContainer.className = "pt-25 min-h-screen w-full flex items-center justify-center bg-linear-to-bl from-black via-green-900 to-black"
 
 	const TitlePong = document.createElement("h1");
-	TitlePong.className = "pt-25 text-8xl tracking-widest absolute top-0 text-green-400 neon-matrix w-full text-center";
+	TitlePong.className = "pt-25 text-6xl sm:text-8xl tracking-widest absolute top-0 text-green-400 neon-matrix w-full text-center";
 	TitlePong.textContent = "P O N G";
 	mainContainer.appendChild(TitlePong);
 
@@ -49,7 +49,7 @@ export function PongMenuPage(): HTMLElement {
 	GridContainer.className = "gap-10 pong-menu-grid";
 
 	const CosmeticContainer = document.createElement("div");
-	CosmeticContainer.className = "grid grid-cols-2 w-[25vw] gap-10 text-center h-[50vh]";
+	CosmeticContainer.className = "grid grid-cols-2 w-7/10 sm:w-6/10 md:w-4/10 lg:w-3/10 h-3/10 gap-10 text-center h-[50vh]";
 	CosmeticContainer.addEventListener('click', () => {
 		navigateTo("/inventory")
 	})
@@ -66,7 +66,7 @@ export function PongMenuPage(): HTMLElement {
 		itemDiv.className = "flex flex-col items-center";
 
 		const img = document.createElement("img");
-		img.className = "rounded-xl p-4 size-40 transition-all duration-300 hover:scale-110 text-3xl tracking-widest text-green-400 neon-matrix border-2 border-green-400 rounded-lg mb-2 w-full h-full hover:p-1";
+		img.className = "rounded-xl p-4 w-3/10 transition-all duration-300 hover:scale-110 text-3xl tracking-widest text-green-400 neon-matrix border-2 border-green-400 rounded-lg mb-2 w-full h-full hover:p-1";
 		img.src = firstItem.id;
 		img.alt = firstItem.name;
 
@@ -86,7 +86,7 @@ export function PongMenuPage(): HTMLElement {
 	// PlayContainer.appendChild(getName1);
 
 	const getName2 = document.createElement("input");
-	getName2.className = "mt-10 relative z-10 text-3xl text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
+	getName2.className = "mt-10 relative z-10 text-xl sm:text-2xl md:text-3xl text-green-400 neon-matrix rounded-full px-6 md:px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
 	getName2.placeholder = translations[getCurrentLang()].username2;
 	getName2.maxLength = 16;
 	getName2.addEventListener("input", () => {
@@ -95,7 +95,7 @@ export function PongMenuPage(): HTMLElement {
 	PlayContainer.appendChild(getName2);
 
 	const HistoryContainer = document.createElement("div");
-	HistoryContainer.className = "history border-5 border-green-400 rounded-xl flex flex-col items-center text-center w-[25vw] h-[70vh]";
+	HistoryContainer.className = "history border-5 border-green-400 rounded-xl flex flex-col items-center text-center w-8/10 sm:w-7/10 md:w-5/10 xl:w-3/10 sm:h-[65vh]";
 
 	const HistoryTitle = document.createElement("h2");
 	HistoryTitle.className = "border-green-400 w-full rounded-xl p-2 text-5xl tracking-widest neon-matrix";
