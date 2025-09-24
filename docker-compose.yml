@@ -1,0 +1,26 @@
+name: ft_transcendence
+
+include:
+  - ./backend/compose-backend.yml
+  - ./elk/compose-elk.yml
+
+volumes:
+  certs:
+    driver: local
+  esdata01:
+    driver: local
+  kibanadata:
+    driver: local
+  logstashdata:
+    driver: local
+  logstash-keystore:
+  filebeatdata:
+    driver: local
+  app_logs:
+    driver: local
+
+networks:
+  backend:
+    driver: bridge
+  elk:
+    driver: bridge

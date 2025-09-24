@@ -11,6 +11,7 @@ filebeat.inputs:
       collection_method: volume
     fields_under_root: true
 
+
 logging.level: info
 logging.to_stderr: true
 

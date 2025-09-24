@@ -1,6 +1,7 @@
 services:
+
   gateway:
-    container_name: gateway_container
+    container_name: backend_gateway
     build: ./src/gateway
     networks:
       - backend
@@ -11,22 +12,25 @@ services:
       - game
       - tournament
       - user
-      - websocket
+      #- websocket
     restart: on-failure
     env_file:
       - .env
+  
   auth:
-    container_name: auth_container
+    container_name: backend_auth
     build: ./src/auth
     networks:
       - backend
     volumes:
       - ./src/auth/data:/app/data
+      - app_logs:/var/log/app
     restart: on-failure
     env_file:
       - .env
+  
   game:
-    container_name: game_container
+    container_name: backend_game
     build: ./src/game
     networks:
       - backend
@@ -35,8 +39,9 @@ services:
     restart: on-failure
     env_file:
       - .env
+  
   tournament:
-    container_name: tournament_container
+    container_name: backend_tournament
     build: ./src/tournament
     networks:
       - backend
@@ -45,8 +50,9 @@ services:
     restart: on-failure
     env_file:
       - .env
+
   user:
-    container_name: user_container
+    container_name: backend_user
     build: ./src/user
     networks:
       - backend
@@ -55,18 +61,16 @@ services:
     restart: on-failure
     env_file:
       - .env
-  websocket:
-    container_name: websocket_container
-    build: ./src/websocket  
-    networks:
-      - backend
-    volumes:
-      - ./src/websocket/data:/app/data
-    restart: on-failure
-    env_file:
-      - .env
 
-networks:
-  backend:
-    name: back
-    driver: bridge
+  #websocket:
+    #container_name: backend_websocket
+    #build: ./src/websocket  
+    #networks:
+      #- backend
+    #volumes:
+      #- ./src/websocket/data:/app/data
+    #restart: on-failure
+    #env_file:
+      #- .env
+
+
