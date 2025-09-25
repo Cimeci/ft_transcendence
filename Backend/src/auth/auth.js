@@ -70,7 +70,7 @@ app.post('/register', async (request, reply) => {
         }
 
         const info = { uuid, username, email, hash }
-        const token = await app.jwt.sign({ uuid: uuid, username: username, email: email })
+        const token = await app.jwt.sign({ userId: uuid, username, email })
         
         const response = await fetch('http://user:4000/insert', {
             method: 'POST',
@@ -125,7 +125,7 @@ app.post('/login', async (request, reply) => {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
+        const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username });
 
         reply.send({ jwtToken, user: {...user, password: undefined} })
     } catch (err) {
@@ -230,7 +230,7 @@ app.get('/google/callback', async(request, reply) => {
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
         if (user) {
-            jwtToken = await app.jwt.sign({ userId: user.uuid });
+            jwtToken = await app.jwt.sign({ userId: user.uuid, username: user.username, email: user.email });
             const info = { online: 1, uuid: user.uuid }
            
             const response = await fetch('http://user:4000/online', {
@@ -248,7 +248,7 @@ app.get('/google/callback', async(request, reply) => {
         } else {
             const uuid = crypto.randomUUID();
             db.prepare('INSERT INTO user (uuid, google_id, username, email, password, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, google_id, given_name, email, null, picture);
-            jwtToken = await app.jwt.sign({ userId: uuid });
+            jwtToken = await app.jwt.sign({ userId: uuid, username: given_name, email });
 
             const info = { uuid: uuid, username: given_name, email: email, hash: null , avatar: picture}
             await fetch('http://user:4000/insert', {
@@ -335,7 +335,7 @@ app.get('/github/callback', async function (request, reply) {
     let jwtToken;
 
     if (user) {
-        jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
+        jwtToken = await app.jwt.sign({ userId: user.uuid, username: user.username, email: user.email});
         const info = { online: 1, uuid: user.uuid }
         
         const response = await fetch('http://user:4000/online', {
@@ -363,7 +363,7 @@ app.get('/github/callback', async function (request, reply) {
             },
             body: JSON.stringify(info)
         });
-        jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
+        jwtToken = await app.jwt.sign({ userId: uuid, username: login, email: emailPrimary});
     }
     reply.send({ access_token: token.access_token, jwtToken })
 })

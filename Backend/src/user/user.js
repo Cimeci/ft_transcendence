@@ -101,7 +101,7 @@ app.patch('/update-info', async(request, reply) => {
     const { email, username, avatar } = request.body;
     let uuid
     try{
-        uuid = checkToken(request);
+        uuid = await checkToken(request);
     } catch (err) {
         reply.code(401).send({ error: 'Unauthorized' });
     }
@@ -391,7 +391,7 @@ async function checkToken(request) {
 
     // const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
     const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
-    return payload.uuid;
+    return payload.userId || payload.uuid;;
 }
 
 app.listen({ port: 4000, host: '0.0.0.0' })
