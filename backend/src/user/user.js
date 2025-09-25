@@ -5,7 +5,21 @@ import jwt from '@fastify/jwt'
 
 dotenv.config();
 
-const app = fastify({ logger: true });
+// Configuration du logger fastify
+const loggerConfig = {
+    transport: {
+        target: 'pino/file',
+        options: {
+            destination: '/var/log/app/user-service.log',
+            mkdir: true
+        }
+    },
+    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+    base: { service: 'user'},
+    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+}
+
+const app = fastify({ logger: loggerConfig });
 
 await app.register(jwt, {
   secret: process.env.JWT_SECRET,
@@ -70,6 +84,9 @@ app.addHook('onClose', async (instance) => {
 app.post('/insert', async(request, reply) => {
     const key = request.headers['x-internal-key'];
     if (key !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'insert_attempt',
+        }, 'Insert user Unauthorized: invalid jwt token');
         return reply.code(403).send({ error: 'Forbidden' })
     }
 
@@ -79,9 +96,20 @@ app.post('/insert', async(request, reply) => {
         db.prepare('INSERT INTO user (uuid, username, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
         db.prepare('INSERT INTO historic (uuid, user_uuid, games, tournament, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(historic_uuid, uuid, null, null, Date.now(), Date.now());
+        request.log.info({
+            event: 'insert_attempt',
+            user: { username, email }
+        }, 'User insert sucess');
         reply.code(201).send({ succes: true})
     } catch (err) {
-        console.error(err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            user: { email, username },
+            event: 'insert_attempt'
+        }, 'Insert user failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
@@ -89,11 +117,16 @@ app.post('/insert', async(request, reply) => {
 app.patch('/online', async(request, reply) => {
     const key = request.headers['x-internal-key'];
     if (key !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'online_attempt',
+        }, 'Set user online Unauthorized: invalid jwt token');
         return reply.code(403).send({ error: 'Forbidden' })
     }
 
     const { uuid, online } = request.body;
-    console.log(online);
+    request.log.info({
+        event: 'online_attempt'
+    }, 'User online sucess');
     db.prepare('UPDATE user set is_online = ? WHERE uuid = ?').run(online, uuid);
 })
 
@@ -103,9 +136,15 @@ app.patch('/update-info', async(request, reply) => {
     try{
         uuid = checkToken(request);
     } catch (err) {
+        request.log.warn({
+            event: 'update-info_attempt'
+        }, 'Update user info Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized' });
     }
     if (!email && !username && !avatar){
+        request.log.warn({
+            event: 'update-info_attempt'
+        }, 'Update user info Failed: nothing to change');
         return reply.code(300).send('There are nothing change');
     }
 
@@ -114,12 +153,17 @@ app.patch('/update-info', async(request, reply) => {
             return /^[^@]+@[^@]+\.[^@]+$/i.test(email);
         };
         if (!validationEmail(email)) {
-            return reply.code(400).send({
-                error: 'Invalid email'
-            });
+            request.log.warn({
+                event: 'update-info_attempt'
+            }, 'Update user info Failed: invalid email');
+            return reply.code(400).send({ error: 'Invalid email' });
         }
         const emailExist = db.prepare('SELECT email FROM user WHERE email = ?').get(email);
         if (emailExist) {
+            request.log.warn({
+                event: 'update-info_attempt',
+                user: { uuid }
+            }, 'Update user info Failed: email already in use');
             return reply.code(400).send({
                 error: 'Email already in use'
             });
@@ -133,6 +177,10 @@ app.patch('/update-info', async(request, reply) => {
     if (avatar)
         db.prepare('UPDATE user set avatar = ? WHERE uuid = ?').run(avatar, uuid);
 
+    request.log.info({
+        event: 'update-info_attempt',
+        user: { email, username }
+    }, 'Update user infos success');
     reply.send('Profile update')
 });
 
@@ -141,6 +189,9 @@ app.get('/friendship', async(request, reply) => {
     try {
         uuid = await checkToken(request);
     } catch (err) {
+        request.log.warn({
+            event: 'get-friendship_attempt'
+        }, 'Get Friendship Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
 
@@ -153,19 +204,30 @@ app.get('/friendship', async(request, reply) => {
             FROM user 
             WHERE uuid != ? 
             AND uuid NOT IN (
-            SELECT friend_id FROM friendships WHERE user_id = ? 
-            UNION 
-            SELECT user_id FROM friendships WHERE friend_id = ?
+                SELECT friend_id FROM friendships WHERE user_id = ? 
+                UNION 
+                SELECT user_id FROM friendships WHERE friend_id = ?
             )`
         ).all(uuid, uuid, uuid);
-    reply.send({
-        friendship: accept,
-        sentRequest: sentRequest,
-        receivedRequest: receivedRequest,
-        notFriend: notFriend
-    })
+
+        request.log.info({
+            event: 'get-friendship_attempt'
+        }, 'Friendship data retrieved successfully');
+
+        reply.send({
+            friendship: accept,
+            sentRequest: sentRequest,
+            receivedRequest: receivedRequest,
+            notFriend: notFriend
+        });
     } catch(err) {
-        console.error( 'GET /friendship', err );
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'get-friendship_attempt'
+        }, 'Get friendship data failed with error');
         reply.code(500).send({ error: 'Internal Server Error' })
     }
 });
@@ -175,25 +237,44 @@ app.post('/friendship/:uuid', async(request, reply) => {
     try {
         user_id = await checkToken(request);
     } catch (err) {
+        request.log.warn({
+            event: 'set-friendship_attempt'
+        }, 'Set Friendship Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
     const friend_id  = request.params.uuid;
     
-    if (user_id === friend_id)
-        // regarder pour le code erreur
-        return reply.code(401).send({ error: 'You can\'t send invite himself'})
+    if (user_id === friend_id) {
+        request.log.warn({
+            event: 'set-friendship_attempt'
+        }, 'Set Friendship Failed: User try to add himself as friend');
+        return reply.code(401).send({ error: 'You can\'t send invite to yourself'});
+    }
 
     const uuid = crypto.randomUUID();
     try{
         const friend = db.prepare('SELECT * FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)').get(user_id, friend_id, friend_id, user_id);
-        if (friend)
+        if (friend){
+            request.log.warn({
+                event: 'set-friendship_attempt'
+            }, 'Set Friendship Failed: Frien as been already invited');
             return reply.code(409).send({ error: 'this invite exists'});
+        }
 
         db.prepare('INSERT INTO friendships (uuid, user_id, friend_id, status) VALUES (?, ?, ?, ?)').run(uuid, user_id, friend_id, 'pending');
 
+        request.log.info({
+            event: 'set-friendship_attempt'
+        }, 'Set Friendship Success');
         reply.send({ message: 'Friendship request sent' })
     } catch (err) {
-        console.error(err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'set-friendship_attempt'
+        }, 'Set friendship failed with error');
         reply.code(500).send({ error: user_id, friend_id });
     }
 });
@@ -203,6 +284,9 @@ app.patch('/friendship/:uuid', async(request, reply) => {
     try {
         friend_id = await checkToken(request);
     } catch (err) {
+        request.log.warn({
+            event: 'update-friendship_attempt'
+        }, 'Update Friendship Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
     const { statut } = request.body;
@@ -210,9 +294,18 @@ app.patch('/friendship/:uuid', async(request, reply) => {
 
     try {
         db.prepare('UPDATE friendships set status = ? WHERE (user_id = ? AND friend_id = ?)').run(statut, user_id, friend_id);
-
+        request.log.info({
+            event: 'update-friendship_attempt'
+        }, 'Update Friendship Success');
+        reply.send({ message: 'Friendship request sent' })
     } catch(err) {
-        console.log(err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'update-friendship_attempt'
+        }, 'Update friendship failed with error');
         reply.code(500).send({ error: 'Internal Server Error' })
     }
 });
@@ -222,6 +315,9 @@ app.delete('/friendship/:uuid', async(request, reply) => {
     try {
         user_id = await checkToken(request);
     } catch (err) {
+        request.log.warn({
+            event: 'delete-friendship_attempt'
+        }, 'Delete Friendship Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
 
@@ -229,9 +325,18 @@ app.delete('/friendship/:uuid', async(request, reply) => {
 
     try {
         db.prepare('DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)').run(user_id, friend_id, friend_id, user_id);
-    
+        request.log.info({
+            event: 'delete-friendship_attempt'
+        }, 'Delete Friendship Success');
+        reply.send({ message: 'Friendship deleted' })
     } catch(err) {
-        console.log('DELETE /friendship/:uuid');
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'delete-friendship_attempt'
+        }, 'Delete friendship failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
@@ -239,11 +344,13 @@ app.delete('/friendship/:uuid', async(request, reply) => {
 app.patch('/historic', async (request, reply) => {
     const key = request.headers['x-internal-key'];
     if (key !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'update-historic_attempt',
+        }, 'Update Historic Unauthorized: invalid jwt token');
         return reply.code(403).send({ error: 'Forbidden' })
     }
 
     const {tournament, game} = request.body;
-    console.log({tournament, game});
     if (game){
         const player1 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player1_uuid)
         const player2 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player2_uuid)
@@ -266,8 +373,17 @@ app.patch('/historic', async (request, reply) => {
             // Mettre à jour la base de données avec les nouveaux tableaux de jeux
             db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game1JSON, Number(game_win1), Number(game_ratio1), game.player1_uuid);
             db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, Number(game_win2), Number(game_ratio2), game.player2_uuid);
+            request.log.info({
+                event: 'update-historic_attempt'
+            }, 'Update Historic Success');
         } catch (error) {
-            console.error('Erreur lors de la mise à jour de la base de données:', error);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'update-historic_attempt'
+        }, 'Update historic failed with error');
             reply.status(500).send({ error: 'Internal Server Error' });
         }
     }
@@ -286,26 +402,46 @@ app.patch('/historic', async (request, reply) => {
                 const tournament_ratio = (tournament_win * 100 / tournamentArray.length).toFixed(2);
                 db.prepare('UPDATE historic SET tournament = ?, tournament_win = ?, tournament_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(tournamentJSON, Number(tournament_win), Number(tournament_ratio), uuid);
             }
+            request.log.info({
+                event: 'update-tournament-historic_attempt'
+            }, 'Update Tournament Historic Success');
+            
         } catch (error) {
-            console.error('Erreur lors de la mise à jour de la base de données:', error);
-            reply.status(500).send({ error: 'Internal Server Error' });
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'update-tournament-historic_attempt'
+        }, 'Update Tournament Historic Failed');
+        reply.status(500).send({ error: 'Internal Server Error' });
         }
     }
 });
 
 app.get('/search', async(request, reply) => {
     const { search } = request.body;
-
     try {
         const users = db.prepare('SELECT uuid, username, avatar, is_online FROM user WHERE (username LIKE ? OR uuid LIKE ?)').all(`%${search}%`, `%${search}%`);
 
         if (users.length === 0) {
+            request.log.warn({
+                event: 'search-user_attempt'
+            }, 'Search User Failed: No user to specified');
             return reply.send({ error: 'No users found' });
         }
-
+        request.log.info({
+            event: 'search-user_attempt'
+        }, 'Search User Success');
         reply.send({ users });
     } catch (err) {
-        console.error('GET /search', err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'search-user_attempt'
+        }, 'Search User Failed');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
@@ -315,6 +451,9 @@ app.get('/me', async(request, reply) => {
     try {
         uuid = await checkToken(request);
     } catch (err) {
+        request.log.warn({
+            event: 'get-user-infos_attempt'
+        }, 'Get User Infos Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
 
@@ -336,9 +475,14 @@ app.get('/me', async(request, reply) => {
         WHERE u.uuid = ?`).get(uuid);
 
     if (!user) {
+        request.log.warn({
+            event: 'get-user-infos_attempt'
+        }, 'Get User Infos Failed: User not found');
         return reply.code(404).send({ error: 'User not found' });
     }
-
+    request.log.info({
+        event: 'get-user-infos_attempt'
+    }, 'User Found Sucess');
     return reply.send({ user })
 })
 
@@ -356,26 +500,43 @@ app.get('/:uuid', async(request, reply) => {
     FROM user WHERE uuid = ?`).get(uuid);
 
     if (!user) {
+        request.log.warn({
+            event: 'get-uuid_attempt'
+        }, 'Get uuid Failed: User not found');
         return reply.code(404).send({ error: 'User not found' });
     }
-
+    request.log.info({
+        event: 'get-uuid-infos_attempt'
+    }, 'User uuid Sucess');
     return reply.send({ user })
 })
 
 app.delete('/delete-user', async(request, reply) => {
     const key = request.headers['x-internal-key'];
     if (key !== process.env.JWT_SECRET) {
-        return reply.code(403).send({ error: 'Forbidden' })
+        request.log.warn({
+            event: 'delete-user_attempt'
+        }, 'Delete User Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
     }
 
     const uuid = request.body;
-
     try {
         await db.prepare('DELETE FROM friendships WHERE user_id = ? OR friend_id = ?').run(uuid, uuid);
         await db.prepare('DELETE FROM historic WHERE user_uuid = ?').run(uuid);
         await db.prepare('DELETE FROM user WHERE uuid = ?').run(uuid);
+        request.log.info({
+            event: 'delete-user_attempt'
+        }, 'Delete User Sucess');
+
     } catch(err) {
-        console.error('DELETE /delete-user', err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'delete-user_attempt'
+        }, 'Delete User Failed');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 })

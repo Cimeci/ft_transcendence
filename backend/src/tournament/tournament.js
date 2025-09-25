@@ -1,8 +1,25 @@
 import fastify from "fastify";
 import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv'
+import crypto from 'crypto';
 
-const app = fastify({ logger : true });
+
+
+// Configuration du logger fastify
+const loggerConfig = {
+    transport: {
+        target: 'pino/file',
+        options: {
+            destination: '/var/log/app/tournament-service.log',
+            mkdir: true
+        }
+    },
+    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+    base: { service: 'tournament'},
+    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+}
+
+const app = fastify({ logger: loggerConfig });
 
 const db = new Database('./data/tournament.sqlite');
 
@@ -11,7 +28,7 @@ const tournament = `
         uuid TEXT PRIMARY KEY ,
         host TEXT NOT NULL,
         name TEXT NOT NULL,
-        size INTERGER,
+        size INTEGER,
         players JSON NOT NULL,
         game JSON NOT NULL,
         winner TEXT
@@ -28,11 +45,23 @@ app.get('/tournament/:uuid', async (request, reply) => {
     try {
         const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
         if (!tournament) {
+            request.log.warn({
+                event: 'get-tournament_attempt',
+            }, 'Get Tournament Failed: Tournament not found');
             return reply.code(404).send({ error: 'Tournament not found' });
-        } 
+        }
+        request.log.info({
+            event: 'get-tournament_attempt'
+        }, ' Get Tournament sucess');
         reply.send(tournament);
     } catch(err) {
-        console.error('GET /tournament/:uuid', err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'get-tournament_attempt'
+        }, 'Get Tournament failed: Impossible to get tournament');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
@@ -41,9 +70,12 @@ app.post('/tournament', async (request, reply) => {
     const { host_uuid, name, players_uuid } = request.body;
     const uuid = crypto.randomUUID();
 
-    if (!host_uuid || !name || !Array.isArray(players_uuid) || players_uuid.length < 2)
-        // regarder pour le code erreur
+    if (!host_uuid || !name || !Array.isArray(players_uuid) || players_uuid.length < 2) {
+        request.log.warn({
+            event: 'new-tournament_attempt'
+        }, 'New Tournament Failed: Invalid input');
         return reply.code(400).send({ error: 'Invalid input' });
+    }
 
     try {
         const round1Game = Math.floor(players_uuid.length / 2);
@@ -74,9 +106,18 @@ app.post('/tournament', async (request, reply) => {
         const matchJSON = JSON.stringify(matches);
 
         db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, players_uuid.length, playerJSON, matchJSON, null);
+        request.log.info({
+            event: 'new-tournament_attempt'
+        }, 'New Tournament Created Success');
         return { message: 'Tournament created successfully', matches };
     } catch(err){
-        console.error('POST /tournament', err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'new-tournament_attempt'
+        }, 'New Tournament failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
     });
@@ -85,18 +126,27 @@ app.patch('/tournament/:uuid', async (request, reply) => {
     const { uuid } = request.params;
     const { uuid_player } = request.body;
 
-    console.log({ uuid_player: uuid_player });
-    if (!uuid_player)
+    if (!uuid_player){
+        request.log.warn({
+            event: 'tournament-winner_attempt'
+        }, 'Tournament Winner Failed: Missing uuid player');
         return reply.code(400).send({ error: 'Invalid input' });
+    }
     
     try {
         const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
         if (!tournament) {
+            request.log.warn({
+                event: 'tournament-winner_attempt'
+            }, 'Tournament Winner Failed: Tournament not found');
             return reply.code(404).send({ error: 'Tournament not found' });
         }
         const players = JSON.parse(tournament.players);
         const player = players.find(player => player === uuid_player);
         if (!player) {
+            request.log.warn({
+                event: 'tournament-winner_attempt'
+            }, 'Tournament Winner Failed: Player not found in tournament');
             return reply.code(404).send({ error: 'Player not found in this tournament' });
         }
         
@@ -112,12 +162,21 @@ app.patch('/tournament/:uuid', async (request, reply) => {
             body: JSON.stringify({tournament: info, game: null})
         });
 
-        if (!response.ok) {
+        if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
-        }
+
+        request.log.info({
+            event: 'tournament-winner_attempt'
+        }, 'Tournament Winner Success: Winner updated');
         reply.send('Tournament updated');
     } catch(err) {
-        console.error('PATCH /tournament/:uuid', err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'tournament-winner_attempt'
+        }, 'Tournament Winner Failed');
         reply.code(500).send({ error: 'Internal Server Error' });   
     }
 });
@@ -138,19 +197,21 @@ async function createGame (player1_uuid = null, player2_uuid = null, tournament 
     });
 
     if (!res.ok)
-        throw new Error('Failed to create match');
+        throw new Error('Failed to create game');
 
     // deconstruction d'objet, equivalent a ca:
     // const data = await res.json();
     // const uuid = data.uuid;
     const { uuid } = await res.json();
-    console.log({ gameuuid: uuid })
     return uuid;
 }
 
 app.delete('/delete-tournament', async(request, reply) => {
     const key = request.headers['x-internal-key'];
     if (key !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'delete-tournament'
+        }, 'Delete Tournament Unauthorized: invalid jwt token');
         return reply.code(403).send({ error: 'Forbidden' })
     }
 
@@ -158,8 +219,18 @@ app.delete('/delete-tournament', async(request, reply) => {
 
     try {
         await db.prepare('DELETE FROM tournament WHERE host = ?').run(uuid);
+        request.log.info({
+            event: 'delete-tournament_attempt',
+            }, 'Delete Tournament Sucess: Delete for host');
+        return reply.send({ success: true });
     } catch(err) {
-        console.error('DELETE /delete-tournamen', err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'delete-tournament'
+        }, 'Delete Tournament failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 })

@@ -5,8 +5,21 @@ import dotenv from 'dotenv' // Importe la bibliothèque dotenv pour charger les 
 // Charge les variables d'environnement depuis le fichier .env
 dotenv.config();
 
-// Crée une instance de Fastify avec le logger activé
-const app = Fastify({ logger: true});
+// Configuration du logger fastify
+const loggerConfig = {
+    transport: {
+        target: 'pino/file',
+        options: {
+            destination: '/var/log/app/gateway-service.log',
+            mkdir: true
+        }
+    },
+    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+    base: { service: 'gateway'},
+    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+}
+
+const app = fastify({ logger: loggerConfig });
 
 // Enregistre le plugin de proxy HTTP pour les services
 await app.register(fastifyHttpProxy, {
@@ -37,8 +50,8 @@ await app.register(fastifyHttpProxy, {
 
 // Définit un gestionnaire d'erreurs global pour capturer et logger les erreurs
 app.setErrorHandler(async (error, request, reply) => {
-  app.log.error(error); // affiche l’erreur dans la console / logs
-  reply.status(500).send({ error: 'Internal server error' });
+    request.log.error({ error:error.message, code: error.code, route: request.routerPath }, 'Unhandled Error, Internal server error');
+    reply.status(500).send({ error: 'Internal server error' });
 });
 
 // Définit une route de base pour tester le serveur
@@ -49,9 +62,9 @@ app.get('/', (request, reply) => {
 // Lance le serveur sur le port spécifié
 app.listen({ port: 443, host: '0.0.0.0'})
     .then(() => {
-        console.log(`✅ Serveur Fastify démarré sur http://localhost:443`);
+        app.log.info({ event: 'server_start' }, 'Serveur Fastify started on https://localhost:443');
     })
     .catch ((err) => {
-        console.error(err) // Affiche l'erreur en cas d'échec
+        app.log.error({ err, event: 'server_start_failure' }, 'Failed to launch the server');
         process.exit(1) // Termine le processus en cas d'erreur
     });

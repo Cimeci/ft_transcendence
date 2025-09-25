@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import fastifyOauth2 from '@fastify/oauth2';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt';
-import sget from 'simple-get';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -17,7 +17,7 @@ const loggerConfig = {
             mkdir: true
         }
     },
-    redact: ['password', 'hash', 'JWT_SECRET'],
+    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
     base: { service: 'auth'},
     formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
 }
@@ -103,9 +103,8 @@ app.post('/register', async (request, reply) => {
             body: JSON.stringify(info)
         });
 
-        if (!response.ok) {
+        if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
-        }
         
         db.prepare('INSERT INTO user (uuid, username, email, password, avatar) VALUES (?, ?, ?, ?, ?)').run(uuid, username, email, hash, '');
         request.log.info({
@@ -117,12 +116,7 @@ app.post('/register', async (request, reply) => {
         request.log.error({
             error: {
                 message: err.message,
-                stack: err.stack
-            },
-            request: {
-                method: request.method,
-                url: request.url,
-                ip: request.ip
+                code: err.code
             },
             user: { email, username },
             event: 'registration_attempt'
@@ -170,9 +164,8 @@ app.post('/login', async (request, reply) => {
             body: JSON.stringify(info)
         });
 
-        if (!response.ok) {
+        if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
         const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
         request.log.info({
@@ -185,12 +178,7 @@ app.post('/login', async (request, reply) => {
         request.log.error({
             error: {
                 message: err.message,
-                stack: err.stack
-            },
-            request: {
-                method: request.method,
-                url: request.url,
-                ip: request.ip
+                code: err.code
             },
             user: { email, username },
             event: 'login_attempt'
@@ -216,8 +204,7 @@ app.patch('/update-password', async(request, reply) => {
 
     if (!oldPassword || !newPassword){
         request.log.warn({
-            event: 'update-password_attempt',
-            user: { uuid }
+            event: 'update-password_attempt'
         }, 'Password Update failed: Missing passwords');
         return reply.code(400).send({ error: 'Missing passwords' });
     }
@@ -225,8 +212,7 @@ app.patch('/update-password', async(request, reply) => {
     const user = db.prepare('SELECT * FROM user WHERE uuid = ?').get(uuid);
     if (!user) {
         request.log.warn({
-            event: 'update-password_attempt',
-            user: { uuid }
+            event: 'update-password_attempt'
         }, 'Password Update failed: User not found in SQL database');
         return reply.code(401).send({ error: 'User not found' });
     }
@@ -245,8 +231,8 @@ app.patch('/update-password', async(request, reply) => {
         request.log.warn({
             event: 'update-password_attempt',
             user: userContext
-        }, 'Password Update failed: Same Old and new passwords');
-        return reply.code(401).send({ error: 'it\'s the same password' });
+        }, 'Password Update failed: Old password dismatch');
+        return reply.code(401).send({ error: 'Old Password dismatch' });
     }
 
     const validationPassword = (password) => {
@@ -273,12 +259,7 @@ app.patch('/update-password', async(request, reply) => {
         request.log.error({
             error: {
                 message: err.message,
-                stack: err.stack
-            },
-            request: {
-                method: request.method,
-                url: request.url,
-                ip: request.ip
+                code: err.code
             },
             user: { email, username },
             event: 'update-password_attempt'
@@ -310,14 +291,14 @@ app.get('/google/callback', async(request, reply) => {
         request.log.error({
             error: {
                 message: err.message,
-                stack: err.stack
+                code: err.code
             },
             request: {
                 method: request.method,
                 url: request.url,
                 ip: request.ip
             },
-            event: 'google-OAuth_attempt'
+            event: 'google-Oauth_attempt'
         }, 'Google OAuth not initialized');
         return reply.code(500).send({ error: 'Internal Server Error' });
     }
@@ -333,9 +314,8 @@ app.get('/google/callback', async(request, reply) => {
                 Authorization: `Bearer ${token.access_token}`
             }
         });
-        if (!response.ok) {
+        if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
-        }
         
         //mettre en json pour ensuite mettre dans la db
         const {id: google_id, email, given_name, picture } = await response.json();
@@ -366,12 +346,12 @@ app.get('/google/callback', async(request, reply) => {
             body: JSON.stringify(info)
             });
 
-            if (!response.ok) {
+            if (!response.ok)
                 throw new Error(`HTTP error! status: ${response.status}`);
-            }
+
             request.log.info({
                 event: 'google_oauth_attempt',
-                user: { email, uuid: user.uuid }
+                user: { email }
              }, 'Google OAuth login sucess');
 
 
@@ -381,7 +361,7 @@ app.get('/google/callback', async(request, reply) => {
             jwtToken = await app.jwt.sign({ userId: uuid });
 
             const info = { uuid: uuid, username: given_name, email: email, hash: null , avatar: picture}
-            await fetch('http://user:4000/insert', {
+            response = await fetch('http://user:4000/insert', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -389,10 +369,12 @@ app.get('/google/callback', async(request, reply) => {
                 },
                 body: JSON.stringify(info)
             });
+            if (!response.ok)
+                throw new Error(`HTTP error! status: ${response.status}`);
 
             request.log.info({
                 event: 'google_oauth_success',
-                user: { email, uuid }
+                user: { email }
             }, 'Google OAuth new user sucess');
         }
         reply.send({ message: 'logged in successfully', token: jwtToken });
@@ -402,13 +384,8 @@ app.get('/google/callback', async(request, reply) => {
             event: 'google_oauth_attempt',
             error: {
                 message: err.message,
-                stack: err.stack
+                code: err.code
             },
-            request: {
-                method: request.method,
-                url: request.url,
-                ip: request.ip
-            }
         }, 'Google OAuth callback failed');
         reply.code(500).send({ error: 'internal Server Error' 
         });
@@ -450,94 +427,92 @@ async function retrieveAccessToken (token) {
 
 app.get('/github/callback', async function (request, reply) {
 
-    // add try HERE
-    const { token }= await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
-    await saveAccessToken(token)
-    
-    const userResponse = await fetch('https://api.github.com/user', {
-        headers: {
-                Authorization: `token ${token.access_token}`
-            }
-    });
-    const emailResponse = await fetch('https://api.github.com/user/emails', {
-        headers: {
-                Authorization: `token ${token.access_token}`
-            }
-    });
-    const emails = await emailResponse.json();
-    const emailPrimary = await emails.find(email => email.primary)?.email || null;
-    const local = db.prepare('SELECT password FROM user WHERE email = ?').get(emailPrimary);
-    if (local && local.password){
-        request.log.warn({
-            event: 'github_oauth_attempt',
-            user: { email: emailPrimary }
-            }, 'GitHub OAuth failed: email already registered locally');
-        return reply.code(403).send({ error: "SSO forbidden: email already registered locally" }) 
-    }
-
-    const { login, avatar_url, id } = await userResponse.json();
-
-    const user = db.prepare('SELECT * FROM user WHERE email = ?').get(emailPrimary);
-    let jwtToken;
-
-    if (user) {
-        jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
+    try {
+        const { token }= await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
+        await saveAccessToken(token)
         
-        const info = { online: 1, uuid: user.uuid }
-        const response = await fetch('http://user:4000/online', {
-            method: 'PATCH',
+        const userResponse = await fetch('https://api.github.com/user', {
             headers: {
-                'Content-Type': 'application/json',
-                'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
-            },
-            body: JSON.stringify(info)
+                    Authorization: `token ${token.access_token}`
+                }
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const emailResponse = await fetch('https://api.github.com/user/emails', {
+            headers: {
+                    Authorization: `token ${token.access_token}`
+                }
+        });
+        const emails = await emailResponse.json();
+        const emailPrimary = await emails.find(email => email.primary)?.email || null;
+        const local = db.prepare('SELECT password FROM user WHERE email = ?').get(emailPrimary);
+        if (local && local.password){
+            request.log.warn({
+                event: 'github_oauth_attempt',
+                user: { email: emailPrimary }
+                }, 'GitHub OAuth failed: email already registered locally');
+            return reply.code(403).send({ error: "SSO forbidden: email already registered locally" }) 
         }
-        request.log.info({
+
+        const { login, avatar_url, id } = await userResponse.json();
+
+        const user = db.prepare('SELECT * FROM user WHERE email = ?').get(emailPrimary);
+        let jwtToken;
+
+        if (user) {
+            jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
+            
+            const info = { online: 1, uuid: user.uuid }
+            const response = await fetch('http://user:4000/online', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
+                },
+                body: JSON.stringify(info)
+            });
+
+            if (!response.ok)
+                throw new Error(`HTTP error! status: ${response.status}`);
+
+            request.log.info({
+                event: 'github_oauth_attempt',
+                user: { email: emailPrimary, username: login }
+            }, 'GitHub OAuth login sucess');
+
+        } else {
+            const uuid = crypto.randomUUID();
+            db.prepare('INSERT INTO user (uuid, discord_id, username, email, password, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, id, login, emailPrimary, null, avatar_url)
+
+            const info = { uuid: uuid, username: login, email: emailPrimary, hash: null, avatar: avatar_url }
+            const response = await fetch('http://user:4000/insert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-key': process.env.JWT_SECRET
+                },
+                body: JSON.stringify(info)
+            });
+
+            if (!response.ok)
+                throw new Error(`HTTP error! status: ${response.status}`);
+
+            jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
+            request.log.info({
+                event: 'github_oauth_attempt',
+                user: { email: emailPrimary, username: login }
+                }, 'GitHub OAuth new user sucess');
+
+        }
+        reply.send({ access_token: token.access_token, jwtToken });
+     } catch (err) {
+        request.log.error({
             event: 'github_oauth_attempt',
-            user: { email: emailPrimary, uuid: user.uuid, username: login }
-        }, 'GitHub OAuth login sucess');
-
-    } else {
-        const uuid = crypto.randomUUID();
-        db.prepare('INSERT INTO user (uuid, discord_id, username, email, password, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, id, login, emailPrimary, null, avatar_url)
-
-        const info = { uuid: uuid, username: login, email: emailPrimary, hash: null, avatar: avatar_url }
-        await fetch('http://user:4000/insert', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-internal-key': process.env.JWT_SECRET
+            error: {
+                message: err.message,
+                code: err.code
             },
-            body: JSON.stringify(info)
-        });
-        jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
-        request.log.info({
-            event: 'github_oauth_attempt',
-            user: { email: emailPrimary, uuid, username: login }
-            }, 'GitHub OAuth new user sucess');
-
+        }, 'Github OAuth callback failed');
+        reply.code(500).send({ error: 'Internal Server Error' });
     }
-    reply.send({ access_token: token.access_token, jwtToken });
-
-     //} catch (err) {
-        //request.log.error({
-            //event: 'github_oauth_attempt',
-            //error: {
-                //message: err.message,
-                //stack: err.stack
-            //},
-            //request: {
-                //method: request.method,
-                //url: request.url,
-                //ip: request.ip
-            //}
-        //}, 'Github OAuth callback failed');
-        //reply.code(500).send({ error: 'Internal Server Error' });
-    //}
 })
 
 app.get('/github/refreshAccessToken', async function (request, reply) {
@@ -594,48 +569,47 @@ app.delete('/account', async (request, reply) => {
         reply.code(401).send({ error: 'Unauthorized'});
     }
 
-    // ajouter un try HERE
-    await fetch('http://game:4000/delete-game', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-internal-key': process.env.JWT_SECRET
-        },
-        body: JSON.stringify(uuid)
-    })
+    try {
+        await fetch('http://game:4000/delete-game', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET
+            },
+            body: JSON.stringify(uuid)
+        })
 
-    await fetch('http://tournament:4000/delete-tournament', {
-        method: 'DELETE',
-        headers: {
-            'Content-type': 'application/json',
-            'x-internal-key': process.env.JWT_SECRET
-        },
-        body: JSON.stringify(uuid)
-    })
+        await fetch('http://tournament:4000/delete-tournament', {
+            method: 'DELETE',
+            headers: {
+                'Content-type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET
+            },
+            body: JSON.stringify(uuid)
+        })
 
-    await fetch('http://user:4000/delete-user', {
-        method: 'DELETE',
-        headers: {
-            'Content-type': 'application/json',
-            'x-internal-key': process.env.JWT_SECRET
-        },
-        body: JSON.stringify(uuid)
-    })
+        await fetch('http://user:4000/delete-user', {
+            method: 'DELETE',
+            headers: {
+                'Content-type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET
+            },
+            body: JSON.stringify(uuid)
+        })
 
-    db.prepare('DELETE FROM user WHERE uuid = ?').run(uuid);
-    request.log.info({
-        event: 'delete-account_attempt',
-        user: { uuid }
-    }, 'User account deleted successfully');
-    reply.send('User delete with success');
+        db.prepare('DELETE FROM user WHERE uuid = ?').run(uuid);
+        request.log.info({
+            event: 'delete-account_attempt'
+        }, 'User account deleted successfully');
+        reply.send('User delete with success');
 
-    //} catch (err) {
-        //request.log.error({
-            //event: 'delete-account_attempt',
-            //error: err.message
-        //}, 'Delete account failed');
-        //reply.code(500).send({ error: 'Delete account failed' });
-    //}
+    } catch (err) {
+        request.log.error({
+            event: 'delete-account_attempt',
+            error: err.message
+        }, 'Delete account failed');
+        reply.code(500).send({ error: 'Delete account failed' });
+    }
 });
 
 // Middleware pour vérifier le JWT et récupérer le uuid
@@ -651,7 +625,7 @@ async function checkToken(request) {
 }
 
 app.setErrorHandler((error, request, reply) => {
-    request.log.error({ error:error.message, stack: error.stack, route: request.routerPath }, 'Unhandled Error, Internal server error');
+    request.log.error({ error:error.message, code: error.code, route: request.routerPath }, 'Unhandled Error, Internal server error');
     reply.status(500).send({ error: 'Internal Server Error' });
 });
 
