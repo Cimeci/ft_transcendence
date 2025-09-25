@@ -4,7 +4,6 @@ filebeat.inputs:
     id: trans-input
     paths:
       - /var/log/app/*-service.log
-      - /var/log/app/*-service-error.log
     fields:
       log_type: application
       service_type: microservice
