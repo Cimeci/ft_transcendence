@@ -1,4 +1,4 @@
-import Fastify from 'fastify'  // Importe la bibliothèque Fastify pour créer le serveur
+import fastify from 'fastify'  // Importe la bibliothèque Fastify pour créer le serveur
 import fastifyHttpProxy from '@fastify/http-proxy' // Importe le plugin Fastify pour le proxy HTTP
 import dotenv from 'dotenv' // Importe la bibliothèque dotenv pour charger les variables d'environnement
 

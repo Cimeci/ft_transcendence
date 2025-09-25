@@ -23,13 +23,12 @@
 [x] Issue "Health" index into Kibana
 [x] Verify a docker compose down + docker compose up is working (persistence datas)
 
-
 # Littles Adds
 [x] Check about labels docker -> specificly into the filebeat
 [ ] If a second node is added => Define 1 shard into the template.json
 [ ] MetricBeats -> If it's possible without docker sockets
 [ ] Look how handle keystore with elk-certs container (es-certutil)
-
+[ ] Add a logrotate service + modify name pattern into Filebeat.conf
 
 # Clean Code
 [ ] Remove dev suppressions into entrypoin.sh from bootstrap-ilm =>  /!\ very important to keep a functionnal stack !!!
