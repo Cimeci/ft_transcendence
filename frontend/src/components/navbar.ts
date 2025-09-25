@@ -1,8 +1,7 @@
 import { translations } from '../i18n';
 import { getCurrentLang } from '../pages/settings';
 import { navigateTo } from '../routes';
-import { userInventory } from '../pages/inventory';
-import { userName } from "../pages/settings"
+import { getUser, onUserChange } from '../linkUser';
 import { notifications, removeNotification } from './notifications_overlay';
 
 export type Notification = {
@@ -131,13 +130,15 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	profileBox.className = 'z-[3500] flex items-center gap-2 p-1 rounded-lg hover:bg-white/10 cursor-default transition-opacity duration-200 md:opacity-100';
 
 	const avatarImg = document.createElement('img');
-	avatarImg.src = userInventory.avatar?.[0]?.id || '/avatar/default_avatar.png';
+	avatarImg.src = getUser()?.avatar || '/avatar/default_avatar.png';
 	avatarImg.alt = 'avatar';
 	avatarImg.className = 'z-[3500] w-8 h-8 rounded-full object-cover border border-white/20';
 
 	const nameSpan = document.createElement('span');
-	nameSpan.textContent = userName;
+	nameSpan.textContent = getUser()?.username || "default";
 	nameSpan.className = 'z-[3500] text-sm font-medium truncate max-w-[20ch] hidden sm:block';
+
+	// loadUser().catch(() => {});
 
 	profileBox.appendChild(avatarImg);
 	profileBox.appendChild(nameSpan);
@@ -155,9 +156,7 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 			root.classList.add('fade-out');
 			root.addEventListener('animationend', () => navigateTo("/user"), { once: true });
 			// Fallback si l’animation ne se déclenche pas
-			setTimeout(() => {navigateTo("/user"); root.classList.remove('fade-out');}, 600);
-		} else {
-			navigateTo("/user");
+			setTimeout(() => {navigateTo("/profile"); root.classList.remove('fade-out');}, 600);
 		}
 	});
 
@@ -203,6 +202,9 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	deconnection.setAttribute('data-link', '');
 	deconnection.textContent = translations[getCurrentLang()].logout;
 	deconnection.className = 'absolute bottom-5 left-5 text-xl text-red-600 hover:font-bold hover:scale-102 hover:text-red-700';
+	deconnection.addEventListener(("click"), () => {
+		localStorage.clear();
+	})
 	navLinks.appendChild(deconnection);
 
 	hamburgerBtn.addEventListener('click', (e) => {
@@ -230,6 +232,11 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 			const t = translations[getCurrentLang()] as any;
      		link.textContent = t?.[key] ?? key;
 		});
+	});
+
+	onUserChange(u => {
+		nameSpan.textContent = u?.username || "default";
+		avatarImg.src = u?.avatar || '/avatar/default_avatar.png';
 	});
 
 	return nav;

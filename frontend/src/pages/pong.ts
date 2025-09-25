@@ -2,7 +2,7 @@ import { getCurrentLang } from "./settings";
 import { translations } from '../i18n';
 import { navigateTo } from '../routes';
 import { userInventory } from "./inventory";
-import { userName } from "./settings";
+import { onUserChange } from "../linkUser";
 
 export const gameHistory: string[] = [];
 
@@ -131,7 +131,7 @@ export interface User {
 }
 
 export const user1: User = {
-	name: userName,
+	name: "default",
 	score: 0,
 };
 
@@ -480,3 +480,5 @@ export function PongGamePage(): HTMLElement {
 
 	return mainContainer;
 }
+
+onUserChange(u => { if (u) user1.name = u.username; });

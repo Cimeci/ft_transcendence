@@ -1,5 +1,6 @@
 export const translations = {
 	fr: {
+		error: "Erreur",
 		// Settings
 		email: "Mail",
 		changeEmail: "Modifier le mail",
@@ -82,6 +83,7 @@ export const translations = {
 		block: "Bloquer",
 		requests_received: "Demandes reçue",
 		requests_send: "Demandes envoyées",
+		err_id: "Erreur Identifiant",
 		// Profile
 		history: "Historique",
 		classic: "Classique",
@@ -90,6 +92,7 @@ export const translations = {
 		Lose: "Perdue",
 	},
 	en: {
+		error: "Error",
 		// Settings
 		email: "Email",
 		changeEmail: "Change email",
@@ -172,6 +175,7 @@ export const translations = {
 		block: "Block",
 		requests_received: "Requests received",
 		requests_send: "Requests send",
+		err_id: "Identifier Error",
 		// Profile
 		history: "History",
 		classic: "Classic",
@@ -181,6 +185,7 @@ export const translations = {
 	},
 	es: {
 		// Settings
+		error: "Error",
 		email: "Correo electrónico",
 		changeEmail: "Cambio del correo electrónico",
 		currentEmail: "Correo electrónico actual",
@@ -262,6 +267,7 @@ export const translations = {
 		block: "Bloque",
 		requests_received: "Solicitudes recibidas",
 		requests_send: "Solicitudes enviadas",
+		err_id: "Identificar error",
 		// Profile
 		history: "Historia",
 		classic: "Clásico",

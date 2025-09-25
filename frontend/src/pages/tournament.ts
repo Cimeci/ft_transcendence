@@ -6,7 +6,7 @@ import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
 import { CreateSlider } from "../components/utils";
 import { users } from "./friends";
-import { userName } from "./settings";
+import { getUser } from "../linkUser";
 
 let nb_players = {value: 16};
 
@@ -371,7 +371,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 		btn.textContent = "Invite"; //! trad
 		btn.addEventListener("click", () => {
 			window.showInvite({
-                username: userName,
+                username: getUser()?.username || "default",
                 id: "2311",
                 avatar: "/avatar/inowak--.jpg",
                 message: "Invitation to play " + (currentTournament?.name || "tournament"),
@@ -518,7 +518,7 @@ export function PongTournamentPageHost(): HTMLElement {
 		btn.textContent = "Invite"; //! trad
 		btn.addEventListener("click", () => {
 			window.showInvite({
-                username: userName,
+                username: getUser()?.username || "default",
                 id: "2311",
                 avatar: "/avatar/inowak--.jpg",
                 message: "Invitation to play " + (currentTournament?.name || "tournament"),

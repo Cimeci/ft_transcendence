@@ -1,7 +1,7 @@
 import { translations } from "../i18n";
 import { getCurrentLang } from "./settings";
 import { userInventory } from "./inventory";
-import { userName } from "./settings"
+import { getUser, onUserChange } from "../linkUser";
 
 export let inputRef: HTMLInputElement | null = null;
 
@@ -90,10 +90,12 @@ export function FriendsPage(): HTMLElement {
 		NameContainer.appendChild(NameProfileTxt);
 
 		const NameProfile = document.createElement("h1");
-		NameProfile.textContent = userName;
+		NameProfile.textContent = getUser()?.username || "default";
 		NameProfile.className = "w-full border-2 rounded-xl p-3 hover:scale-105 transition-transform duration-300 truncate whitespace-nowrap";
-		enableEllipsisThenScroll(NameProfile, userName);
+		enableEllipsisThenScroll(NameProfile, "default");
 		NameContainer.appendChild(NameProfile);
+
+		onUserChange(u => { NameProfile.textContent = u?.username || "default"; });
 
 		const IdContainer = document.createElement("div");
 		IdContainer.className = "flex flex-col";
@@ -104,7 +106,7 @@ export function FriendsPage(): HTMLElement {
 		IdContainer.appendChild(IdProfileTxt);
 
 		const IdProfile = document.createElement("h1");
-		IdProfile.textContent = "id";
+		IdProfile.textContent = getUser()?.uuid.split("-")[0] || translations[getCurrentLang()].err_id;
 		IdProfile.className = "w-full border-2 rounded-xl p-3 hover:scale-105 transition-transform duration-300 truncate whitespace-nowrap";
 		enableEllipsisThenScroll(IdProfile, IdProfile.textContent || "");
 		IdContainer.appendChild(IdProfile);

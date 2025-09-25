@@ -2,39 +2,25 @@ import '../style.css';
 import { navigateTo } from '../routes';
 import { translations } from '../i18n';
 import { getCurrentLang, createLangSection } from './settings';
-
-export interface User {
-	name: string;
-}
+import { ensureUser } from '../linkUser';
 
 export function OAuthCallbackPage(): HTMLElement {
-  const root = document.createElement('div');
-  root.className = 'min-h-screen flex items-center justify-center text-white';
-  root.textContent = 'Connexion...';
+  	const root = document.createElement('div');
+  	root.className = 'min-h-screen flex items-center justify-center text-white';
+  	root.textContent = 'Connexion...';
 
-  const token = new URLSearchParams(location.search).get('token');
+  	const token = new URLSearchParams(location.search).get('token');
 
-  if (token) {
-    localStorage.setItem('jwt', token);
-	fetch('/user/me', {
-		headers: {
-			'Authorization': `Bearer ${token}`
-		}
-	})
-		.then(async (f) => {
-			const me = await f.json();
-			localStorage.setItem("username", me.user.username);
-			navigateTo('/home')
-		})
-		.catch(() => {
-			root.textContent = 'Erreur: pov; t\'as une api nul';
-			return root;
-		})
-  } else {
-    root.textContent = 'Erreur: token manquant';
-    console.error('OAuth callback: token introuvable dans URL');
-  }
-  return root;
+  	if (token) {
+    	localStorage.setItem('jwt', token);
+		ensureUser(true).then(() => navigateTo('/home')).catch(() => {
+		  root.textContent = 'Erreur: impossible de récupérer le profil';
+		});
+	} else {
+    	root.textContent = 'Erreur: token manquant';
+    	console.error('OAuth callback: token introuvable dans URL');
+  	}
+  	return root;
 }
 
 export function LoginPage(): HTMLElement {
@@ -148,13 +134,8 @@ export function LoginPage(): HTMLElement {
 				if (!resp.ok) throw new Error(data?.error || "Login failed");
 
 				console.log("jwt:", data.jwtToken);
-				const f = await fetch('/user/me', {
-					headers: {
-						'Authorization': `Gros con ${data.jwtToken}`
-					}
-				});
-				const me = await f.json();
-				localStorage.setItem("username", me.user.username);
+				localStorage.setItem('jwt', data.jwtToken);
+				await ensureUser(true);
 				navigateTo("/home");
 			} catch (e: any) {
 				InputPassword.value = "";

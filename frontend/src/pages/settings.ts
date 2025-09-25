@@ -1,10 +1,10 @@
 import { translations } from '../i18n';
 import { userInventory } from './inventory';
-
-export let userName: string = "default";
+import { getUser, onUserChange } from '../linkUser';
 
 const t = translations[getCurrentLang()];
 
+let username: string = "default";
 let email:string = "ilan@42angouleme.fr";
 let password:string = "1234";
 
@@ -206,7 +206,7 @@ function CreateLine():HTMLElement{
 export function emitProfileUpdate() {
     window.dispatchEvent(new CustomEvent('profile:update', {
         detail: {
-            userName,
+            username,
             avatar: userInventory.avatar?.[0]?.id,
             background: userInventory.background?.[0]?.id,
             bar: userInventory.bar?.[0]?.id,
@@ -248,7 +248,7 @@ export function SettingsPage(): HTMLElement {
 	changeNameSection.appendChild(Nameimg);
 
 	const NameContent = document.createElement("p");
-	NameContent.textContent = userName;
+	NameContent.textContent = getUser()?.username || "default";
 	NameContent.className = "truncate text-auto md:text-xl w-full p-1"
 	changeNameSection.appendChild(NameContent);
 
@@ -256,9 +256,9 @@ export function SettingsPage(): HTMLElement {
 	ChangeNameBtn.type = "button";
 	ChangeNameBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
 	ChangeNameBtn.addEventListener(("click"), () => {
-		const overlay = PopUpChangeInformation(t.changeName, "", t.newName, "", userName, (newVal) => {
-			userName = newVal;
-			NameContent.textContent = userName;
+		const overlay = PopUpChangeInformation(t.changeName, "", t.newName, "", getUser()?.username || "default", (newVal) => {
+			// userName = newVal; //!update USERNAME
+			NameContent.textContent = newVal;
 			emitProfileUpdate();
 		});
 		mainContainer.appendChild(overlay);
@@ -284,7 +284,7 @@ export function SettingsPage(): HTMLElement {
 	changeMailSection.appendChild(Mailimg);
 
 	const MailContent = document.createElement("p");
-	MailContent.textContent = email;
+	MailContent.textContent = getUser()?.email || "err email";
 	MailContent.className = "truncate text-auto md:text-xl w-full p-1"
 	changeMailSection.appendChild(MailContent);
 
@@ -349,5 +349,8 @@ export function SettingsPage(): HTMLElement {
 	settingsContainer.appendChild(changeInfoSection);
 	mainContainer.appendChild(settingsContainer);
 
+	onUserChange(u => { NameContent.textContent = u?.username || "default"; });
+
 	return mainContainer;
 }
+

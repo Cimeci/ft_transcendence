@@ -14,6 +14,7 @@ import { CreditsPage } from './pages/credits';
 import { FriendsPage, type InvitePayload } from './pages/friends';
 import { UserPage } from './pages/user';
 import { addNotification, removeNotification } from './components/notifications_overlay'
+import { ensureUser, onUserChange, getUser } from './linkUser';
 
 document.getElementById("jschef")?.remove();
 
@@ -205,5 +206,18 @@ window.showInvite = (payload: InvitePayload) => {
 
 window.addEventListener('resize', positionToastRoot);
 
-window.renderPage = renderPage;
-renderPage();
+
+async function bootstrap() {
+  await ensureUser();
+  window.renderPage = renderPage;
+  renderPage();
+}
+
+onUserChange(() => {
+  const oldNavbar = document.querySelector('nav.navbar-burger');
+  if (oldNavbar) oldNavbar.remove();
+  const navbar = createNavbar(navRoutesForNavbar);
+  document.body.prepend(navbar);
+});
+
+bootstrap(); // lance

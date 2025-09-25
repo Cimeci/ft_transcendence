@@ -1,8 +1,8 @@
 import { getCurrentLang } from "./settings";
 import { translations } from "../i18n";
 import { userInventory } from "./inventory";
-import { userName } from "./settings"
 import { navigateTo } from "../routes";
+import { getUser } from "../linkUser";
 
 export function UserPage(): HTMLElement {
     const main = document.createElement("div");
@@ -103,14 +103,11 @@ export function UserPage(): HTMLElement {
         status.className = "absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full ring-2 ring-black/60";
         avatarWrap.appendChild(status);
 
-        const setOnline = (v: boolean) => {
-          status.classList.remove("bg-green-600", "bg-gray-500");
-          status.classList.add(v ? "bg-green-600" : "bg-gray-500");
-        };
-        setOnline(Math.random() < 0.5);
+        Number(localStorage.getItem("is_online")) == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
+
 
         const name = document.createElement("h2");
-        name.textContent = userName;
+        name.textContent = getUser()?.username || "default";
         name.className = "text-white font-semibold text-lg";
 
         center.appendChild(avatarWrap);
