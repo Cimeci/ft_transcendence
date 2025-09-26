@@ -2,6 +2,7 @@ import fastify from "fastify";
 import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt'
+import crypto from 'node:crypto';
 
 dotenv.config();
 
@@ -109,6 +110,9 @@ app.patch('/update-info', async(request, reply) => {
         return reply.code(300).send('There are nothing change');
     }
 
+    // Fetch current user for comparisons
+    const current = db.prepare('SELECT email FROM user WHERE uuid = ?').get(uuid);
+
     if (email){
         const validationEmail = (email) => {
             return /^[^@]+@[^@]+\.[^@]+$/i.test(email);
@@ -118,13 +122,16 @@ app.patch('/update-info', async(request, reply) => {
                 error: 'Invalid email'
             });
         }
-        const emailExist = db.prepare('SELECT email FROM user WHERE email = ?').get(email);
-        if (emailExist) {
-            return reply.code(400).send({
-                error: 'Email already in use'
-            });
+        // If email unchanged, skip update
+        if (!current || email !== current.email) {
+            const existing = db.prepare('SELECT uuid FROM user WHERE email = ?').get(email);
+            if (existing && existing.uuid !== uuid) {
+                return reply.code(400).send({
+                    error: 'Email already in use'
+                });
+            }
+            db.prepare('UPDATE user set email = ? WHERE uuid = ?').run(email, uuid);
         }
-        db.prepare('UPDATE user set email = ? WHERE uuid = ?').run(email, uuid);
     }
     if (username){
         db.prepare('UPDATE user set username = ? WHERE uuid = ?').run(username, uuid);

@@ -199,7 +199,7 @@ app.register(fastifyOauth2, {
 app.get('/google/callback', async(request, reply) => {
     if (!app.google) {
         console.error('google is not initialized');
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('oauth_error')}`);
     }
     try {
         //recuperation du token d'acces et du token de rafraichissement
@@ -222,9 +222,7 @@ app.get('/google/callback', async(request, reply) => {
         
         const local = db.prepare('SELECT password FROM user WHERE email = ?').get(email);
         if (local && local.password){
-           return reply
-            .code(403)
-            .send({ error: "SSO forbidden: email already registered locally" }) 
+           return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('sso_forbidden')}`);
         }
         let jwtToken;
 
@@ -264,9 +262,7 @@ app.get('/google/callback', async(request, reply) => {
         return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}`);
     } catch (err) {
         console.error(err);
-        reply.code(500).send({ error: 'internal Server Error' 
-
-        });
+        return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('oauth_error')}`);
     }
 });
 
@@ -304,10 +300,10 @@ async function retrieveAccessToken (token) {
 }
 
 app.get('/github/callback', async function (request, reply) {
-    console.log('Request query:', request);
+    // console.log('GitHub callback received');
 
     const { token }= await app.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
-    console.log(token.access_token)
+    // console.log('GitHub access token acquired')
     await saveAccessToken(token)
     
     const userResponse = await fetch('https://api.github.com/user', {
@@ -321,16 +317,32 @@ app.get('/github/callback', async function (request, reply) {
             }
     });
     
+    // Parse GitHub user first to obtain login for fallback email if needed
+    const ghUser = await userResponse.json();
+    const { login, avatar_url, id } = ghUser;
+
     const emails = await emailResponse.json();
-    const emailPrimary = await emails.find(email => email.primary)?.email || null;
-    const local = db.prepare('SELECT password FROM user WHERE email = ?').get(emailPrimary);
-    if (local && local.password){
-       return reply
-        .code(403)
-        .send({ error: "SSO forbidden: email already registered locally" }) 
+    let emailPrimary = (Array.isArray(emails) && (
+        emails.find(e => e.primary && e.verified)?.email ||
+        emails.find(e => e.verified)?.email ||
+        emails[0]?.email
+    )) || null;
+
+    // Fallback for users with hidden email on GitHub
+    if (!emailPrimary && login) {
+        emailPrimary = `${login}@users.noreply.github.com`;
     }
 
-    const { login, avatar_url, id } = await userResponse.json();
+    if (!emailPrimary) {
+        // Cannot proceed without an email; redirect back with an error
+        return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('no_email_from_github')}`);
+    }
+
+    const local = db.prepare('SELECT password FROM user WHERE email = ?').get(emailPrimary);
+    if (local && local.password){
+       return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('sso_forbidden')}`);
+    }
+
     const user = db.prepare('SELECT * FROM user WHERE email = ?').get(emailPrimary);
     let jwtToken;
 
@@ -365,7 +377,9 @@ app.get('/github/callback', async function (request, reply) {
         });
         jwtToken = await app.jwt.sign({ userId: uuid, username: login, email: emailPrimary});
     }
-    reply.send({ access_token: token.access_token, jwtToken })
+
+    // Redirect to frontend callback like Google flow
+    return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}`);
 })
 
 app.get('/github/refreshAccessToken', async function (request, reply) {
@@ -444,12 +458,13 @@ async function checkToken(request) {
     const authHeader = request.headers.authorization;
     console.log('Auth Header:', authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return reply.code(401).send({ error: 'Unauthorized' });
+        throw new Error('Unauthorized');
     }
 
-    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
-    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
-    return payload.uuid;
+    // const token = authHeader.slice(7);
+    const payload = await request.jwtVerify();
+    // Tokens signés plus haut utilisent userId (pas uuid)
+    return payload.userId || payload.uuid;
 }
 
 app.setErrorHandler((error, request, reply) => {
