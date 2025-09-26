@@ -2,6 +2,7 @@ import '../style.css';
 import { navigateTo } from '../routes';
 import { translations } from '../i18n';
 import { getCurrentLang, createLangSection } from './settings';
+import { ensureUser } from '../linkUser';
 // import { Inventory } from './inventory';
 
 export interface User {
@@ -123,67 +124,73 @@ export function RegisterPage(): HTMLElement {
 	RegisterBtn.className = "mt-4 px-8 py-3 rounded-xl bg-green-600 text-white text-2xl duration-300 focus:scale-105 hover:scale-105 hover:bg-green-700 transition-all w-full";
 	RegisterBtn.textContent = translations[getCurrentLang()].register;
 	RegisterBtn.addEventListener("click", async () => {
-			try {
-				const resp = await fetch("/auth/register", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ username: newuser.name.trim() ,email: newuser.email.trim(), password: newuser.password.trim() })
-				});
-				const data = await resp.json();
-				if (!resp.ok) throw new Error(data?.error || "Register failed");
-				console.log("jwt:", data.jwtToken);
-				{ // Connect
-					const overlay = document.createElement("div");
-            		overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
-					overlay.style.opacity = "0";
-            		overlay.style.transition = "opacity 1s ease";
-					// 
-            		const msg = document.createElement("h1");
-            		msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
-            		msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
-            		overlay.appendChild(msg);
-					// 
-            		document.body.appendChild(overlay);
-            		requestAnimationFrame(() => {
-            		    overlay.style.opacity = "1";
-            		});
-					// 
-            		RegisterContainer.classList.add("fade-out");
-					// 
-            		setTimeout(() => {
-						overlay.style.opacity = "0";
-						const onTransitionEnd = () => {
-							overlay.removeEventListener("transitionend", onTransitionEnd);
-                		    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                			navigateTo("/home");
-						}
-						overlay.addEventListener("transitionend", onTransitionEnd);
-            		}, 5000);
-					navigateTo("/home");
-				}
-			} catch (e: any) {
-				if (e.message.includes("email") || e.message.includes("Email"))
-					InputEmail.value = "";
-					InputEmail.placeholder = e.message || "Register failed";
-					InputEmail.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
-				if (e.message.includes("password") || e.message.includes("Password"))
-				{
-					InputPassword.value = "";
-					InputPassword.placeholder = e.message || "Register failed";
-					InputPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
-					InputConfirmPassword.value = "";
-					InputConfirmPassword.placeholder = e.message || "Register failed";
-					InputConfirmPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
-				}
-				setTimeout(() => {
-					InputEmail.placeholder = translations[getCurrentLang()].email;
-					InputEmail.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
-					InputPassword.placeholder = translations[getCurrentLang()].password;
-					InputPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
-					InputConfirmPassword.placeholder = translations[getCurrentLang()].confirm_password;
-					InputConfirmPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
-				}, 800);
+		try {
+			const resp = await fetch("/auth/register", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ username: newuser.name.trim() ,email: newuser.email.trim(), password: newuser.password.trim() })
+			});
+			const data = await resp.json();
+			if (!resp.ok) throw new Error(data?.error || "Register failed");
+			// Use the token returned by backend and log the user in
+			const jwt = data.token || data.jwtToken;
+			if (jwt) {
+				localStorage.setItem('jwt', jwt);
+				await ensureUser(true);
 			}
+			console.log("jwt:", jwt);
+			{ // Connect
+				const overlay = document.createElement("div");
+        		overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
+				overlay.style.opacity = "0";
+        		overlay.style.transition = "opacity 1s ease";
+				// 
+        		const msg = document.createElement("h1");
+        		msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
+        		msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
+        		overlay.appendChild(msg);
+				// 
+        		document.body.appendChild(overlay);
+        		requestAnimationFrame(() => {
+        		    overlay.style.opacity = "1";
+        		});
+				// 
+        		RegisterContainer.classList.add("fade-out");
+				// 
+        		setTimeout(() => {
+					overlay.style.opacity = "0";
+					const onTransitionEnd = () => {
+						overlay.removeEventListener("transitionend", onTransitionEnd);
+            			if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            			navigateTo("/home");
+					}
+					overlay.addEventListener("transitionend", onTransitionEnd);
+        		}, 5000);
+				navigateTo("/home");
+			}
+		} catch (e: any) {
+			if (e.message.includes("email") || e.message.includes("Email"))
+				InputEmail.value = "";
+				InputEmail.placeholder = e.message || "Register failed";
+				InputEmail.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
+			if (e.message.includes("password") || e.message.includes("Password"))
+			{
+				InputPassword.value = "";
+				InputPassword.placeholder = e.message || "Register failed";
+				InputPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
+				InputConfirmPassword.value = "";
+				InputConfirmPassword.placeholder = e.message || "Register failed";
+				InputConfirmPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
+			}
+			setTimeout(() => {
+				InputEmail.placeholder = translations[getCurrentLang()].email;
+				InputEmail.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
+				InputPassword.placeholder = translations[getCurrentLang()].password;
+				InputPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
+				InputConfirmPassword.placeholder = translations[getCurrentLang()].confirm_password;
+				InputConfirmPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
+			}, 800);
+		}
 	});
 	RegisterContainer.appendChild(RegisterBtn);
 

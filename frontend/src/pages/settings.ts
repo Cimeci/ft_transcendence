@@ -1,6 +1,6 @@
 import { translations } from '../i18n';
 import { userInventory } from './inventory';
-import { getUser, onUserChange } from '../linkUser';
+import { getUser, onUserChange, ensureUser } from '../linkUser';
 
 const t = translations[getCurrentLang()];
 
@@ -97,7 +97,7 @@ export function createLangSection(): HTMLElement {
 	return langSection;
 }
 
-function PopUpChangeInformation( title: string, maininfo: string, newinfo: string, confnewinfo: string, value: string, onConfirm?: (newValue: string) => void ): HTMLElement {
+function PopUpChangeInformation( title: string, maininfo: string, newinfo: string, confnewinfo: string, value: string, onConfirm?: (newValue: string, oldValue?: string) => void ): HTMLElement {
     const overlay = document.createElement("div");
     overlay.className = "fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4";
 
@@ -163,10 +163,11 @@ function PopUpChangeInformation( title: string, maininfo: string, newinfo: strin
 
     BtnConfirm.addEventListener("click", () => {
         let hasErr = false;
-        if (maininfo && Info.value !== value) { hasErr = true; Info.classList.add("shake", "placeholder:text-red-500"); }
+        // Only validate current value match if a value was provided
+        if (maininfo && value && Info.value !== value) { hasErr = true; Info.classList.add("shake", "placeholder:text-red-500"); }
         if (confnewinfo && newinfo && NewInfo.value !== ConfirmNewInfo.value) { hasErr = true; NewInfo.classList.add("shake","placeholder:text-red-500"); ConfirmNewInfo.classList.add("shake","placeholder:text-red-500"); }
        	if (!hasErr) {
-       		onConfirm?.(NewInfo.value);
+       		onConfirm?.(NewInfo.value, Info.value);
        		close();
        	}
         setTimeout(() => {
@@ -174,6 +175,36 @@ function PopUpChangeInformation( title: string, maininfo: string, newinfo: strin
         }, 800);
     });
     return overlay;
+}
+
+// Helpers to call backend
+async function updateProfileInfo(partial: { email?: string; username?: string; avatar?: string }) {
+  const token = localStorage.getItem('jwt');
+  if (!token) throw new Error('Not authenticated');
+  const resp = await fetch('/user/update-info', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(partial)
+  });
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error(data?.error || 'Update failed');
+  }
+  await ensureUser(true);
+}
+
+async function updatePassword(oldPassword: string, newPassword: string) {
+  const token = localStorage.getItem('jwt');
+  if (!token) throw new Error('Not authenticated');
+  const resp = await fetch('/auth/update-password', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ oldPassword, newPassword })
+  });
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error(data?.error || 'Password update failed');
+  }
 }
 
 function CreateFlagSection(lang: string, IconPath: string, code:string): HTMLButtonElement {
@@ -256,10 +287,14 @@ export function SettingsPage(): HTMLElement {
 	ChangeNameBtn.type = "button";
 	ChangeNameBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
 	ChangeNameBtn.addEventListener(("click"), () => {
-		const overlay = PopUpChangeInformation(t.changeName, "", t.newName, "", getUser()?.username || "default", (newVal) => {
-			// userName = newVal; //!update USERNAME
-			NameContent.textContent = newVal;
-			emitProfileUpdate();
+		const overlay = PopUpChangeInformation(t.changeName, "", t.newName, "", getUser()?.username || "default", async (newVal) => {
+			try {
+				await updateProfileInfo({ username: newVal });
+				NameContent.textContent = getUser()?.username || newVal;
+				emitProfileUpdate();
+			} catch (e: any) {
+				alert(e.message || 'Update failed');
+			}
 		});
 		mainContainer.appendChild(overlay);
 	});
@@ -292,9 +327,13 @@ export function SettingsPage(): HTMLElement {
 	ChangeMailBtn.type = "button";
 	ChangeMailBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
 	ChangeMailBtn.addEventListener(("click"), () => {
-		const overlay = PopUpChangeInformation(t.changeEmail, t.currentEmail, t.newEmail, t.confirmNewEmail, email, (newVal) => {
-			email = newVal;
-			MailContent.textContent = email;
+		const overlay = PopUpChangeInformation(t.changeEmail, t.currentEmail, t.newEmail, t.confirmNewEmail, getUser()?.email || email, async (newVal) => {
+			try {
+				await updateProfileInfo({ email: newVal });
+				MailContent.textContent = getUser()?.email || newVal;
+			} catch (e: any) {
+				alert(e.message || 'Update failed');
+			}
 		});
 		mainContainer.appendChild(overlay);
 	});
@@ -321,16 +360,22 @@ export function SettingsPage(): HTMLElement {
 	const PasswordContent = document.createElement("p");
 	PasswordContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
 	const maskPassword = (v: string) => "•".repeat(v.length);
-	PasswordContent.textContent = maskPassword(password);
+	PasswordContent.textContent = maskPassword(getUser()?.password || password);
 	changePasswordSection.appendChild(PasswordContent);
 
 	const ChangePasswordBtn = document.createElement("button");
 	ChangePasswordBtn.type = "button";
 	ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
 	ChangePasswordBtn.addEventListener(("click"), () => {
-		const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, password, (newVal) => {
-			password = newVal;
-			PasswordContent.textContent = maskPassword(password);
+		// Do not validate against stored value; ask user to input current password
+		const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, "", async (newVal, oldVal) => {
+			try {
+				await updatePassword(oldVal || '', newVal);
+				password = newVal;
+				PasswordContent.textContent = maskPassword(password);
+			} catch (e: any) {
+				alert(e.message || 'Password update failed');
+			}
 		});
 		mainContainer.appendChild(overlay);
 	});
