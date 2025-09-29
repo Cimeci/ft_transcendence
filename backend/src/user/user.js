@@ -70,8 +70,6 @@ const historic = `
         UNIQUE (user_uuid, games)
     );
 `
-/*a mettre peut etre dans la db historic
-,*/
 
 db.exec(user);
 db.exec(friends);
@@ -540,7 +538,6 @@ app.delete('/delete-user', async(request, reply) => {
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
-
 
 // Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
