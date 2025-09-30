@@ -78,7 +78,7 @@ export function LoginPage(): HTMLElement {
 
   const InputName = document.createElement('input');
   InputName.className = 'text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103';
-  InputName.placeholder = translations[getCurrentLang()].username;
+  InputName.placeholder = translations[getCurrentLang()].email;
   InputName.maxLength = 20;
 
   const InputPassword = document.createElement('input');
