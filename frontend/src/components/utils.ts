@@ -1,3 +1,5 @@
+import { navigateTo } from "../routes";
+
 export function CreateSlider(ref: { value: number }, txt: string, minValue: number, maxValue: number, onChange?: (v: number) => void) : HTMLElement
 {
     const SliderContainer = document.createElement("div");
@@ -56,4 +58,31 @@ export function CreateSlider(ref: { value: number }, txt: string, minValue: numb
     SliderContainer.appendChild(Slider);
 
     return SliderContainer;
+}
+
+export function CreateWrappedButton(mainContainer: HTMLElement, txt: string, path: string, size: number): HTMLElement {
+    const PlayContainer = document.createElement("div");
+    PlayContainer.className = "flex flex-col justify-center items-center gap-4 text-center";
+
+    const PlayBtnWrapper = document.createElement("div");
+    PlayBtnWrapper.className = "relative inline-flex items-center justify-center animated-gradient-border rounded-full p-[clamp(2px,0.6vw,8px)] mb-2 w-fit h-fit";
+
+    const PlayBtn = document.createElement("button");
+    PlayBtn.className = "relative z-10 inline-flex items-center justify-center whitespace-nowrap leading-none w-fit h-fit cursor-pointer transition-all duration-300 hover:scale-98 text-" + String(size) + "xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
+    PlayBtn.textContent = txt;
+
+    PlayBtn.addEventListener('click', () => {
+        if (path != "null")
+        {
+            mainContainer.classList.add("fade-out");
+            setTimeout(() => {
+                navigateTo(path);
+            }, 1000);
+        }
+    });
+
+    PlayBtnWrapper.appendChild(PlayBtn);
+    PlayContainer.appendChild(PlayBtnWrapper);
+
+    return (PlayContainer);
 }
