@@ -9,7 +9,7 @@
 
 # Completing setup
 [x] Kibana.yml
-[ ] Handle filter from Logstash.conf
+[x] Handle filter from Logstash.conf
 [ ] Add Restart Policy
 [ ] Change volumes logs (not the default one in compose)
 [ ] Persistence queue ?
