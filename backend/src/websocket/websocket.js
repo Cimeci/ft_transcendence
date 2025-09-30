@@ -33,15 +33,24 @@ app.register(async function (app) {
       try {
         let response;
         if (messageData.service === 'A') {
-          response = await axios.post(`http://auth:4000/handle-message`, messageData);
+          response = await fetch('http://auth:4000/handle-message', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(messageData)
+          });
         } else if (messageData.service === 'B') {
-          response = await axios.post(`http://game:4000/handle-message`, messageData);
+          response = await fetch('http://game:4000/handle-message', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(messageData)
+          });
         } else {
           socket.send(JSON.stringify({ error: 'Service inconnu' }));
           return;
         }
 
-        socket.send(JSON.stringify(response.data));
+        const responseData = await response.json();
+        socket.send(JSON.stringify(responseData));
       } catch (error) {
         console.error('Erreur lors de la communication avec les services :', error);
         socket.send(JSON.stringify({ error: 'Erreur interne' }));
@@ -54,4 +63,4 @@ app.register(async function (app) {
   });
 });
 
-app.listen({ port: 4000, host: '0.0.0.0.0' });
+app.listen({ port: 4000, host: '0.0.0.0' });

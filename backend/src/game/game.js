@@ -161,4 +161,12 @@ app.delete('/delete-game', async(request, reply) => {
     }
 })
 
+// Définis une route pour traiter les messages
+app.post('/handle-message', async (req, reply) => {
+  console.log('Message reçu par Service B :', req.body);
+  // Traite le message ici
+  const response = { message: 'Réponse de Service B', data: req.body };
+  reply.send(response);
+});
+
 app.listen({ port: 4000, host: '0.0.0.0' })

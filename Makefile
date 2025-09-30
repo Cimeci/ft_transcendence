@@ -4,7 +4,7 @@
 #	USED CONTAINERS															   #
 ################################################################################
 ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs
-BACKEND_CONTAINERS	=	gateway auth tournament	user game 
+BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket
 
 ################################################################################
 #	RECIPES																	   #
@@ -18,7 +18,8 @@ elk: pre-start
 	docker compose up $(ELK_CONTAINERS)
 
 back: pre-start
-	docker compose up $(BACKEND_CONTAINERS)
+	docker compose up --build $(BACKEND_CONTAINERS)
+# 	docker compose up $(BACKEND_CONTAINERS)
 
 down:
 	docker compose down

@@ -630,6 +630,14 @@ app.setErrorHandler((error, request, reply) => {
     reply.status(500).send({ error: 'Internal Server Error' });
 });
 
+// Définis une route pour traiter les messages
+app.post('/handle-message', async (req, reply) => {
+  console.log('Message reçu par Service A :', req.body);
+  // Traite le message ici
+  const response = { message: 'Réponse de Service A', data: req.body };
+  reply.send(response);
+});
+
 app.get('/', async(request, reply) => {
     return 'hello';
 });
