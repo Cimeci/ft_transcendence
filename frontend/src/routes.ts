@@ -7,7 +7,9 @@ import { ShopPage } from './pages/shop';
 import { InventoryPage } from './pages/inventory';
 import { SettingsPage, getCurrentLang } from './pages/settings';
 import { translations } from './i18n';
-import { PongMenuPage, PongGamePage, PongOverlayPage } from './pages/pong';
+import { PongMenuPage } from './pages/pong';
+import { PongLocalMenuPage, PongLocalGamePage, PongLocalOverlayPage } from './pages/pongLocal';
+import { PongOnlineMenuPage, PongOnlineGamePage, PongOnlineOverlayPage } from './pages/pongOnline';
 import { PongTournamentMenuPage, PongTournamentPageJoin, PongTournamentPageHost, PongTournamentPageCurrentGame } from './pages/tournament';
 import { LandingPage } from './pages/landing';
 import { CreditsPage } from './pages/credits';
@@ -26,9 +28,13 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/shop': ShopPage,
 	'/friends': FriendsPage,
 	'/inventory': InventoryPage,
-	'/pong': PongMenuPage,
-	'/pong/game': PongGamePage,
-	'/pong/game/overlay': PongOverlayPage,
+	'/pong/menu': PongMenuPage,
+	'/pong/local/menu': PongLocalMenuPage,
+	'/pong/local/game': PongLocalGamePage,
+	'/pong/local/game/overlay': PongLocalOverlayPage,
+	'/pong/Online/menu': PongOnlineMenuPage,
+	'/pong/Online/game': PongOnlineGamePage,
+	'/pong/Online/game/overlay': PongOnlineOverlayPage,
 	'/tournament/menu': PongTournamentMenuPage,
 	'/tournament/host': PongTournamentPageHost,
 	'/tournament/join': PongTournamentPageJoin,
