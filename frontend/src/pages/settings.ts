@@ -2,7 +2,7 @@ import { translations } from '../i18n';
 import { userInventory } from './inventory';
 import { getUser, onUserChange, ensureUser } from '../linkUser';
 
-const t = translations[getCurrentLang()];
+export const t = translations[getCurrentLang()];
 
 let username: string = "default";
 let email:string = "ilan@42angouleme.fr";

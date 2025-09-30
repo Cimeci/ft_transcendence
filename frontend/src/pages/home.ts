@@ -30,7 +30,7 @@ export function HomePage(): HTMLElement {
 
 	PongImg.addEventListener("click", () => {
 		PongImg.classList.add("fade-out");
-		setTimeout(() => { navigateTo("/pong"); }, 500);
+		setTimeout(() => { navigateTo("/pong/menu"); }, 500);
 	});
 
 	LinkContainer.appendChild(PongLinkContainer);

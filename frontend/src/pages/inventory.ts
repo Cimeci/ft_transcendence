@@ -46,10 +46,10 @@ export const userInventory: Inventory = {
         { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250},
     ],
     ball: [
-        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball', price: 250},
-        { id: 'ball/default_ball.png', name: 'default_ball', type: 'ball', price: 250},
-        { id: 'ball/tennis_ball.png', name: 'tennis_ball', type: 'ball', price: 250},
-        { id: 'ball/swenn_ball.gif', name: 'swenn_ball', type: 'ball', price: 250},
+        { id: 'ball/default_ball.png', name: 'default ball', type: 'ball', price: 250},
+        { id: 'ball/default_ball.png', name: 'default ball', type: 'ball', price: 250},
+        { id: 'ball/tennis_ball.png', name: 'tennis ball', type: 'ball', price: 250},
+        { id: 'ball/swenn_ball.gif', name: 'swenn ball', type: 'ball', price: 250},
     ],
 };
 

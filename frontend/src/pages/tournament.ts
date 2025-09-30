@@ -1,6 +1,6 @@
 import { getCurrentLang } from "./settings";
 import { translations } from "../i18n";
-import { CreateWrappedButton } from "./pong";
+import { CreateWrappedButton } from "../components/utils";
 import { createInputWithEye, togglePassword } from "./register"; 
 import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
