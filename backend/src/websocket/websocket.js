@@ -22,6 +22,52 @@ dotenv.config();
 const app = fastify({ logger: true });
 app.register(jwt, { secret: process.env.JWT_SECRET });
 app.register(websocket);
+
+const paddleWidth = 10;
+const paddleHeight = 120;
+const speed = 6;
+
+const start_ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speddX: 5, speedY: 5 };
+let leftpaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
+const rightPaddle = { x: canvas.width - 20, y: 800 / 2 - paddleHeight / 2 };
+let ballRotation = 0;
+
+async function startGame() {
+  
+}
+async function resetBall(forceDirection = null) {
+    // Position centrale
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+
+    // Stoppe la balle pendant l’attente
+    ball.speedX = 0;
+    ball.speedY = 0;
+    ballRotation = 0;
+
+    // Annule un éventuel timer précédent
+    if (launchTimeout !== null) {
+        clearTimeout(launchTimeout);
+    }
+
+    // Vitesse initiale
+    const speed = canvas.width / 200;
+    const maxAngle = Math.PI / 4;
+
+    // Lance la balle après un délai
+    launchTimeout = window.setTimeout(() => {
+        let angle = 0;
+        do {
+            angle = (Math.random() * 2 - 1) * maxAngle;
+        } while (Math.abs(angle) < 0.1);
+
+        const direction = forceDirection ?? (Math.random() < 0.5 ? -1 : 1);
+        ball.speedX = Math.cos(angle) * speed * direction;
+        ball.speedY = Math.sin(angle) * speed;
+        launchTimeout = null;
+    }, 3000); // 3 secondes d’attente
+}
+
 app.register(async function (app) {
   app.get('/ws', { websocket: true }, async (socket, request) => {
     console.log('Client connecté');
@@ -29,25 +75,12 @@ app.register(async function (app) {
     socket.on('message', async (message) => {
       console.log('Message reçu du client :', message);
       const messageData = JSON.parse(message.toString());
+      console.log('Message data :', messageData);
 
+      let lplayer, rplayer, ball, score, event, msg, notification;
       try {
-        let response;
-        if (messageData.service === 'A') {
-          response = await fetch('http://auth:4000/handle-message', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(messageData)
-          });
-        } else if (messageData.service === 'B') {
-          response = await fetch('http://game:4000/handle-message', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(messageData)
-          });
-        } else {
-          socket.send(JSON.stringify({ error: 'Service inconnu' }));
-          return;
-        }
+        messageData.
+        
 
         const responseData = await response.json();
         socket.send(JSON.stringify(responseData));
