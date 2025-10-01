@@ -27,18 +27,20 @@ const paddleWidth = 10;
 const paddleHeight = 120;
 const speed = 6;
 
-const start_ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speddX: 5, speedY: 5 };
-let leftpaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
-const rightPaddle = { x: canvas.width - 20, y: 800 / 2 - paddleHeight / 2 };
+let ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 5, speedY: 5 };
+let leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
+let rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
 let ballRotation = 0;
 
-async function startGame() {
-  
-}
-async function resetBall(forceDirection = null) {
+let score = { left: 4, right: 0 };
+
+let launchTimeout; // <-- ajouté
+const BALL_SPIN_STEP = Math.PI / 6;
+
+function resetBall(forceDirection = null) {
     // Position centrale
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height / 2;
+    ball.x = 1400 / 2;
+    ball.y = 800 / 2;
 
     // Stoppe la balle pendant l’attente
     ball.speedX = 0;
@@ -51,11 +53,11 @@ async function resetBall(forceDirection = null) {
     }
 
     // Vitesse initiale
-    const speed = canvas.width / 200;
+    const speed = 1400 / 200;
     const maxAngle = Math.PI / 4;
 
     // Lance la balle après un délai
-    launchTimeout = window.setTimeout(() => {
+    launchTimeout = setTimeout(() => {
         let angle = 0;
         do {
             angle = (Math.random() * 2 - 1) * maxAngle;
@@ -68,6 +70,54 @@ async function resetBall(forceDirection = null) {
     }, 3000); // 3 secondes d’attente
 }
 
+function endGame() {
+  if (score.left === 5 || score.right === 5) {
+  // fin de parti, envoyer un message de fin
+  const finishMessage = { event: 'finish', winner: score.left === 5 ? 'left' : 'right' };
+        
+  ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 5, speedY: 5 };
+  leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
+  rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
+  ballRotation = 0;
+  score = { left: 4, right: 0 };
+
+  socket.send(JSON.stringify(finishMessage));
+        
+  }
+}
+function updateGame() {
+  // calcul la prochaine position de la balle, a mettre dans une fonction
+  ball.x += ball.speedX;
+	ball.y += ball.speedY;
+	if (ball.y < 0 || ball.y > 800) ball.speedY *= -1;
+
+  const hitLeft = ball.x - ball.radius < leftPaddle.x + paddleWidth && ball.y > leftPaddle.y && ball.y < leftPaddle.y + paddleHeight;
+  const hitRight = ball.x + ball.radius > rightPaddle.x && ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight;
+
+  if (hitLeft || hitRight) {
+    ball.speedX *= -1;
+    ballRotation += BALL_SPIN_STEP;
+  }
+        
+	// Score (on passe la direction du prochain service)
+	if (ball.x < 0) {
+    score.right++;
+		// user2.score++;
+		resetBall(1);   // relance vers le joueur 1 (à droite)
+	}
+	if (ball.x > 1400) {
+    score.left++;
+		// user1.score++;
+		resetBall(-1);  // relance vers le joueur 2 (à gauche)
+	}
+
+  // Accélération progressive uniquement si la balle est en mouvement
+	if (ball.speedX !== 0 || ball.speedY !== 0) {
+		ball.speedX *= 1.0005;
+		ball.speedY *= 1.0005;
+	}
+}
+
 app.register(async function (app) {
   app.get('/ws', { websocket: true }, async (socket, request) => {
     console.log('Client connecté');
@@ -76,21 +126,37 @@ app.register(async function (app) {
       console.log('Message reçu du client :', message);
       const messageData = JSON.parse(message.toString());
       console.log('Message data :', messageData);
-
-      let lplayer, rplayer, ball, score, event, msg, notification;
-      try {
-        messageData.
-        
-
-        const responseData = await response.json();
-        socket.send(JSON.stringify(responseData));
-      } catch (error) {
-        console.error('Erreur lors de la communication avec les services :', error);
-        socket.send(JSON.stringify({ error: 'Erreur interne' }));
+      console.log(ball);
+      let { event, paddle, direction } = messageData;
+      if (event === 'move' && paddle === 'left') {
+        if (direction === 'up' && leftPaddle.y > 2) {
+          leftPaddle.y -= speed;
+        }
+        else if (direction === 'down' && leftPaddle.y + paddleHeight < 800 - 2) {
+          leftPaddle.y += speed;
+        }
+      } 
+      else if (paddle === 'move' && paddle === 'right') {
+        if (direction === 'up' && rightPaddle.y > 2) {
+          rightPaddle.y -= speed;
+        }
+        else if (direction === 'down' && rightPaddle.y + paddleHeight < 800 - 2) {
+          rightPaddle.y += speed;
+        }
       }
+
+      updateGame();
+
+      endGame();
+        const gameState = { ball, leftPaddle, rightPaddle, score };
+        socket.send(JSON.stringify(gameState));
     });
 
     socket.on('close', () => {
+      ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 5, speedY: 5 };
+      leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
+      rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
+      ballRotation = 0;
       console.log('Connexion WebSocket fermée');
     });
   });
