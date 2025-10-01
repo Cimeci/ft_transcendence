@@ -70,7 +70,7 @@ function resetBall(forceDirection = null) {
     }, 3000); // 3 secondes d’attente
 }
 
-function endGame() {
+function endGame(socket) {
   if (score.left === 5 || score.right === 5) {
   // fin de parti, envoyer un message de fin
   const finishMessage = { event: 'finish', winner: score.left === 5 ? 'left' : 'right' };
@@ -81,10 +81,16 @@ function endGame() {
   ballRotation = 0;
   score = { left: 4, right: 0 };
 
-  socket.send(JSON.stringify(finishMessage));
-        
+  // socket.send(JSON.stringify(finishMessage));
+  const gameState = { ball, leftPaddle, rightPaddle, score };
+    app.websocketServer.clients.forEach((client) => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify(finishMessage));
+        }
+    }); 
   }
 }
+
 function updateGame() {
   // calcul la prochaine position de la balle, a mettre dans une fonction
   ball.x += ball.speedX;
@@ -115,7 +121,18 @@ function updateGame() {
 	if (ball.speedX !== 0 || ball.speedY !== 0) {
 		ball.speedX *= 1.0005;
 		ball.speedY *= 1.0005;
+
+    // const gameState = { ball, leftPaddle, rightPaddle, score };
+    //   socket.send(JSON.stringify(gameState));
+    // Envoyer l'état du jeu à tous les clients
+    const gameState = { ball, leftPaddle, rightPaddle, score };
+    app.websocketServer.clients.forEach((client) => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify(gameState));
+        }
+    });
 	}
+  endGame();
 }
 
 app.register(async function (app) {
@@ -145,11 +162,8 @@ app.register(async function (app) {
         }
       }
 
-      updateGame();
-
-      endGame();
-        const gameState = { ball, leftPaddle, rightPaddle, score };
-        socket.send(JSON.stringify(gameState));
+      // updateGame();
+      // endGame(socket);
     });
 
     socket.on('close', () => {
@@ -161,5 +175,8 @@ app.register(async function (app) {
     });
   });
 });
+
+setInterval(updateGame, 1000 / 60);
+
 
 app.listen({ port: 4000, host: '0.0.0.0' });
