@@ -4,42 +4,184 @@ import { navigateTo } from '../routes';
 import { userInventory } from "./inventory";
 import { onUserChange } from "../linkUser";
 import { CreateWrappedButton } from "../components/utils";
-
-
-// const CosmeticContainer = document.createElement("div");
-// 	CosmeticContainer.className = "flex flex-col justify-between items-center w-1/3 h-[50vh] glass-blur";
-
-// 	const TitleCosmetic = document.createElement("p");
-// 	TitleCosmetic.textContent = "Actual Cosmetics" //! i18n
-// 	TitleCosmetic.className = "text-xl font-bold";
-// 	CosmeticContainer.appendChild(TitleCosmetic);
-
-// 	const imgBall = document.createElement("img");
-// 	imgBall.className = "rounded-xl p-4 transition-all duration-300 hover:scale-105 text-3xl tracking-widest text-green-400 neon-matrix border-2 border-green-400 rounded-lg mb-2 w-full h-full hover:p-1";
-// 	imgBall.src = userInventory["ball"][0].id;
-// 	CosmeticContainer.appendChild(imgBall);
-
-// 	const imgBar = document.createElement("img");
-// 	imgBar.className = "rounded-xl p-4 transition-all duration-300 hover:scale-105 text-3xl tracking-widest text-green-400 neon-matrix border-2 border-green-400 rounded-lg mb-2 w-full h-full hover:p-1";
-// 	imgBar.src = userInventory["bar"][0].id;
-// 	CosmeticContainer.appendChild(imgBar);
-
-// 	const imgBg = document.createElement("img");
-// 	imgBg.className = "rounded-xl p-4 transition-all duration-300 hover:scale-105 text-3xl tracking-widest text-green-400 neon-matrix border-2 border-green-400 rounded-lg mb-2 w-full h-full hover:p-1";
-// 	imgBg.src = userInventory["background"][0].id;
-// 	CosmeticContainer.appendChild(imgBg);
+import { getUser } from "../linkUser";
+import { t } from "./settings";
+import { users } from "./friends";
 
 export const gameHistory: string[] = [];
 
 export function PongOnlineMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
-	mainContainer.className = "pt-25 min-h-screen w-full flex items-center justify-center bg-linear-to-bl from-black via-green-900 to-black"
+	mainContainer.className = "p-10 pt-25 min-h-screen w-full flex flex-col xl:flex-row items-center justify-center gap-10 bg-linear-to-bl from-black via-green-900 to-black"
+
+	const rightContainer = document.createElement("div");{
+	rightContainer.className = "z-[200] p-2 fixed top-25 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
+	rightContainer.classList.add("hidden");
+	mainContainer.appendChild(rightContainer);
+
+	const btnRightBar = document.createElement("button");
+	btnRightBar.className = "top-25 right-5 w-10 h-10 fixed z-[2000] cursor-pointer duration-200 transition-all hover:-translate-x-2";
+	btnRightBar.onclick = () => {
+		if (rightContainer.classList.contains("hidden")) {
+			btnRightBar.classList.remove("right-5", "hover:-translate-x-2");
+			btnRightBar.classList.add("right-[calc(15%+1.25rem)]", "hover:translate-x-2");
+			rightContainer.classList.remove("hidden");
+		} else {
+			btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
+			btnRightBar.classList.add("right-5", "hover:-translate-x-2");
+			btnRightBar.classList.remove("right-3/10", "hover:translate-x-2");
+			rightContainer.classList.add("hidden");
+		}
+	}
+	mainContainer.appendChild(btnRightBar);
+
+	const iconRightBar = document.createElement("img");
+	iconRightBar.className = "w-full h-full"
+	iconRightBar.src = "/icons/contact.svg"
+	btnRightBar.appendChild(iconRightBar);
+
+	const lstFriends = document.createElement("ul");
+	lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
+	rightContainer.appendChild(lstFriends);
+
+	users.forEach(e => {
+		const li: HTMLLIElement = document.createElement("li");
+		li.className = "flex justify-between items-center p-2 w-full min-h-12"
+
+		const profil = document.createElement("div");{
+		profil.className = "flex gap-2 justify-center items-center";
+		li.appendChild(profil);
+
+		const icon = document.createElement("img");
+		icon.src = e.avatar;
+		icon.className = "w-8 h-8 rounded-full object-cover";
+		profil.appendChild(icon);
+
+		const name = document.createElement("p");
+		name.className = "text-base";
+		name.textContent = e.username;
+		profil.appendChild(name);
+		}
+
+		const btn = document.createElement("button");
+		btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
+		btn.textContent = "Invite"; //! i18n
+		btn.addEventListener("click", () => {
+			window.showInvite({
+				username: getUser()?.username || "default",
+				id: getUser()?.uuid.split("-")[0] || t.err_id,
+				avatar: getUser()?.avatar || "/avatar/default_avatar.png",
+				message: "Invitation to play against " + getUser()?.username || "default",
+			});
+		});
+		li.appendChild(btn);
+		lstFriends.appendChild(li);
+	});
+	}
 
 	const TitlePong = document.createElement("h1");
 	TitlePong.className = "pt-25 text-6xl sm:text-8xl tracking-widest absolute top-0 text-green-400 neon-matrix w-full text-center";
 	TitlePong.textContent = "P O N G";
 	mainContainer.appendChild(TitlePong);
 
+	const container1 = document.createElement("div");{
+	container1.className = "mt-30 xl:mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
+	mainContainer.appendChild(container1);
+
+	const username = document.createElement("p");
+	username.className = "w-9/10 glass-blur text-xl py-1";
+	username.textContent = getUser()?.username || "default";
+	container1.appendChild(username);
+
+	onUserChange(u => { username.textContent = u?.username || "default"; });
+
+	const inventory = document.createElement("div");
+	inventory.className = "w-9/10 flex justify-around";
+	container1.appendChild(inventory);
+
+	const ballContainer = document.createElement("div");{
+		ballContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		inventory.appendChild(ballContainer);
+
+		const ball = document.createElement("img");
+		ball.src = "/ball/default_ball.png";
+		ball.className = "w-full h-full rounded-xl";
+		ballContainer.appendChild(ball);
+	}
+
+	const barContainer = document.createElement("div");{
+		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		inventory.appendChild(barContainer);
+		
+		const bar = document.createElement("img");
+		bar.src = "/bar/default_bar.png";
+		bar.className = "w-full h-full rounded-xl";
+		barContainer.appendChild(bar);
+	}
+	}
+
+	const container2 = document.createElement("div");{
+	container2.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-6 glass-blur justify-around items-center text-center";
+	mainContainer.appendChild(container2);
+
+	const playBtn = CreateWrappedButton(mainContainer, t.play, "/pong/online/game", 5);
+	// playBtn.className += "text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl";
+	container2.appendChild(playBtn);
+
+	const bgContainer = document.createElement("div");{
+		bgContainer.className = "glass-blur h-[14rem] w-[14rem] flex flex-col gap-2 p-1";
+		container2.appendChild(bgContainer);
+		
+		const bgTxt = document.createElement("p");
+		bgTxt.textContent = t.gamebackground || "Background";
+		bgContainer.appendChild(bgTxt);
+
+		const bg = document.createElement("img");
+		bg.src = "/bg/matrix_bg.gif";
+		bg.className = "w-full rounded-xl h-full";
+		bgContainer.appendChild(bg);
+	}
+
+	const backBtn = CreateWrappedButton(mainContainer, t.back, "/pong/menu", 0);
+	container2.appendChild(backBtn);
+
+	}
+
+	const container3 = document.createElement("div");{
+	container3.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
+	mainContainer.appendChild(container3);
+
+	const username = document.createElement("p");
+	username.className = "w-9/10 glass-blur text-xl py-1";
+	username.textContent = "SECOND default";
+	container3.appendChild(username);
+
+	// onUserChange(u => { username.textContent = u?.username || "default"; });
+
+	const inventory = document.createElement("div");
+	inventory.className = "w-9/10 flex justify-around";
+	container3.appendChild(inventory);
+
+	const ballContainer = document.createElement("div");{
+		ballContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		inventory.appendChild(ballContainer);
+
+		const ball = document.createElement("img");
+		ball.src = "/ball/default_ball.png";
+		ball.className = "w-full h-full rounded-xl";
+		ballContainer.appendChild(ball);
+	}
+
+	const barContainer = document.createElement("div");{
+		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		inventory.appendChild(barContainer);
+		
+		const bar = document.createElement("img");
+		bar.src = "/bar/default_bar.png";
+		bar.className = "w-full h-full rounded-xl";
+		barContainer.appendChild(bar);
+	}
+	}
 
 	return (mainContainer);
 }
@@ -97,7 +239,7 @@ export function PongOnlineOverlayPage(): HTMLElement {
 		setTimeout(() => {
 			user1.score = 0;
 			user2.score = 0;
-			navigateTo("/pong");
+			navigateTo("/pong/menu");
 		}, 1000);
 	});
 	setTimeout(() => {
@@ -105,7 +247,7 @@ export function PongOnlineOverlayPage(): HTMLElement {
 		setTimeout(() => {
 			user1.score = 0;
 			user2.score = 0;
-			navigateTo("/pong");
+			navigateTo("/pong/menu");
 		}, 1000);
 	}, 5000);
 
@@ -117,234 +259,264 @@ export function PongOnlineOverlayPage(): HTMLElement {
 }
 
 function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
-	const container = document.createElement("div");
-	container.className = "relative flex flex-col items-center justify-center";
+  // Utilise l’origine (5173) + proxy Vite /ws -> back
+//   const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const socket = new WebSocket(`ws://localhost:4000/ws`);
 
-	// GESTION DES TOUCHES
-	const keys: Record<string, boolean> = {};
-	const onKeyDown = (e: KeyboardEvent) => {
-		keys[e.key] = true;
-	};
-	const onKeyUp = (e: KeyboardEvent) => {
-		keys[e.key] = false;
-	};
-	window.addEventListener('keydown', onKeyDown);
-	window.addEventListener('keyup', onKeyUp);
+  socket.onopen = () => {
+    console.log('[WS] open', socket.url);
+    send({ event: 'join', username: getUser()?.username, avatar: getUser()?.avatar });
+  };
+  socket.onerror = (e) => console.error('[WS] error', e);
+  socket.onclose = (ev) => console.warn('[WS] close', ev.code, ev.reason, ev.wasClean);
 
-	function cleanup() {
-		window.removeEventListener('keydown', onKeyDown);
-		window.removeEventListener('keyup', onKeyUp);
+  type ServerState = {
+    ball: { x: number; y: number; radius: number };
+    paddles: { leftY: number; rightY: number };
+    scores: { left: number; right: number };
+    state?: 'waiting' | 'playing' | 'game_over';
+    winner?: 'left' | 'right';
+  };
+
+  const container = document.createElement("div");
+  container.className = "relative flex flex-col items-center justify-center";
+
+  function send(data: any) {
+	  if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(data));
 	}
+	
 
-	const resolveBallPath = () => {
-		const raw = userInventory.ball[0]?.id || '';
-		return raw.startsWith('/') ? raw : '/' + raw;
-	};
-	let currentBallSrc = resolveBallPath();
-	const ballImg = new Image();
-	ballImg.src = currentBallSrc;
-	let ballImgLoaded = false;
-	ballImg.onload = () => { ballImgLoaded = true; };
+  type Dir = 'idle'|'up'|'down';
+  const pressedKeys = new Set<string>();
+  const input = { left: 'idle' as Dir, right: 'idle' as Dir };
+  const TICK_MS = 20;
+  let sendTimer: number | null = null;
 
-	const resolveBarPath = () => {
-		const raw = userInventory.bar[0]?.src || '';
-		return raw.startsWith('/') ? raw : '/' + raw;
-	};
-	let currentBarSrc = resolveBarPath();
-	const leftBarImg = new Image();
-	leftBarImg.src = currentBarSrc;	
-	let leftBarImgLoaded = false;
-	leftBarImg.onload = () => { leftBarImgLoaded = true; };
+  function startSendLoop() {
+    if (sendTimer != null) return;
+    sendTimer = window.setInterval(() => {
+      if (input.left  !== 'idle') send({ event: 'move', paddle: 'left',  direction: input.left });
+      if (input.right !== 'idle') send({ event: 'move', paddle: 'right', direction: input.right });
+    }, TICK_MS);
+  }
+  function stopSendLoopIfIdle() {
+    if (input.left === 'idle' && input.right === 'idle' && sendTimer != null) {
+      window.clearInterval(sendTimer);
+      sendTimer = null;
+    }
+  }
+  function recomputeFromPressed() {
+    const prevLeft = input.left, prevRight = input.right;
+    input.left  = pressedKeys.has('w') ? 'up' : (pressedKeys.has('s') ? 'down' : 'idle');
+    input.right = pressedKeys.has('ArrowUp') ? 'up' : (pressedKeys.has('ArrowDown') ? 'down' : 'idle');
 
-	const resolveRightBarPath = () => {
-		const raw = userInventory.bar[1]?.src || userInventory.bar[0]?.src || '';
-		return raw.startsWith('/') ? raw : '/' + raw;
-	};
-	let currentRightBarSrc = resolveRightBarPath();
-	const rightBarImg = new Image();
-	rightBarImg.src = currentRightBarSrc;
-	let rightBarImgLoaded = false;
-	rightBarImg.onload = () => { rightBarImgLoaded = true; };
+    if (prevLeft !== input.left && input.left === 'idle')  send({ event: 'stop', paddle: 'left' });
+    if (prevRight !== input.right && input.right === 'idle') send({ event: 'stop', paddle: 'right' });
 
-	const canvas = document.createElement("canvas");
-	canvas.width = 1400;
-	canvas.height = 800;
-	const bgUrl = userInventory.background[0].id.startsWith('/')
-		? userInventory.background[0].id
-		: '/' + userInventory.background[0].id;
-	canvas.className = "border-2 w-[70vw] h-[80vh]";
-	canvas.style.backgroundImage = `url('${bgUrl}')`;
-	canvas.style.backgroundSize = "cover";
-	canvas.style.backgroundPosition = "center";
-	canvas.style.backgroundRepeat = "no-repeat";
-	container.appendChild(canvas);
+    if (input.left !== 'idle' || input.right !== 'idle') startSendLoop();
+    else stopSendLoopIfIdle();
+  }
 
-	const ctx = canvas.getContext("2d")!;
-	const paddleWidth = 10;
-	const paddleHeight = 120;
-	const speed = 6;
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'w' || e.key === 's' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      pressedKeys.add(e.key);
+      recomputeFromPressed();
+      e.preventDefault();
+    } else if (e.key === 'e') {
+      send({ event: 'boost' });
+    }
+  };
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (e.key === 'w' || e.key === 's' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      pressedKeys.delete(e.key);
+      recomputeFromPressed();
+      e.preventDefault();
+    }
+  };
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', () => {
+    // sécurité si l’onglet perd le focus
+    pressedKeys.clear();
+    input.left = input.right = 'idle';
+    stopSendLoopIfIdle();
+    send({ event: 'stop', paddle: 'left' });
+    send({ event: 'stop', paddle: 'right' });
+  });
 
-	const leftPaddle = { x: 10, y: canvas.height / 2 - paddleHeight / 2 };
-	const rightPaddle = { x: canvas.width - 20, y: canvas.height / 2 - paddleHeight / 2 };
+  function cleanup() {
+    window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('keyup', onKeyUp);
+    if (sendTimer != null) { window.clearInterval(sendTimer); sendTimer = null; }
+    try { socket.close(); } catch {}
+  }
 
-	const ball = { x: canvas.width / 2, y: canvas.height / 2, radius: 20, speedX: 5, speedY: 5 };
-	let ballRotation = 0;
-	const BALL_SPIN_STEP = Math.PI / 6;
+  // 3) Assets (render only)
+  const resolveBallPath = () => {
+    const raw = userInventory.ball[0]?.id || '';
+    return raw.startsWith('/') ? raw : '/' + raw;
+  };
+  let currentBallSrc = resolveBallPath();
+  const ballImg = new Image();
+  ballImg.src = currentBallSrc;
+  let ballImgLoaded = false;
+  ballImg.onload = () => { ballImgLoaded = true; };
 
-	let launchTimeout: number | null = null; // <-- ajouté
+  const resolveBarPath = () => {
+    const raw = userInventory.bar[0]?.src || '';
+    return raw.startsWith('/') ? raw : '/' + raw;
+  };
+  let currentBarSrc = resolveBarPath();
+  const leftBarImg = new Image();
+  leftBarImg.src = currentBarSrc;	
+  let leftBarImgLoaded = false;
+  leftBarImg.onload = () => { leftBarImgLoaded = true; };
 
-	function resetBall(forceDirection?: number) {
-		// Position centrale
-		ball.x = canvas.width / 2;
-		ball.y = canvas.height / 2;
-		// Stoppe la balle pendant l’attente
-		ball.speedX = 0;
-		ball.speedY = 0;
-		ballRotation = 0;
+  const resolveRightBarPath = () => {
+    const raw = userInventory.bar[1]?.src || userInventory.bar[0]?.src || '';
+    return raw.startsWith('/') ? raw : '/' + raw;
+  };
+  let currentRightBarSrc = resolveRightBarPath();
+  const rightBarImg = new Image();
+  rightBarImg.src = currentRightBarSrc;
+  let rightBarImgLoaded = false;
+  rightBarImg.onload = () => { rightBarImgLoaded = true; };
 
-		// Annule un éventuel timer précédent
-		if (launchTimeout !== null) {
-			clearTimeout(launchTimeout);
-		}
+  // 4) Canvas
+  const canvas = document.createElement("canvas");
+  canvas.width = 1400;
+  canvas.height = 800;
+  const bgUrl = userInventory.background[0].id.startsWith('/') ? userInventory.background[0].id : '/' + userInventory.background[0].id;
+  canvas.className = "border-2 w-[70vw] h-[80vh]";
+  canvas.style.backgroundImage = `url('${bgUrl}')`;
+  canvas.style.backgroundSize = "cover";
+  canvas.style.backgroundPosition = "center";
+  canvas.style.backgroundRepeat = "no-repeat";
+  container.appendChild(canvas);
 
-		const speed = canvas.width / 200;
-		const maxAngle = Math.PI / 4;
+  const ctx = canvas.getContext("2d")!;
+  const paddleWidth = 10;
+  const paddleHeight = 120;
 
-		launchTimeout = window.setTimeout(() => {
-			let angle = 0;
-			do {
-				angle = (Math.random() * 2 - 1) * maxAngle;
-			} while (Math.abs(angle) < 0.1);
+  // 5) Etat reçu du serveur
+  let state: ServerState | null = null;
 
-			const direction = forceDirection ?? (Math.random() < 0.5 ? -1 : 1);
-			ball.speedX = Math.cos(angle) * speed * direction;
-			ball.speedY = Math.sin(angle) * speed;
-			launchTimeout = null;
-		}, 3000); // 3 secondes d’attente
-	}
+  socket.onopen = () => {
+      // Optionnel: prévenir qu’on est prêt (et qui on est)
+      send({ action: 'join', username: getUser()?.username, avatar: getUser()?.avatar });
+  };
 
-	let prevScore1 = user1.score;
-	let prevScore2 = user2.score;
-	let isGameOver = false;
-	let overlayTriggered = false;
+  socket.onmessage = (ev) => {
+		try {
+			const msg = JSON.parse(ev.data);
+            // On accepte soit {type:'state', payload:...} soit un snapshot direct
+            if (msg?.type === 'state') state = msg.payload as ServerState;
+            else state = msg as ServerState;
 
-	function update() {
-		if (isGameOver) return;
-		if (keys["Escape"]) return;
-		if (keys["q"]) user1.score = 5;
-		if (keys["e"]) {ball.speedX *= 1.1; ball.speedY *= 1.1;}
+			console.log(msg);
 
-		if (keys["w"] && leftPaddle.y > 2) leftPaddle.y -= speed;
-		if (keys["s"] && leftPaddle.y + paddleHeight < canvas.height - 2) leftPaddle.y += speed;
-		if (keys["ArrowUp"] && rightPaddle.y > 2) rightPaddle.y -= speed;
-		if (keys["ArrowDown"] && rightPaddle.y + paddleHeight < canvas.height - 2) rightPaddle.y += speed;
-		ball.x += ball.speedX;
-		ball.y += ball.speedY;
-		if (ball.y < 0 || ball.y > canvas.height) ball.speedY *= -1;
-		// Collisions paddles
-		const hitLeft = ball.x - ball.radius < leftPaddle.x + paddleWidth && ball.y > leftPaddle.y && ball.y < leftPaddle.y + paddleHeight;
-		const hitRight = ball.x + ball.radius > rightPaddle.x && ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight;
-		if (hitLeft || hitRight) {
-			ball.speedX *= -1;
-			ballRotation += BALL_SPIN_STEP;
-		}
+			state = {
+      			ball: msg.ball,
+      			paddles: { leftY: msg.leftPaddle?.y ?? 340, rightY: msg.rightPaddle?.y ?? 340 },
+      			scores: { left: msg.score?.left ?? 0, right: msg.score?.right ?? 0 },
+      			state: msg.event === 'finish' ? 'game_over' : 'playing',
+      			winner: msg.winner
+      		};
 
-		// Score (on passe la direction du prochain service)
-		if (ball.x < 0) {
-			user2.score++;
-			resetBall(1);   // relance vers le joueur 1 (à droite)
-		}
-		if (ball.x > canvas.width) {
-			user1.score++;
-			resetBall(-1);  // relance vers le joueur 2 (à gauche)
-		}
+            // MAJ scores + noms (render only)
+            if (state?.scores) {
+                user1.score = state.scores.left ?? 0;
+                user2.score = state.scores.right ?? 0;
+                score1Elem.textContent = `${user1.name}: ${user1.score}`;
+                score2Elem.textContent = `${user2.name}: ${user2.score}`;
+            }
 
-		if (user1.score === 5 || user2.score === 5) {
-			isGameOver = true;
-			if (launchTimeout !== null) {
-				clearTimeout(launchTimeout);
-				launchTimeout = null;
-			}
-		}
+            // Fin de partie pilotée par le back
+            if (state?.state === 'game_over') {
+                cleanup();
+                navigateTo("/pong/online/menu");
+            }
+        } catch {}
+    };
 
-		// Accélération progressive uniquement si la balle est en mouvement
-		if (ball.speedX !== 0 || ball.speedY !== 0) {
-			ball.speedX *= 1.0005;
-			ball.speedY *= 1.0005;
-		}
-	}
+    socket.onclose = () => {
+        // Si la partie n’est pas finie mais WS coupé: sortir proprement
+        if (state?.state !== 'game_over') {
+            cleanup();
+            // navigateTo("/pong/menu");
+        }
+    };
 
-	function draw() {
-		ctx.clearRect(0, 0, canvas.width, canvas.height); // Laisse le GIF CSS visible
+    // 6) Draw loop: on dessine UNIQUEMENT ce que le serveur envoie
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		ctx.fillStyle = "white";
+        // Sync assets dynamiques
+        const latestBar = resolveBarPath();
+        if (latestBar !== currentBarSrc) {
+            currentBarSrc = latestBar;
+            leftBarImgLoaded = false;
+            leftBarImg.src = currentBarSrc;
+        }
+        const latestRightBar = resolveRightBarPath();
+        if (latestRightBar !== currentRightBarSrc) {
+            currentRightBarSrc = latestRightBar;
+            rightBarImgLoaded = false;
+            rightBarImg.src = currentRightBarSrc;
+        }
+        const latestBall = resolveBallPath();
+        if (latestBall !== currentBallSrc) {
+            currentBallSrc = latestBall;
+            ballImgLoaded = false;
+            ballImg.src = currentBallSrc;
+        }
 
-		const latestBar = resolveBarPath();
-		if (latestBar !== currentBarSrc) {
-			currentBarSrc = latestBar;
-			leftBarImgLoaded = false;
-			leftBarImg.src = currentBarSrc;
-		}
+        // Si pas encore d’état, afficher “waiting…”
+        if (!state) {
+            ctx.fillStyle = "white";
+            ctx.font = "24px system-ui";
+            ctx.fillText("Waiting for server...", canvas.width/2 - 140, canvas.height/2);
+            return;
+        }
 
-		const latestRightBar = resolveRightBarPath();
-		if (latestRightBar !== currentRightBarSrc) {
-			currentRightBarSrc = latestRightBar;
-			rightBarImgLoaded = false;
-			rightBarImg.src = currentRightBarSrc;
-		}
+        // Paddles
+        const leftY = state.paddles?.leftY ?? canvas.height/2 - paddleHeight/2;
+        const rightY = state.paddles?.rightY ?? canvas.height/2 - paddleHeight/2;
 
-		// Paddles
-		if (leftBarImgLoaded) ctx.drawImage(leftBarImg, leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
-		else ctx.fillRect(leftPaddle.x, leftPaddle.y, paddleWidth, paddleHeight);
+        if (leftBarImgLoaded) ctx.drawImage(leftBarImg, 10, leftY, paddleWidth, paddleHeight);
+        else {
+            ctx.fillStyle = "white";
+            ctx.fillRect(10, leftY, paddleWidth, paddleHeight);
+        }
 
-		if (rightBarImgLoaded) ctx.drawImage(rightBarImg, rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
-		else ctx.fillRect(rightPaddle.x, rightPaddle.y, paddleWidth, paddleHeight);
+        if (rightBarImgLoaded) ctx.drawImage(rightBarImg, canvas.width - 20, rightY, paddleWidth, paddleHeight);
+        else {
+            ctx.fillStyle = "white";
+            ctx.fillRect(canvas.width - 20, rightY, paddleWidth, paddleHeight);
+        }
 
-		// Balle
-		const latest = resolveBallPath();
-		if (latest !== currentBallSrc) {
-			currentBallSrc = latest;
-			ballImgLoaded = false;
-			ballImg.src = currentBallSrc;
-		}
-		if (ballImgLoaded) {
-			ctx.save();
-			ctx.translate(ball.x, ball.y);
-			ctx.rotate(ballRotation);
-			ctx.drawImage(ballImg, -ball.radius, -ball.radius, ball.radius * 2, ball.radius * 2);
-			ctx.restore();
-		} else {
-			ctx.save();
-			ctx.translate(ball.x, ball.y);
-			ctx.rotate(ballRotation);
-			ctx.fillStyle = "rgba(255,255,255,0.6)";
-			ctx.beginPath();
-			ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
-			ctx.fill();
-			ctx.restore();
-		}
+        // Balle
+        const bx = state.ball?.x ?? canvas.width/2;
+        const by = state.ball?.y ?? canvas.height/2;
+        const br = state.ball?.radius ?? 20;
 
-		if (user1.score !== prevScore1) { score1Elem.textContent = user1.name + ": " + user1.score; prevScore1 = user1.score; }
-		if (user2.score !== prevScore2) { score2Elem.textContent = user2.name + ": " + user2.score; prevScore2 = user2.score; }
-	}
+        if (ballImgLoaded) {
+            ctx.drawImage(ballImg, bx - br, by - br, br * 2, br * 2);
+        } else {
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            ctx.beginPath();
+            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
 
-	function loop() {
-		if (!isGameOver) {
-			update();
-			draw();
-			requestAnimationFrame(loop);
-		} else if (!overlayTriggered) {
-			overlayTriggered = true;
-			cleanup();
-			navigateTo("/pong/online/game/overlay");
-		}
-	}
+    function loop() {
+        draw(); // aucune physique locale
+        requestAnimationFrame(loop);
+    }
 
-	// Au lancement du jeu
-	resetBall();
-	loop();
-
-	return container;
+    loop();
+    return container;
 }
 
 export function PongOnlineGamePage(): HTMLElement {
