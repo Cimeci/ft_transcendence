@@ -11,7 +11,7 @@ services:
       - game
       - tournament
       - user
-      # - websocket
+      - websocket
     restart: on-failure
     env_file:
       - .env
@@ -55,16 +55,18 @@ services:
     restart: on-failure
     env_file:
       - .env
-  # websocket:
-  #   container_name: websocket_container
-  #   build: ./src/websocket  
-  #   networks:
-  #     - backend
-  #   volumes:
-  #     - ./src/websocket/data:/app/data
-  #   restart: on-failure
-  #   env_file:
-  #     - .env
+  websocket:
+    container_name: websocket_container
+    build: ./src/websocket  
+    networks:
+      - backend
+    volumes:
+      - ./src/websocket/data:/app/data
+    ports:
+      - "4000:4000"
+    restart: on-failure
+    env_file:
+      - .env
 
 networks:
   backend:
