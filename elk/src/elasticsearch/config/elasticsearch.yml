@@ -21,7 +21,7 @@ xpack.security:
 
 # Licence and memory
 xpack.license.self_generated.type: ${LICENSE}
-bootstrap.memory_lock: true
+bootstrap.memory_lock: false
 
 # Unused Services
 xpack.ml.enabled: false
