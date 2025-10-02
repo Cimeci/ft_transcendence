@@ -33,7 +33,7 @@ let rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
 let ballRotation = 0;
 
 let score = { left: 0, right: 0 };
-
+let isGamerunning = false;
 let launchTimeout; // <-- ajouté
 const BALL_SPIN_STEP = Math.PI / 6;
 
@@ -46,6 +46,14 @@ function resetBall(forceDirection = null) {
     ball.speedX = 0;
     ball.speedY = 0;
     ballRotation = 0;
+
+    // Envoyer l'état du jeu à tous les clients pour mettre la balle au centre
+    const gameState = { ball, leftPaddle, rightPaddle, score };
+        app.websocketServer.clients.forEach((client) => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify(gameState));
+        }
+    });
 
     // Annule un éventuel timer précédent
     if (launchTimeout !== null) {
@@ -67,7 +75,7 @@ function resetBall(forceDirection = null) {
         ball.speedX = Math.cos(angle) * speed * direction;
         ball.speedY = Math.sin(angle) * speed;
         launchTimeout = null;
-    }, 3000); // 3 secondes d’attente
+    }, 1000); // 1 secondes d’attente
 }
 
 function endGame(socket) {
@@ -88,10 +96,12 @@ function endGame(socket) {
             client.send(JSON.stringify(finishMessage));
         }
     }); 
+    isGamerunning = false;
   }
 }
 
 function updateGame() {
+  if (!isGamerunning) return;
   // calcul la prochaine position de la balle, a mettre dans une fonction
   ball.x += ball.speedX;
 	ball.y += ball.speedY;
@@ -122,9 +132,8 @@ function updateGame() {
 		ball.speedX *= 1.0005;
 		ball.speedY *= 1.0005;
 
-    // const gameState = { ball, leftPaddle, rightPaddle, score };
-    //   socket.send(JSON.stringify(gameState));
     // Envoyer l'état du jeu à tous les clients
+    console.log({score: score})
     const gameState = { ball, leftPaddle, rightPaddle, score };
     app.websocketServer.clients.forEach((client) => {
         if (client.readyState === 1) {
@@ -137,13 +146,25 @@ function updateGame() {
 
 app.register(async function (app) {
   app.get('/ws', { websocket: true }, async (socket, request) => {
-    console.log('Client connecté');
+    request.log.info({
+        event: 'websocket_attempt'
+    }, 'WebSocket connection success');
+
+    // Authentification du token JWT
+    // try {
+    //   await request.jwtVerify();
+    // } catch (err) {
+    //   request.log.warn({
+    //         event: 'delete-friendship_attempt'
+    //     }, 'Delete Friendship Unauthorized: invalid jwt token');
+    //     reply.code(401).send({ error: 'Unauthorized'});
+    // }
 
     socket.on('message', async (message) => {
       console.log('Message reçu du client :', message);
       const messageData = JSON.parse(message.toString());
       console.log('Message data :', messageData);
-      console.log(ball);
+      isGamerunning= true;
       let { event, paddle, direction } = messageData;
       if (event === 'move') {
         if ( paddle === 'left'){
@@ -163,9 +184,6 @@ app.register(async function (app) {
           }
         } 
       }
-
-      // updateGame();
-      // endGame(socket);
     });
 
     socket.on('close', () => {
@@ -176,10 +194,31 @@ app.register(async function (app) {
       score = { left: 0, right: 0 };
       console.log('Connexion WebSocket fermée');
     });
+
+    // Gestion des erreurs apres une connexion réussie,avoir pour le message a envoyer
+    socket.on('error', (error) => {
+      request.log.error({
+          error: {
+              message: error.message,
+              code: error.code,
+          },
+          event: 'websocket_attempt'
+      }, 'WebSocket error occurred');
+    });
   });
 });
 
 setInterval(updateGame, 1000 / 60);
 
+// Gestion des erreurs de connexion WebSocket
+app.on('ws-error', (err, req) => {
+  request.log.error({
+      error: {
+          message: error.message,
+          code: error.code,
+      },
+      event: 'websocket_attempt'
+  }, 'WebSocket error occurred');  
+});
 
 app.listen({ port: 4000, host: '0.0.0.0' });
