@@ -6,20 +6,21 @@ import jwt from '@fastify/jwt'
 dotenv.config();
 
 // Configuration du logger fastify
-const loggerConfig = {
-    transport: {
-        target: 'pino/file',
-        options: {
-            destination: '/var/log/app/user-service.log',
-            mkdir: true
-        }
-    },
-    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
-    base: { service: 'user'},
-    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
-}
+// const loggerConfig = {
+//     transport: {
+//         target: 'pino/file',
+//         options: {
+//             destination: '/var/log/app/user-service.log',
+//             mkdir: true
+//         }
+//     },
+//     redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+//     base: { service: 'user'},
+//     formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+// }
 
-const app = fastify({ logger: loggerConfig });
+// const app = fastify({ logger: loggerConfig });
+const app = fastify({ logger: true });
 
 await app.register(jwt, {
   secret: process.env.JWT_SECRET,

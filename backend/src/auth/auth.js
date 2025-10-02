@@ -9,20 +9,21 @@ import crypto from 'crypto';
 dotenv.config();
 
 // Configuration du logger fastify
-const loggerConfig = {
-    transport: {
-        target: 'pino/file',
-        options: {
-            destination: '/var/log/app/auth-service.log',
-            mkdir: true
-        }
-    },
-    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
-    base: { service: 'auth'},
-    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
-}
+// const loggerConfig = {
+//     transport: {
+//         target: 'pino/file',
+//         options: {
+//             destination: '/var/log/app/auth-service.log',
+//             mkdir: true
+//         }
+//     },
+//     redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+//     base: { service: 'auth'},
+//     formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+// }
 
-const app = fastify({ logger: loggerConfig });
+// const app = fastify({ logger: loggerConfig });
+const app = fastify({ logger: true });
 
 await app.register(jwt, {
   secret: process.env.JWT_SECRET,
@@ -627,6 +628,14 @@ async function checkToken(request) {
 app.setErrorHandler((error, request, reply) => {
     request.log.error({ error:error.message, code: error.code, route: request.routerPath }, 'Unhandled Error, Internal server error');
     reply.status(500).send({ error: 'Internal Server Error' });
+});
+
+// Définis une route pour traiter les messages
+app.post('/handle-message', async (req, reply) => {
+  console.log('Message reçu par Service A :', req.body);
+  // Traite le message ici
+  const response = { message: 'Réponse de Service A', data: req.body };
+  reply.send(response);
 });
 
 app.get('/', async(request, reply) => {

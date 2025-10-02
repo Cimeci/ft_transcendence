@@ -5,20 +5,21 @@ import crypto from 'crypto';
 
 
 // Configuration du logger fastify
-const loggerConfig = {
-    transport: {
-        target: 'pino/file',
-        options: {
-            destination: '/var/log/app/game-service.log',
-            mkdir: true
-        }
-    },
-    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
-    base: { service: 'game'},
-    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
-}
+// const loggerConfig = {
+//     transport: {
+//         target: 'pino/file',
+//         options: {
+//             destination: '/var/log/app/game-service.log',
+//             mkdir: true
+//         }
+//     },
+//     redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+//     base: { service: 'game'},
+//     formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+// }
 
-const app = fastify({ logger: loggerConfig });
+// const app = fastify({ logger: loggerConfig });
+const app = fastify({ logger: true });
 
 const db = new Database('./data/game.sqlite');
 
@@ -159,5 +160,13 @@ app.delete('/delete-game', async(request, reply) => {
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 })
+
+// Définis une route pour traiter les messages
+app.post('/handle-message', async (req, reply) => {
+  console.log('Message reçu par Service B :', req.body);
+  // Traite le message ici
+  const response = { message: 'Réponse de Service B', data: req.body };
+  reply.send(response);
+});
 
 app.listen({ port: 4000, host: '0.0.0.0' })
