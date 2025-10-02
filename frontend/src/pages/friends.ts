@@ -293,9 +293,11 @@ export function FriendsPage(): HTMLElement {
 				FriendsList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
 				FriendContainer.appendChild(FriendsList);
 
+				let friendData: Friend[] = [];
+
 				const renderFriends = () => {
                     const q = input.value.trim().toLowerCase();
-					const filtered = data.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+					const filtered = friendData.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
                     FriendsList.innerHTML = "";
                     if (filtered.length === 0) {
                         const li = document.createElement("li");
@@ -319,8 +321,8 @@ export function FriendsPage(): HTMLElement {
 
                         const menu = createUserActionsDropdown(
                             u,
-                            () => { data = data.filter(x => x.id !== u.id); renderFriends(); },
-                            () => { data = data.filter(x => x.id !== u.id); renderFriends(); }
+                            () => { friendData = friendData.filter(x => x.id !== u.id); renderFriends(); },
+                            () => { friendData = friendData.filter(x => x.id !== u.id); renderFriends(); }
                         );
 
                         li.appendChild(name);
@@ -331,14 +333,32 @@ export function FriendsPage(): HTMLElement {
                 };
 				input.addEventListener("input", renderFriends);
 				form.addEventListener("submit", (e) => { e.preventDefault(); renderFriends(); });
-				renderFriends();
+				const token = localStorage.getItem("jwt") || "";
+				(async () => {
+				  try {
+				    const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+				    if (!resp.ok) throw new Error(String(resp.status));
+				    const data = await resp.json();
+				    const me = getUser()?.uuid;
+				    const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
+				
+				    // Map simple: username = id (tu pourras enrichir plus tard via /user/:uuid)
+				    friendData = rows.map(r => {
+				      const other = r.user_id === me ? r.friend_id : r.user_id;
+				      return { id: other, username: other, invitation: "Friend", avatar: "/avatar/default_avatar.png" };
+				    });
+				  } catch (e) {
+				    console.error("load friendship failed", e);
+				    friendData = [];
+				  }
+				  renderFriends();
+				})();
             }
 
 			{
 				const SearchContainer = document.createElement("div");
 				SearchContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8 hidden";
 				SearchContainer.dataset.section = "search";
-				// expose ref
 				// @ts-ignore
 				window.__searchSection = SearchContainer;
 				//! Search Bar
@@ -485,10 +505,12 @@ export function FriendsPage(): HTMLElement {
 					return label === t.user_id ? 'user_id' : label === t.username ? 'username' : 'all';
 				};
 
+				let searchData: Friend[] = [];
+				
 				const render = () => {
 					const q = input.value.trim().toLowerCase();
 					const cat = getCategory();
-					const filtered = users.filter(u => {
+					const filtered = searchData.filter(u => {
 						if (!q) return true;
 						if (cat === 'user_id')
 							return u.id.toLowerCase().includes(q);
@@ -522,6 +544,44 @@ export function FriendsPage(): HTMLElement {
 						add_btn.textContent = translations[getCurrentLang()].add;
 						add_btn.className = `${ACTION_BTN} justify-self-end bg-green-500 hover:bg-green-600`;
 
+						add_btn.addEventListener(("click"), async () => {
+							const token = localStorage.getItem("jwt") || "";
+ 							add_btn.disabled = true;
+ 							const old = add_btn.textContent;
+ 							add_btn.textContent = "…";
+						try {
+						    const resp = await fetch(`/user/friendship/${encodeURIComponent(u.id)}`, {
+						      method: "POST",
+						      headers: { Authorization: `Bearer ${token}` },
+						      // si votre auth est en cookie, ajoutez: credentials: 'include'
+						    });
+						    if (resp.ok) {
+						      // Retirer de la liste des non-amis
+						      searchData = searchData.filter(x => x.id !== u.id);
+						      render();
+						      return;
+						    }
+						    if (resp.status === 409) {
+						      add_btn.textContent = "Déjà invité";
+						      add_btn.classList.remove("bg-green-500", "hover:bg-green-600");
+						      add_btn.classList.add("bg-gray-500");
+						      return;
+						    }
+						    if (resp.status === 401) {
+						      alert("Session expirée. Reconnecte-toi.");
+						      add_btn.textContent = old;
+						      return;
+						    }
+						    console.error("POST /friendship failed:", resp.status);
+						    add_btn.textContent = old;
+						  } catch (e) {
+						    console.error(e);
+						    add_btn.textContent = old;
+						  } finally {
+						    add_btn.disabled = false;
+						  }
+						});
+
                         li.appendChild(name);
                         li.appendChild(uid);
                         li.appendChild(add_btn);
@@ -532,7 +592,38 @@ export function FriendsPage(): HTMLElement {
 				input.addEventListener("input", render);
 				SearchBar.addEventListener("submit", (e) => { e.preventDefault(); render(); });
 				ul.querySelectorAll("button").forEach(b => b.addEventListener("click", render));
-				render();
+				const token = localStorage.getItem('jwt') || '';
+				console.log('[friends] jwt present:', Boolean(token));
+
+				(async () => {
+				  try {
+				    const resp = await fetch('/user/friendship', {
+				      headers: { Authorization: `Bearer ${token}` },
+				    });
+				    console.log('[friends] GET /user/friendship status:', resp.status);
+				    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+				    const data = await resp.json();
+				    console.log('[friends] payload keys:', Object.keys(data || {}));
+				
+				    // certains back renvoient notFriend | not_friends | notfriends
+				    const raw = (data?.notFriend ?? data?.not_friends ?? data?.notfriends ?? []) as Array<any>;
+				    console.log('[friends] notFriend length:', raw.length);
+				
+				    searchData = raw.map(u => ({
+				      // certains back utilisent id/login à la place de uuid/username
+				      id: (u.uuid ?? u.id) as string,
+				      username: (u.username ?? u.login ?? u.uuid ?? u.id) as string,
+				      invitation: 'Add',
+				      avatar: (u.avatar || '/avatar/default_avatar.png') as string
+				    })).filter(u => !!u.id && !!u.username);
+				
+				    render();
+				  } catch (err) {
+				    console.error('GET /user/friendship failed:', err);
+				    searchData = [];
+				    render();
+				  }
+				})();
 
 				FriendMenu.appendChild(SearchContainer);
 			}
@@ -600,9 +691,11 @@ export function FriendsPage(): HTMLElement {
 				RequestsRecievedList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
 				RequestsRecievedContainer.appendChild(RequestsRecievedList);
 
+				let receivedData: Friend[] = [];
+
 				const renderRequestsRecieved = () => {
                     const q = input.value.trim().toLowerCase();
-					const filtered = data.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+					const filtered = receivedData.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
                     RequestsRecievedList.innerHTML = "";
                     if (filtered.length === 0) {
                         const li = document.createElement("li");
@@ -638,20 +731,37 @@ export function FriendsPage(): HTMLElement {
 						accept.className = `${ACTION_BTN} bg-green-500 hover:bg-green-600`;
                         const imgaccept = document.createElement("img");
 						imgaccept.src = "/icons/check.svg"; imgaccept.className = `${ICON_SM}`;
-                        accept.appendChild(imgaccept);
-                        btndiv.appendChild(accept);
+						
+					    accept.addEventListener("click", async () => {
+					      const token = localStorage.getItem("jwt") || "";
+					      try {
+					        const r = await fetch(`/user/friendship/${encodeURIComponent(u.id)}`, {
+					          method: "PATCH",
+					          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+					          body: JSON.stringify({ statut: "accepted" })
+					        });
+					        if (!r.ok) throw new Error(String(r.status));
+					        receivedData = receivedData.filter(x => x.id !== u.id);
+					        renderRequestsRecieved();
+					      } catch (e) { console.error("accept failed", e); }
+					    });
+					    // DELETE pour refuser (simple, évite le statut 'refused' qui bloque notFriend)
+					    refuse.addEventListener("click", async () => {
+					      const token = localStorage.getItem("jwt") || "";
+					      try {
+					        const r = await fetch(`/user/friendship/${encodeURIComponent(u.id)}`, {
+					          method: "DELETE",
+					          headers: { Authorization: `Bearer ${token}` }
+					        });
+					        if (!r.ok) throw new Error(String(r.status));
+					        receivedData = receivedData.filter(x => x.id !== u.id);
+					        renderRequestsRecieved();
+					      } catch (e) { console.error("refuse failed", e); }
+					    });
 
-						//! changer cela pour le add
-
-                        accept.addEventListener("click", () => {
-                          window.showInvite({
-                            username: u.username,
-                            id: u.id,
-                            avatar: u.avatar,
-                            message: u.invitation,
-                          });
-                        });
-
+						accept.appendChild(imgaccept);
+						btndiv.appendChild(accept);
+						
                         li.appendChild(name);
                         li.appendChild(uid);
                         li.appendChild(btndiv);
@@ -660,7 +770,23 @@ export function FriendsPage(): HTMLElement {
                 };
 				input.addEventListener("input", renderRequestsRecieved);
 				form.addEventListener("submit", (e) => { e.preventDefault(); renderRequestsRecieved(); });
-				renderRequestsRecieved();
+				const token = localStorage.getItem('jwt') || '';
+				console.log('[friends] jwt present:', Boolean(token));
+
+				(async () => {
+				   const token = localStorage.getItem("jwt") || "";
+				   try {
+				     const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+				     if (!resp.ok) throw new Error(String(resp.status));
+				     const data = await resp.json();
+				     const rows = (data?.receivedRequest ?? []) as Array<{ user_id: string }>;
+				     receivedData = rows.map(r => ({ id: r.user_id, username: r.user_id, invitation: "Request", avatar: "/avatar/default_avatar.png" }));
+				   } catch (e) {
+				     console.error("load receivedRequest failed", e);
+				     receivedData = [];
+				   }
+				   renderRequestsRecieved();
+				 })();
 			}
 
 			{
@@ -672,8 +798,7 @@ export function FriendsPage(): HTMLElement {
 				window.__reqSection = RequestsContainer;
 				FriendMenu.appendChild(RequestsContainer);
 
-				const sent: Friend[] = users.slice(0, 5);
-				let sentData: Friend[] = sent.slice();
+				let sentData: Friend[] = [];
 
 				const form = document.createElement("form");
 				form.className = "w-full";
@@ -762,7 +887,21 @@ export function FriendsPage(): HTMLElement {
                         span.textContent = (translations[getCurrentLang()] as any).cancel ?? "Cancel";
                         span.className = "max-[600px]:hidden";
                         cancel.appendChild(span);
-                        cancel.addEventListener("click", () => { sentData = sentData.filter(x => x.id !== u.id); renderRequests(); });
+                        cancel.addEventListener("click", async () => {
+							const token = localStorage.getItem("jwt") || "";
+							try {
+								const r = await fetch(`/user/friendship/${encodeURIComponent(u.id)}`, {
+									method: "DELETE",
+									headers: { Authorization: `Bearer ${token}` }
+								});
+								if (!r.ok) throw new Error(String(r.status));
+								sentData = sentData.filter(x => x.id !== u.id);
+								renderRequests;
+							}
+							catch (e) {
+								console.error("cancel failed", e);
+							}
+						});
 
                         li.appendChild(name);
                         li.appendChild(uid);
@@ -772,7 +911,21 @@ export function FriendsPage(): HTMLElement {
 				};
 				input.addEventListener("input", renderRequests);
 				form.addEventListener("submit", (e) => { e.preventDefault(); renderRequests(); });
-				renderRequests();
+				(async () => {
+					const token = localStorage.getItem("jwt") || "";
+					try {
+						const resp = await fetch("user/friendship", { headers: {Authorization: `Bearer ${token}`} });
+						if (!resp.ok) throw new Error(String(resp.status));
+						const data = await resp.json();
+						const rows = (data?.sentRequest ?? []) as Array<{ friend_id: string}>;
+						sentData = rows.map(r => ({ id: r.friend_id, username: r.friend_id, invitation: "Pending", avatar: "/avatar/default_avatar.png"}));
+					} catch(e) {
+						console.error("load sentRequest failed", e);
+						sentData = [];
+					}
+					renderRequests();
+				
+				})();
 			}
 
 			PageContainer.appendChild(FriendMenu);
