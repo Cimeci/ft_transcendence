@@ -4,18 +4,15 @@
 [ ] Check if expose port on 0.0.0.0 is a good production idea (ss -tunlp)
 [x] Backup & retention
 [ ] Filebeat Keystore ?
-[ ] Remove ports settings in the compose
-
 
 # Completing setup
 [x] Kibana.yml
 [x] Handle filter from Logstash.conf
 [ ] Add Restart Policy
-[ ] Change volumes logs (not the default one in compose)
+[x] Change volumes logs (not the default one in compose)
 [ ] Persistence queue ?
 [ ] Add Healthcheck to the filebeat service
 [ ] Log4j2 configuration logs for Elastic
-
 
 # Functionnality
 [x] Add fake web app logs (check if the harvesters are ok)
@@ -26,22 +23,20 @@
 # Littles Adds
 [x] Check about labels docker -> specificly into the filebeat
 [ ] If a second node is added => Define 1 shard into the template.json
-[ ] MetricBeats -> If it's possible without docker sockets
 [ ] Look how handle keystore with elk-certs container (es-certutil)
 [ ] Add a logrotate service + modify name pattern into Filebeat.conf
 
 # Clean Code
 [ ] Remove dev suppressions into entrypoin.sh from bootstrap-ilm =>  /!\ very important to keep a functionnal stack !!!
-[ ] Clean Docker compose -> use Dockerfiles and configurations files 
+[x] Clean Docker compose -> use Dockerfiles and configurations files 
 [ ] Defined ports into the .env 
 
 
 
+
 # Documentation Specs
-[ ] Specifications about root
+[ ] Specifications about root (subject reference)
 [ ] Specifications about env
-
-
 
 ## Security concern
 
@@ -74,5 +69,8 @@ transcendence-000001 (Old Index, read only)
 We autamtized suppression after to olf indices
 
 
+## Kibana Dashboards
 
+As this stack is dedicated to a school project and cannot be maintained on a server permenantly, we couldn't create dashboards from the Kiban UI and just save it. To prevent this issue, we export 3 Dashboards vues and set a kibana-dashboards container, build from an Alpine image and use the REST API to POST the ndjson dashboards.
+[ ] HERE ADD SOME EXPLAINATION ABOUT THE 3 DASHBOARDS AND ADD SCREENSHOTS 
 

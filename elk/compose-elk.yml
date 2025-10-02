@@ -45,6 +45,7 @@ services:
       - SSL_CERTIFICATE=certs/es01/es01.crt
       - SSL_KEY=certs/es01/es01.key
       - LICENSE=${LICENSE}
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
     mem_limit: ${ES_MEM_LIMIT}
     ulimits:
       memlock:
@@ -68,7 +69,7 @@ services:
     depends_on:
       es01:
         condition: service_healthy
-    build: src//ilm-manager
+    build: src/ilm-manager
     volumes:
       - certs:/certs:ro  
     environment:
@@ -113,6 +114,20 @@ services:
       retries: 120
     restart: unless-stopped
 
+  kibana-dashboards:
+    container_name: elk_kibana-dashboards
+    networks:
+      - elk
+    depends_on:
+      kibana:
+        condition: service_healthy
+    build: src/kibana-dashboards
+    volumes:
+      - certs:/certs:ro  
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    restart: on-failure
+
   logstash:
     container_name: elk_logstash
     networks:
@@ -139,6 +154,7 @@ services:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - ELASTIC_HOSTS=https://es01:9200
       - LOGSTASH_KEYSTORE_PASS=${LOGSTASH_KEYSTORE_PASS}
+      - LS_JAVA_OPTS=${LS_JAVA_OPTS}
     mem_limit: ${LS_MEM_LIMIT}
     healthcheck:
       test: ["CMD-SHELL", "curl -s -f http://localhost:9600 || exit 1"]

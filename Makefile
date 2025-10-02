@@ -3,7 +3,7 @@
 ################################################################################
 #	USED CONTAINERS															   #
 ################################################################################
-ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs
+ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs kibana-dashboards
 BACKEND_CONTAINERS	=	gateway auth tournament	user game 
 
 ################################################################################
