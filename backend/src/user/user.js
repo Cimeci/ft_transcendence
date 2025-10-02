@@ -71,14 +71,84 @@ const historic = `
         UNIQUE (user_uuid, games)
     );
 `
-
+const inventory = `
+    CREATE TABLE IF NOT EXISTS items (
+        uuid TEXT PRIMARY KEY,
+        user_uuid TEXT,
+        ball JSON,
+        background JSON,
+        paddle JSON,
+        avatar JSON,
+        ball_use JSON,
+        background_use JSON,
+        paddle_use JSON,
+        avatar_use JSON,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_uuid) REFERENCES user(uuid)
+    );
+`
 db.exec(user);
 db.exec(friends);
 db.exec(historic);
+db.exec(inventory);
 
 app.addHook('onClose', async (instance) => {
   db.close();
 });
+
+function creationInventory(user_uuid) {
+    const uuid = crypto.randomUUID();
+    
+    const ball = JSON.stringify([
+        { id: 'ball/default_ball.png', name: 'default ball', type: 'ball', price: 0, usable: true},
+        { id: 'ball/tennis_ball.png', name: 'tennis ball', type: 'ball', price: 250, usable: false},
+        { id: 'ball/swenn_ball.gif', name: 'swenn ball', type: 'ball', price: 250, usable: false},
+    ]);
+
+    const background = JSON.stringify([
+        { id: 'bg/default_bg.png', name: 'default bg', type: 'background', price: 250, usable: true},
+        { id: 'bg/transcendence_bg.png', name: 'transcendence bg', type: 'background', price: 250, usable: false},
+        { id: 'bg/matrix_bg.gif', name: 'matrix bg', type: 'background', price: 250, usable: false},
+
+    ]);
+
+    const paddle = JSON.stringify([
+        { src: 'playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar', price: 0, usable: true},
+        { src: 'playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar', price: 250, usable: false},
+        { src: 'playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250, usable: false},
+        { src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250, usable: false},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+
+    ]);
+
+    const avatar = JSON.stringify([
+        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar', price: 0, usable: true},
+        { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/xavierchad.gif', name: 'xavierchad avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar', price: 250, usable: false},
+        { id: 'avatar/rgodet.jpg', name: 'rgodet avatar', type: 'avatar', price: 250, usable: false},
+
+    ]);
+
+    const ball_use = JSON.stringify([{ id: 'ball/default_ball.png', name: 'default ball'}]); 
+    const background_use =  JSON.stringify([{ id: 'bg/default_bg.png', name: 'default bg'}]);
+    const paddle_use = JSON.stringify([{ id: 'bar/default_bar.png', name: 'default bar'}]);
+    const avatar_use = JSON.stringify([{ id: 'avatar/default_avatar.png', name: 'default avatar'}]);
+
+    console.log(ball);
+    db.prepare('INSERT INTO items (uuid, user_uuid, ball, background, paddle, avatar, ball_use, background_use, paddle_use, avatar_use) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .run(uuid, user_uuid, ball, background, paddle, avatar, ball_use, background_use, paddle_use, avatar_use);
+}
 
 app.post('/insert', async(request, reply) => {
     const key = request.headers['x-internal-key'];
@@ -95,6 +165,7 @@ app.post('/insert', async(request, reply) => {
         db.prepare('INSERT INTO user (uuid, username, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
         db.prepare('INSERT INTO historic (uuid, user_uuid, games, tournament, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(historic_uuid, uuid, null, null, Date.now(), Date.now());
+        creationInventory(uuid);
         request.log.info({
             event: 'insert_attempt',
             user: { username, email }
@@ -417,6 +488,251 @@ app.patch('/historic', async (request, reply) => {
         }
     }
 });
+
+app.get('/shop', async(request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const inventory = db.prepare('SELECT ball, background, paddle, avatar FROM items WHERE user_uuid = ?').get(uuid);
+    if (!inventory) {
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Failed: inventory not found');
+        return reply.code(404).send({ error: 'Inventory not found' });
+    }
+
+    console.log(inventory);
+    const filteredInventory = {
+        ball: JSON.parse(inventory.ball).filter(item => !item.usable),
+        background: JSON.parse(inventory.background).filter(item => !item.usable),
+        paddle: JSON.parse(inventory.paddle).filter(item => !item.usable),
+        avatar: JSON.parse(inventory.avatar).filter(item => !item.usable),
+    };
+
+    request.log.info({
+        event: 'get-inventory_attempt'
+    }, 'Get Inventory Success');
+    reply.send({ filteredInventory });
+});
+
+app.patch('/shop', async(request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+ 
+    const { ball, background, paddle, avatar } = request.body;
+
+    if (!ball && !background && !paddle && !avatar){
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Failed: nothing to change');
+        return reply.code(300).send('There are nothing change');
+    }
+
+    const inventory = db.prepare('SELECT * FROM items WHERE user_uuid = ?').get(uuid);
+    if (!inventory) {
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Failed: inventory not found');
+        return reply.code(404).send({ error: 'Inventory not found' });
+    }
+
+    if (ball){
+        const currentBall = JSON.parse(inventory.ball);
+        console.log(currentBall);
+        let ballupdate = currentBall.find(item => item.name === ball);
+        if (!ballupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: ball not owned');
+            return reply.code(400).send({ error: 'You do not own this ball' });
+        }
+        ballupdate.usable = true;
+        currentBall.push(ballupdate);
+        const ballJSON = JSON.stringify(currentBall);
+        db.prepare('UPDATE items set ball = ? WHERE user_uuid = ?').run(ballJSON, uuid);
+    }
+    
+    if (background){
+        const currentBackground = JSON.parse(inventory.background);
+        let backgroundupdate = currentBackground.find(item => item.name === background);
+        if (!backgroundupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: background not owned');
+            return reply.code(400).send({ error: 'You do not own this background' });
+        }
+        backgroundupdate.usable = true;
+        currentBackground.push(backgroundupdate);
+        const backgroundJSON = JSON.stringify(currentBackground);
+        db.prepare('UPDATE items set background = ? WHERE user_uuid = ?').run(backgroundJSON, uuid);
+    }
+
+    if (paddle){
+        const currentPaddle = JSON.parse(inventory.paddle);
+        let paddleupdate = currentPaddle.find(item => item.name === paddle);
+        if (!paddleupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: paddle not owned');
+            return reply.code(400).send({ error: 'You do not own this paddle' });
+        }
+        paddleupdate.usable = true;
+        currentPaddle.push(paddleupdate);
+        const paddleJSON = JSON.stringify(currentPaddle);
+        db.prepare('UPDATE items set paddle = ? WHERE user_uuid = ?').run(paddleJSON, uuid);
+    }
+
+    if (avatar){
+        const currentAvatar = JSON.parse(inventory.avatar);
+        let avatarupdate = currentAvatar.find(item => item.name === avatar);
+        if (!avatarupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: avatar not owned');
+            return reply.code(400).send({ error: 'You do not own this avatar' });
+        }
+        avatarupdate.usable = true;
+        currentAvatar.push(avatarupdate);
+        const avatarJSON = JSON.stringify(currentAvatar);
+        db.prepare('UPDATE items set avatar = ? WHERE user_uuid = ?').run(avatarJSON, uuid);
+    }
+    request.log.info({
+        event: 'update-inventory_attempt'
+    }, 'Update Inventory Success');
+    reply.send('Inventory update')
+});
+
+app.get('/inventory-use', async(request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'get-inventory-attempt'
+        }, 'Get Inventory Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const inventory = db.prepare('SELECT ball_use, background_use, paddle_use, avatar_use FROM items WHERE user_uuid = ?').get(uuid);
+    if (!inventory) {
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Failed: inventory not found');
+        return reply.code(404).send({ error: 'Inventory not found' });
+    }
+
+    const filteredInventory = {
+        ball_use: JSON.parse(inventory.ball_use),
+        background_use: JSON.parse(inventory.background_use),
+        paddle_use: JSON.parse(inventory.paddle_use),
+        avatar_use: JSON.parse(inventory.avatar_use),
+    };
+
+    request.log.info({
+        event: 'get-inventory_attempt'
+    }, 'Get Inventory Success');
+    reply.send({ filteredInventory });
+});
+
+app.patch('/inventory-use', async(request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+ 
+    const { ball_use, background_use, paddle_use, avatar_use } = request.body;
+
+    if (!ball_use && !background_use && !paddle_use && !avatar_use){
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Failed: nothing to change');
+        return reply.code(300).send('There are nothing change');
+    }
+
+    const inventory = db.prepare('SELECT * FROM items WHERE user_uuid = ?').get(uuid);
+    if (!inventory) {
+        request.log.warn({
+            event: 'get-inventory_attempt'
+        }, 'Get Inventory Failed: inventory not found');
+        return reply.code(404).send({ error: 'Inventory not found' });
+    }
+
+    if (ball_use){
+        const currentBall = JSON.parse(inventory.ball);
+        const ballupdate = currentBall.find(item => item.name === ball_use && item.usable);
+        if (!ballupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: ball not owned or not usable');
+            return reply.code(400).send({ error: 'You do not own this ball or it is not usable' });
+        }
+        const ballUseJSON = JSON.stringify([{id: ballupdate.id, name: ballupdate.name}]);
+        db.prepare('UPDATE items set ball_use = ? WHERE user_uuid = ?').run(ballUseJSON, uuid);
+    }
+    
+    if (background_use){
+        const currentBackground = JSON.parse(inventory.background);
+        const backgroundupdate = currentBackground.find(item => item.name === background_use && item.usable);
+        if (!backgroundupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: background not owned or not usable');
+            return reply.code(400).send({ error: 'You do not own this background or it is not usable' });
+        }
+        const backgroundUseJSON = JSON.stringify([{ id: backgroundupdate.id, name: backgroundupdate.name }]);
+        db.prepare('UPDATE items set background_use = ? WHERE user_uuid = ?').run(backgroundUseJSON, uuid);
+    }
+
+    if (paddle_use){
+        const currentPaddle = JSON.parse(inventory.paddle);
+        const paddleupdate = currentPaddle.find(item => item.name === paddle_use && item.usable);
+        if (!paddleupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: paddle not owned or not usable');
+            return reply.code(400).send({ error: 'You do not own this paddle or it is not usable' });
+        }
+        const paddleUseJSON = JSON.stringify([{ id: paddleupdate.id, name: paddleupdate.name }]);
+        db.prepare('UPDATE items set paddle_use = ? WHERE user_uuid = ?').run(paddleUseJSON, uuid);
+    }
+
+    if (avatar_use){
+        const currentAvatar = JSON.parse(inventory.avatar);
+        const avatarupdate = currentAvatar.find(item => item.name === avatar_use && item.usable);
+        if (!avatarupdate) {
+            request.log.warn({
+                event: 'update-inventory_attempt'
+            }, 'Update Inventory Failed: avatar not owned or not usable');
+            return reply.code(400).send({ error: 'You do not own this avatar or it is not usable' });
+        }
+        const avatarUseJSON = JSON.stringify([{ id: avatarupdate.id, name: avatarupdate.name }]);
+        db.prepare('UPDATE items set avatar_use = ? WHERE user_uuid = ?').run(avatarUseJSON, uuid);
+    }
+    request.log.info({
+        event: 'update-inventory_attempt'
+    }, 'Update Inventory Success');
+    reply.send('Inventory update')
+});
+
 
 app.get('/search', async(request, reply) => {
     const { search } = request.body;

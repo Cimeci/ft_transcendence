@@ -211,14 +211,14 @@ app.register(async function (app) {
 setInterval(updateGame, 1000 / 60);
 
 // Gestion des erreurs de connexion WebSocket
-app.on('ws-error', (err, req) => {
-  request.log.error({
-      error: {
-          message: error.message,
-          code: error.code,
-      },
-      event: 'websocket_attempt'
-  }, 'WebSocket error occurred');  
-});
+// app.on('ws-error', (err, req) => {
+//   request.log.error({
+//       error: {
+//           message: error.message,
+//           code: error.code,
+//       },
+//       event: 'websocket_attempt'
+//   }, 'WebSocket error occurred');  
+// });
 
 app.listen({ port: 4000, host: '0.0.0.0' });
