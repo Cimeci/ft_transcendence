@@ -179,8 +179,7 @@ services:
     volumes:
       - certs:/usr/share/filebeat/certs
       - filebeatdata:/usr/share/filebeat/data
-      - app_logs:/var/log/app:ro # <= real logs 
-      #- "./logs_data:/var/log/app:ro" # <= provisory fakes logs
+      - app_logs:/var/log/app:ro 
     environment:
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
