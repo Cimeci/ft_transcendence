@@ -8,9 +8,9 @@
 # Completing setup
 [x] Kibana.yml
 [x] Handle filter from Logstash.conf
-[ ] Add Restart Policy
+[x] Add Restart Policy
 [x] Change volumes logs (not the default one in compose)
-[ ] Persistence queue ?
+[x] Persistence queue ?
 [ ] Add Healthcheck to the filebeat service
 [ ] Log4j2 configuration logs for Elastic
 
@@ -72,5 +72,10 @@ We autamtized suppression after to olf indices
 ## Kibana Dashboards
 
 As this stack is dedicated to a school project and cannot be maintained on a server permenantly, we couldn't create dashboards from the Kiban UI and just save it. To prevent this issue, we export 3 Dashboards vues and set a kibana-dashboards container, build from an Alpine image and use the REST API to POST the ndjson dashboards.
-[ ] HERE ADD SOME EXPLAINATION ABOUT THE 3 DASHBOARDS AND ADD SCREENSHOTS 
+[ ] HERE ADD SOME EXPLAINATION ABOUT THE 3 DASHBOARDS AND ADD SCREENSHOTS
+
+
+## Improvments
+
+Because this is a school project working into a limited environment, We don't need to handle persistant queue. There is not critical data in our production or audit. As we don't want to have a overhead memory (LG is alredy limited to 1GB)
 
