@@ -616,7 +616,7 @@ app.patch('/shop', async(request, reply) => {
     reply.send('Inventory update')
 });
 
-app.get('/inventory-use', async(request, reply) => {
+app.get('/inventory', async(request, reply) => {
     let uuid;
     try {
         uuid = await checkToken(request);
