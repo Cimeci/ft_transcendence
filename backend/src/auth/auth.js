@@ -93,7 +93,9 @@ app.post('/register', async (request, reply) => {
         }
 
         const info = { uuid, username, email, hash }
-        const token = await app.jwt.sign({ uuid: uuid, username: username, email: email })
+
+        const { token, refreshToken } = await generateTokens(uuid, username, email);
+        // const token = await app.jwt.sign({ uuid: uuid, username: username, email: email })
         
         const response = await fetch('http://user:4000/insert', {
             method: 'POST',
@@ -112,7 +114,7 @@ app.post('/register', async (request, reply) => {
             event: 'register_attempt',
             user: { email }
         }, 'Registration success');
-        reply.code(201).send({ success: true, token});
+        reply.code(201).send({ success: true, token, refreshToken});
     } catch (err) {
         request.log.error({
             error: {
@@ -168,13 +170,15 @@ app.post('/login', async (request, reply) => {
         if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
 
-        const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
+        const { token, refreshToken } = await generateTokens(uuid, username, email);
+
+        // const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
         request.log.info({
             event: 'login_attempt',
             user: { email }
         }, 'Login success');
 
-        reply.send({ jwtToken })
+        reply.send({ token, refreshToken })
     }catch (err) {
         request.log.error({
             error: {
@@ -332,10 +336,12 @@ app.get('/google/callback', async(request, reply) => {
             return reply.code(403).send({ error: "SSO forbidden: email already registered locally" }) 
         }
         let jwtToken;
+        let refreshToken ;
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
         if (user) {
-            jwtToken = await app.jwt.sign({ userId: user.uuid });
+            jwtToken, refreshToken = generateTokens(user.uuid, user.username, user.email);
+            //jwtToken = await app.jwt.sign({ userId: user.uuid });
             const info = { online: 1, uuid: user.uuid }
            
             const response = await fetch('http://user:4000/online', {
@@ -359,7 +365,9 @@ app.get('/google/callback', async(request, reply) => {
         } else {
             const uuid = crypto.randomUUID();
             db.prepare('INSERT INTO user (uuid, google_id, username, email, password, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, google_id, given_name, email, null, picture);
-            jwtToken = await app.jwt.sign({ userId: uuid });
+            jwtToken, refreshToken = generateTokens(uuid, given_name, email);
+            
+            //jwtToken = await app.jwt.sign({ userId: uuid });
 
             const info = { uuid: uuid, username: given_name, email: email, hash: null , avatar: picture}
             response = await fetch('http://user:4000/insert', {
@@ -378,7 +386,7 @@ app.get('/google/callback', async(request, reply) => {
                 user: { email }
             }, 'Google OAuth new user sucess');
         }
-        reply.send({ message: 'logged in successfully', token: jwtToken });
+        reply.send({ message: 'logged in successfully', token: jwtToken, refreshToken });
 
     } catch (err) {
         request.log.error({
@@ -456,10 +464,12 @@ app.get('/github/callback', async function (request, reply) {
         const { login, avatar_url, id } = await userResponse.json();
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(emailPrimary);
-        let jwtToken;
+        let jwtToken; 
+        let refreshToken;
 
         if (user) {
-            jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
+            jwtToken, refreshToken  = generateTokens(user.uuid, user.username, user.email);
+            //jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
             
             const info = { online: 1, uuid: user.uuid }
             const response = await fetch('http://user:4000/online', {
@@ -496,14 +506,15 @@ app.get('/github/callback', async function (request, reply) {
             if (!response.ok)
                 throw new Error(`HTTP error! status: ${response.status}`);
 
-            jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
+            jwtToken, refreshToken = generateTokens(uuid, login, emailPrimary);
+            //jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
             request.log.info({
                 event: 'github_oauth_attempt',
                 user: { email: emailPrimary, username: login }
                 }, 'GitHub OAuth new user sucess');
 
         }
-        reply.send({ access_token: token.access_token, jwtToken });
+        reply.send({ access_token: token.access_token, jwtToken, refreshToken });
      } catch (err) {
         request.log.error({
             event: 'github_oauth_attempt',
@@ -625,18 +636,29 @@ async function checkToken(request) {
     return payload.uuid;
 }
 
+async function generateTokens(uuid, username, email) {
+    const jwtToken = await app.jwt.sign({ uuid: uuid, username: username, email: email });
+    
+    const refreshToken = crypto.randomBytes(64).toString('hex');
+
+    // Le refresh token expirera dans 7 jours
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Stocker le refresh token en mémoire (à remplacer par une base de données ou un stockage persistant en production)
+    memStore.set(refreshToken, { 
+        uuid, 
+        username, 
+        email, 
+        refresh_token: refreshToken,
+        expires
+    });
+    return { jwtToken, refreshToken };
+}
 app.setErrorHandler((error, request, reply) => {
     request.log.error({ error:error.message, code: error.code, route: request.routerPath }, 'Unhandled Error, Internal server error');
     reply.status(500).send({ error: 'Internal Server Error' });
 });
 
-// Définis une route pour traiter les messages
-app.post('/handle-message', async (req, reply) => {
-  console.log('Message reçu par Service A :', req.body);
-  // Traite le message ici
-  const response = { message: 'Réponse de Service A', data: req.body };
-  reply.send(response);
-});
 
 app.get('/', async(request, reply) => {
     return 'hello';
