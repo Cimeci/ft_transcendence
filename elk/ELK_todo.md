@@ -1,7 +1,6 @@
 # Security
 [x] Simple script tester
-[ ] Check leaks from images
-[ ] Check if expose port on 0.0.0.0 is a good production idea (ss -tunlp)
+[x] Check if expose port on 0.0.0.0 is a good production idea (ss -tunlp)
 [x] Backup & retention
 [x] Filebeat Keystore ?
 
@@ -29,9 +28,9 @@
 # Clean Code
 [x] Remove dev suppressions into entrypoin.sh from bootstrap-ilm =>  /!\ very important to keep a functionnal stack !!!
 [x] Clean Docker compose -> use Dockerfiles and configurations files 
-[ ] Defined ports into the .env
 [ ] Add a gitignore (with the .env)
 [ ] Add dockerignore everywhere
+[x] Logstash https healtcheck
 
 
 
@@ -62,9 +61,7 @@ Nous avons donc fait le choix de constuire notre projet dans une machine virtual
 - La VM permet de retrouver un environnement root complet et d’utiliser Docker normalement.
 
 
-
-
-### Pipeline and Component
+### Stack and Component
 
 The subject specifies a ELK (ES, Logstash, Kibana) tools are needed. Mais pour garder uns stack légère nous avons choisi d'utiliser FIlebeat qui assure la seule ingestion des logs et leur envoi à Logstash pour plusieurs raisons:
 - Plus léger que Logstash (failble consommation mémoire et CPU)
@@ -76,6 +73,9 @@ The subject specifies a ELK (ES, Logstash, Kibana) tools are needed. Mais pour g
 -> Ajouter un schéma de la satck avec ses ports
 
 La stack tourne en mode basic donc certains Warning sont proc au lancement (IA Asssistant ou AWS S3 Region). Ces outils ne sont pas utilisés donc les logs sont à ignorer.
+
+
+
 
 ### Security concern
 
