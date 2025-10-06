@@ -67,7 +67,8 @@ services:
     depends_on:
       es01:
         condition: service_healthy
-    build: src/ilm-manager
+    build:
+      context: src/ilm-manager/
     volumes:
       - certs:/certs:ro  
     environment:
@@ -119,7 +120,8 @@ services:
     depends_on:
       kibana:
         condition: service_healthy
-    build: src/kibana-dashboards
+    build:
+      context: src/kibana-dashboards/
     volumes:
       - certs:/certs:ro  
     environment:

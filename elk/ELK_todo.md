@@ -29,7 +29,7 @@
 [x] Remove dev suppressions into entrypoin.sh from bootstrap-ilm =>  /!\ very important to keep a functionnal stack !!!
 [x] Clean Docker compose -> use Dockerfiles and configurations files 
 [ ] Add a gitignore (with the .env)
-[ ] Add dockerignore everywhere
+[x] Add dockerignore everywhere
 [x] Logstash https healtcheck
 
 
