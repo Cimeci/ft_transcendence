@@ -15,6 +15,7 @@ As we were only a team of three, we had to focus on modules that interested us b
 That's why we didn't manage the server-side (CLI, API) at all, nor did we spend too much time on the graphics.
 Above all, we wanted a solid backend that communicates logically with the front end, with a devops infrastructure that makes this site ready for production.
 
+```
 #### 🛠️ Web (backend/frontend)
    ├── Major: Use a framework to build the backend (Fastify + Node.js)
    ├── Minor: Use a framework to build the backend (Tailwind + TS)
@@ -39,7 +40,7 @@ naments
 
 #### 🌍 Accessibility
    └── Minor: Multiple language support
-
+```
 
 ## Getting Started
 
@@ -226,5 +227,5 @@ As this project is built in a limited school environment with educational constr
 - **Frontend** Ilan [inowak--](https://github.com/Cimeci)
 - **Devops** Antoine [antauber](https://github.com/Monsieur-Bert)
 
-`[42 Angouleme - October 25]`
+📍`[42 Angouleme - October 25]`
 
