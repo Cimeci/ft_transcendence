@@ -36,8 +36,6 @@ services:
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - esdata01:/usr/share/elasticsearch/data
-    ports:
-      - ${ES_PORT}:9200
     environment:
       - CLUSTER_NAME=${CLUSTER_NAME}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
@@ -69,7 +67,8 @@ services:
     depends_on:
       es01:
         condition: service_healthy
-    build: src/ilm-manager
+    build:
+      context: src/ilm-manager/
     volumes:
       - certs:/certs:ro  
     environment:
@@ -93,7 +92,7 @@ services:
       - certs:/usr/share/kibana/config/certs
       - kibanadata:/usr/share/kibana/data
     ports:
-      - ${KIBANA_PORT}:5601
+      - 127.0.0.1:5601:5601
     environment:
       - ELASTIC_HOSTS=https://es01:9200
       - ELASTIC_USER=kibana_system
@@ -121,7 +120,8 @@ services:
     depends_on:
       kibana:
         condition: service_healthy
-    build: src/kibana-dashboards
+    build:
+      context: src/kibana-dashboards/
     volumes:
       - certs:/certs:ro  
     environment:
@@ -179,8 +179,7 @@ services:
     volumes:
       - certs:/usr/share/filebeat/certs
       - filebeatdata:/usr/share/filebeat/data
-      - app_logs:/var/log/app:ro # <= real logs 
-      #- "./logs_data:/var/log/app:ro" # <= provisory fakes logs
+      - app_logs:/var/log/app:ro 
     environment:
       - ELASTIC_USER=elastic
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}

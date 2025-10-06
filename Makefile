@@ -27,6 +27,12 @@ down:
 down-v:
 	docker compose down -v
 
+clear: down-v
+	rm -f backend/src/auth/data/user.sqlite
+	rm -f backend/src/game/data/game.sqlite
+	rm -f backend/src/tournament/data/tournament.sqlite
+	rm -f backend/src/user/data/user.sqlite
+
 build:
 	docker compose build
 
