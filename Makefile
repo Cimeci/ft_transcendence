@@ -1,11 +1,11 @@
-.PHONY: all up elk back down build status pre-start look-logs
+.PHONY: all up elk back front fullstack down down-v clear build status pre-start look-logs cat-logs
 
 ################################################################################
 #	USED CONTAINERS															   #
 ################################################################################
 ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs kibana-dashboards
 BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket
-
+# FRONTEND_CONTAINERS	=	
 
 ################################################################################
 #	RECIPES																	   #
@@ -19,7 +19,12 @@ elk: pre-start
 	docker compose up $(ELK_CONTAINERS)
 
 back: pre-start
-	docker compose up --build $(BACKEND_CONTAINERS)
+	docker compose up $(BACKEND_CONTAINERS)
+
+# front: back
+# 	docker compose up $(FRONTEND_CONTAINERS)
+
+# fullstack: 
 
 down:
 	docker compose down
