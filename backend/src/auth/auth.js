@@ -5,6 +5,7 @@ import fastifyOauth2 from '@fastify/oauth2';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ dotenv.config();
 // const app = fastify({ logger: loggerConfig });
 const app = fastify({ logger: true });
 
+
 await app.register(jwt, {
   secret: process.env.JWT_SECRET,
   sign: { expiresIn: '2h' }
@@ -41,7 +43,10 @@ const user = `
         username TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT,
-        avatar TEXT
+        avatar TEXT,
+        twofa_enabled INTEGER DEFAULT 1,
+        twofa_code TEXT,
+        twofa_expiry DATETIME
     );
 `
 db.exec(user);
@@ -94,7 +99,7 @@ app.post('/register', async (request, reply) => {
 
         const info = { uuid, username, email, hash }
 
-        const { token, refreshToken } = await generateTokens(uuid, username, email);
+        const { jwtToken, refreshToken } = await generateTokens(uuid, username, email);
         // const token = await app.jwt.sign({ uuid: uuid, username: username, email: email })
         
         const response = await fetch('http://user:4000/insert', {
@@ -114,7 +119,7 @@ app.post('/register', async (request, reply) => {
             event: 'register_attempt',
             user: { email }
         }, 'Registration success');
-        reply.code(201).send({ success: true, token, refreshToken});
+        reply.code(201).send({ success: true, jwtToken, refreshToken});
     } catch (err) {
         request.log.error({
             error: {
@@ -157,6 +162,23 @@ app.post('/login', async (request, reply) => {
             return reply.code(401).send({ error: 'Invalid identifier or password'});
         }
 
+        const is2FAEnabled = user.twofa_enabled === 1;
+        if (is2FAEnabled) {
+            const code = createCode(user.uuid);
+
+            const emailResult = await send2FACode(email, code);
+            if (!emailResult.success) {
+                request.log.error({
+                    event: 'login_attempt',
+                    user: { email },
+                    error: emailResult.error
+                }, 'Login failed: unable to send 2FA code');
+                return reply.code(500).send({ error: 'Unable to send 2FA code' });
+            }
+            
+            return reply.send({ uuid: user.uuid });
+        }
+
         const info = { online: 1, uuid: user.uuid }
         const response = await fetch('http://user:4000/online', {
             method: 'PATCH',
@@ -170,7 +192,7 @@ app.post('/login', async (request, reply) => {
         if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
 
-        const { token, refreshToken } = await generateTokens(uuid, username, email);
+        const { jwtToken, refreshToken } = await generateTokens(uuid, username, email);
 
         // const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
         request.log.info({
@@ -178,7 +200,7 @@ app.post('/login', async (request, reply) => {
             user: { email }
         }, 'Login success');
 
-        reply.send({ token, refreshToken })
+        reply.send({ jwtToken, refreshToken })
     }catch (err) {
         request.log.error({
             error: {
@@ -192,6 +214,100 @@ app.post('/login', async (request, reply) => {
 
     }
 });
+
+app.post('/verify-2fa', async (request, reply) => {
+    const { uuid, code } = request.body;
+    
+    try {
+        const user = db.prepare('SELECT * FROM user WHERE uuid = ?').get(uuid);
+        if (!user) {
+            request.log.warn({
+                event: '2fa_verification_attempt',
+                user: { uuid }
+            }, '2FA verification failed: user not found');
+            return reply.code(401).send({ error: 'Invalid user' });
+        }
+        
+        if (user.twofa_code !== code || new Date() > new Date(user.twofa_expiry)) {
+            request.log.warn({
+                event: '2fa_verification_attempt',
+                user: { uuid }
+            }, '2FA verification failed: invalid or expired code');
+            return reply.code(401).send({ error: 'Invalid or expired 2FA code' });
+        }
+
+        // Réinitialiser le code 2FA après une vérification réussie
+        db.prepare('UPDATE user SET twofa_code = NULL, twofa_expiry = NULL WHERE uuid = ?').run(uuid);
+
+        const info = { online: 1, uuid: user.uuid }
+        const response = await fetch('http://user:4000/online', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
+            },
+            body: JSON.stringify(info)
+        });
+
+        if (!response.ok)
+            throw new Error(`HTTP error! status: ${response.status}`);
+
+        const { jwtToken, refreshToken } = await generateTokens(uuid, user.username, user.email);
+
+        request.log.info({
+            event: '2fa_verification_attempt',
+            user: { uuid }
+        }, '2FA verification success');
+
+        console.log(jwtToken, refreshToken);
+        reply.send({ jwtToken, refreshToken });
+    } catch (err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            user: { uuid },
+            event: '2fa_verification_attempt'
+        }, '2FA verification failed with error');
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
+
+function createCode(uuid) {
+    const code = crypto.randomInt(100000, 999999).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // Le code expire dans 10 minutes
+
+    db.prepare('UPDATE user SET twofa_code = ?, twofa_expiry = ? WHERE uuid = ?').run(code, expiresAt.toISOString(), uuid);
+    return code;
+}
+
+// Configuration du transporteur nodemailer
+const transporter = nodemailer.createTransport({
+    port: process.env.SMTP_PORT, 
+    host: process.env.SMTP_HOST, // true pour 465, false pour les autres ports
+    secure: false,
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+    }
+});
+
+async function send2FACode(email, code) {
+    const mailOptions = {
+        from: `"${process.env.APP_NAME}" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Your 2FA Code',
+        text: `Your 2FA code is: ${code}. It will expire in 10 minutes.`
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
 
 app.patch('/update-password', async(request, reply) => {
     const { oldPassword, newPassword } = request.body;
