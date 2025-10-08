@@ -1,4 +1,5 @@
 import fastify from 'fastify';
+import fastifyMetrics from 'fastify-metrics';
 import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv'
 import crypto from 'crypto';
@@ -20,6 +21,8 @@ import crypto from 'crypto';
 
 // const app = fastify({ logger: loggerConfig });
 const app = fastify({ logger: true });
+
+await app.register(fastifyMetrics, { endpoint: '/metrics' });
 
 const db = new Database('./data/game.sqlite');
 
