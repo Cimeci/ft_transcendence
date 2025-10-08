@@ -53,3 +53,7 @@ look-logs:
 cat-logs:
 	sudo find /var/lib/docker/volumes/ft_transcendence_app_logs/_data -name "*.log" -exec cat {} \;
 
+help:
+	@echo "Availables commands are"
+	@cat Makefile | head -1 | sed -n 's/^\.PHONY:[[:space:]]*//p'
+
