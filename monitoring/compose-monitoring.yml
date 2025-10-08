@@ -1,0 +1,19 @@
+services:
+  prometheus:
+    container_name: monitor_prometheus
+    networks:
+      - monitoring
+      - backend
+    build:
+      context: ./src/prometheus
+    volumes:
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  #grafana:
+    #container_name: monitor_grafana
+    #network:
+      #- monitoring
+    #restart: unless-stopped
