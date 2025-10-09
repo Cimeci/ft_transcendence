@@ -2,6 +2,7 @@ import fastify from "fastify";
 import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt'
+import crypto from 'crypto';
 
 dotenv.config();
 
