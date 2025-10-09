@@ -150,8 +150,12 @@ export function FriendsPage(): HTMLElement {
 		line.className = "border-3 border-green-400 w-full";
 		FriendMenu.appendChild(line);
 
+		
+		let friendData: Friend[] = [];
+		let searchData: Friend[] = [];
+		let receivedData: Friend[] = [];
+		let sentData: Friend[] = [];
 
-			let data: Friend[] = users.slice();
 
 			const createUserActionsDropdown = (u: Friend, onRemove: () => void, onBlock: () => void): HTMLElement => {
 				const wrap = document.createElement("div");
@@ -191,7 +195,7 @@ export function FriendsPage(): HTMLElement {
 
 				const liProfile = document.createElement("li");
 				const aProfile = document.createElement("a");
-				aProfile.href = `/user?id=${encodeURIComponent(u.id)}`;
+				aProfile.href = `/friend_profile?id=${encodeURIComponent(u.id)}`;
 				aProfile.setAttribute("data-link", "");
 				aProfile.className = "block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white";
 				aProfile.textContent = translations[getCurrentLang()].profile ?? "Profile";
@@ -203,18 +207,58 @@ export function FriendsPage(): HTMLElement {
 				btnRemove.type = "button";
 				btnRemove.className = "inline-flex w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white";
 				btnRemove.textContent = translations[getCurrentLang()].delete ?? "Remove";
-				btnRemove.addEventListener("click", () => { onRemove(); menu.classList.add("hidden"); });
+				btnRemove.addEventListener("click", async () => {
+					const token = localStorage.getItem("jwt") || "";
+					btnRemove.disabled = true;
+					const old = btnRemove.textContent;
+					btnRemove.textContent = "...";
+					
+					try {
+						const resp = await fetch(`/user/friendship/${encodeURIComponent(u.id)}`, {
+							method: "DELETE",
+							headers: {
+								Authorization: `Bearer ${token}`,
+							},
+						});
+						if (resp.ok) {
+							try { onRemove(); } catch (e) {console.error("onRemove callback failed", e);}
+							friendData = friendData.filter(x => x.id !== u.id);
+							try {
+								const r2 = await fetch('/user/friendship', {headers: {Authorization: `Bearer ${token}`}});
+								if (r2.ok) {
+									const data2 = await r2.json();
+									const raw = (data2?.notFriend ?? []) as Array<{uuid: string, username?: string; avatar?: string|null}>;
+									searchData = raw.map(nf => ({
+										id: nf.uuid,
+										username: nf.username || 'default',
+										invitation: 'Add',
+										avatar: nf.avatar || 'avatar/default_avatar.png'
+									}));
+								} else {
+									if (!searchData.some(x => x.id === u.id)) {
+										searchData.push({ id: u.id, username: u.username, invitation: 'Add', avatar: u.avatar});
+									}
+								}
+							} catch {
+								if (!searchData.some(x => x.id === u.id)) {
+									searchData.push({id: u.id, username: u.username, invitation: 'Add', avatar: u.avatar, })
+								}
+							}
+							return;
+						}
+						if (resp.status === 401) {
+							alert("Need Reconnection");
+							btnRemove.textContent = old;
+							return;
+						}
+						console.error("DELETE /friendship failed:", resp.status);
+						btnRemove.textContent = old;
+					} catch (e) { console.error(e); btnRemove.textContent = old; }
+					finally { btnRemove.disabled = false; }
+				});
+
 				liRemove.appendChild(btnRemove);
 				ul.appendChild(liRemove);
-
-				const liBlock = document.createElement("li");
-				const btnBlock = document.createElement("button");
-				btnBlock.type = "button";
-				btnBlock.className = "inline-flex w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white";
-				btnBlock.textContent = translations[getCurrentLang()].block ?? "Block";
-				btnBlock.addEventListener("click", () => { onBlock(); menu.classList.add("hidden"); });
-				liBlock.appendChild(btnBlock);
-				ul.appendChild(liBlock);
 
 				menu.appendChild(ul);
 				wrap.appendChild(menu);
@@ -228,8 +272,8 @@ export function FriendsPage(): HTMLElement {
 				});
 
 				return wrap;
-			};
 
+				}
 			{
                 const FriendContainer = document.createElement("div");
                 FriendContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8";
@@ -293,8 +337,6 @@ export function FriendsPage(): HTMLElement {
 				FriendsList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
 				FriendContainer.appendChild(FriendsList);
 
-				let friendData: Friend[] = [];
-
 				const renderFriends = () => {
                     const q = input.value.trim().toLowerCase();
 					const filtered = friendData.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
@@ -322,7 +364,7 @@ export function FriendsPage(): HTMLElement {
                         const menu = createUserActionsDropdown(
                             u,
                             () => { friendData = friendData.filter(x => x.id !== u.id); renderFriends(); },
-                            () => { friendData = friendData.filter(x => x.id !== u.id); renderFriends(); }
+                            () => { friendData = friendData.filter(x => x.id !== u.id); renderFriends(); },
                         );
 
                         li.appendChild(name);
@@ -341,12 +383,26 @@ export function FriendsPage(): HTMLElement {
 				    const data = await resp.json();
 				    const me = getUser()?.uuid;
 				    const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
-				
-				    // Map simple: username = id (tu pourras enrichir plus tard via /user/:uuid)
-				    friendData = rows.map(r => {
+
+				    const list = await Promise.all(rows.map(async (r) => {
 				      const other = r.user_id === me ? r.friend_id : r.user_id;
+				      try {
+				        const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+				          headers: { Authorization: `Bearer ${token}` }
+				        });
+				        if (r2.ok) {
+				          const { user } = await r2.json();
+				          return {
+				            id: other,
+				            username: user.username || other,
+				            invitation: "Friend",
+				            avatar: user.avatar || "/avatar/default_avatar.png"
+				          };
+				        }
+				      } catch {}
 				      return { id: other, username: other, invitation: "Friend", avatar: "/avatar/default_avatar.png" };
-				    });
+				    }));
+				    friendData = list;
 				  } catch (e) {
 				    console.error("load friendship failed", e);
 				    friendData = [];
@@ -504,8 +560,6 @@ export function FriendsPage(): HTMLElement {
 					const label = (dropdown_btn.querySelector("span") as HTMLSpanElement).textContent || t.all;
 					return label === t.user_id ? 'user_id' : label === t.username ? 'username' : 'all';
 				};
-
-				let searchData: Friend[] = [];
 				
 				const render = () => {
 					const q = input.value.trim().toLowerCase();
@@ -691,8 +745,6 @@ export function FriendsPage(): HTMLElement {
 				RequestsRecievedList.className = "w-full border-2 rounded-xl divide-y overflow-y-auto h-full";
 				RequestsRecievedContainer.appendChild(RequestsRecievedList);
 
-				let receivedData: Friend[] = [];
-
 				const renderRequestsRecieved = () => {
                     const q = input.value.trim().toLowerCase();
 					const filtered = receivedData.filter(u => !q || u.username.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
@@ -780,7 +832,25 @@ export function FriendsPage(): HTMLElement {
 				     if (!resp.ok) throw new Error(String(resp.status));
 				     const data = await resp.json();
 				     const rows = (data?.receivedRequest ?? []) as Array<{ user_id: string }>;
-				     receivedData = rows.map(r => ({ id: r.user_id, username: r.user_id, invitation: "Request", avatar: "/avatar/default_avatar.png" }));
+				     const list = await Promise.all(rows.map(async (r) => {
+				       const uid = r.user_id;
+				       try {
+				         const r2 = await fetch(`/user/${encodeURIComponent(uid)}`, {
+				           headers: { Authorization: `Bearer ${token}` }
+				         });
+				         if (r2.ok) {
+				           const { user } = await r2.json();
+				           return {
+				             id: uid,
+				             username: user.username || uid,
+				             invitation: "Request",
+				             avatar: user.avatar || "/avatar/default_avatar.png"
+				           };
+				         }
+				       } catch {}
+				       return { id: uid, username: uid, invitation: "Request", avatar: "/avatar/default_avatar.png" };
+				     }));
+				     receivedData = list;
 				   } catch (e) {
 				     console.error("load receivedRequest failed", e);
 				     receivedData = [];
@@ -797,8 +867,6 @@ export function FriendsPage(): HTMLElement {
 				// @ts-ignore
 				window.__reqSection = RequestsContainer;
 				FriendMenu.appendChild(RequestsContainer);
-
-				let sentData: Friend[] = [];
 
 				const form = document.createElement("form");
 				form.className = "w-full";
@@ -896,7 +964,7 @@ export function FriendsPage(): HTMLElement {
 								});
 								if (!r.ok) throw new Error(String(r.status));
 								sentData = sentData.filter(x => x.id !== u.id);
-								renderRequests;
+								renderRequests();
 							}
 							catch (e) {
 								console.error("cancel failed", e);
@@ -914,11 +982,29 @@ export function FriendsPage(): HTMLElement {
 				(async () => {
 					const token = localStorage.getItem("jwt") || "";
 					try {
-						const resp = await fetch("user/friendship", { headers: {Authorization: `Bearer ${token}`} });
+						const resp = await fetch("/user/friendship", { headers: {Authorization: `Bearer ${token}`} });
 						if (!resp.ok) throw new Error(String(resp.status));
 						const data = await resp.json();
 						const rows = (data?.sentRequest ?? []) as Array<{ friend_id: string}>;
-						sentData = rows.map(r => ({ id: r.friend_id, username: r.friend_id, invitation: "Pending", avatar: "/avatar/default_avatar.png"}));
+						const list = await Promise.all(rows.map(async (r) => {
+						  const uid = r.friend_id;
+						  try {
+						    const r2 = await fetch(`/user/${encodeURIComponent(uid)}`, {
+						      headers: { Authorization: `Bearer ${token}` }
+						    });
+						    if (r2.ok) {
+						      const { user } = await r2.json();
+						      return {
+						        id: uid,
+						        username: user.username || uid,
+						        invitation: "Pending",
+						        avatar: user.avatar || "/avatar/default_avatar.png"
+						      };
+						    }
+						  } catch {}
+						  return { id: uid, username: uid, invitation: "Pending", avatar: "/avatar/default_avatar.png" };
+						}));
+						sentData = list;
 					} catch(e) {
 						console.error("load sentRequest failed", e);
 						sentData = [];
