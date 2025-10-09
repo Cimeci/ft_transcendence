@@ -2,6 +2,7 @@ import fastify from "fastify";
 import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt'
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -807,12 +808,20 @@ app.get('/:uuid', async(request, reply) => {
 
     const user = db.prepare(`
     SELECT
-        uuid,
-        username,
-        email,
-        avatar,
-        is_online
-    FROM user WHERE uuid = ?`).get(uuid);
+        u.uuid,
+        u.username,
+        u.email,
+        u.avatar,
+        u.is_online,
+        h.games,
+        h.game_win,
+        h.game_ratio,
+        h.tournament,
+        h.tournament_win,
+        h.tournament_ratio,
+    FROM user u
+    JOIN historic h ON u.uuid = h.user_uuid
+    WHERE u.uuid = ?`).get(uuid);
 
     if (!user) {
         request.log.warn({

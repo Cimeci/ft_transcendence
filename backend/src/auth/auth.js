@@ -6,8 +6,11 @@ import dotenv from 'dotenv';
 import jwt from '@fastify/jwt';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+//import sget from 'simple-get';
 
 dotenv.config();
+
+const FRONT = process.env.FRONT_URL
 
 // Configuration du logger fastify
 // const loggerConfig = {
@@ -25,6 +28,7 @@ dotenv.config();
 
 // const app = fastify({ logger: loggerConfig });
 const app = fastify({ logger: true });
+
 
 
 await app.register(jwt, {
@@ -119,7 +123,7 @@ app.post('/register', async (request, reply) => {
             event: 'register_attempt',
             user: { email }
         }, 'Registration success');
-        reply.code(201).send({ success: true, jwtToken, refreshToken});
+        reply.code(201).send({ success: true, token: jwtToken, refreshToken});
     } catch (err) {
         request.log.error({
             error: {
@@ -192,7 +196,7 @@ app.post('/login', async (request, reply) => {
         if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
 
-        const { jwtToken, refreshToken } = await generateTokens(uuid, username, email);
+        const { jwtToken, refreshToken } = await generateTokens(user.uuid, user.username, user.email);
 
         // const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
         request.log.info({
@@ -421,7 +425,7 @@ app.get('/google/callback', async(request, reply) => {
             },
             event: 'google-Oauth_attempt'
         }, 'Google OAuth not initialized');
-        return reply.code(500).send({ error: 'Internal Server Error' });
+        return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('oauth_error')}`);
     }
 
     try {
@@ -447,16 +451,14 @@ app.get('/google/callback', async(request, reply) => {
                 event: 'google_oauth_attempt',
                 user: { email }
             }, 'Google OAuth failed: email already registered locally');
-
-
-            return reply.code(403).send({ error: "SSO forbidden: email already registered locally" }) 
+           return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('sso_forbidden')}`);
         }
         let jwtToken;
         let refreshToken ;
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
         if (user) {
-            jwtToken, refreshToken = generateTokens(user.uuid, user.username, user.email);
+            ({jwtToken, refreshToken} = generateTokens(user.uuid, user.username, user.email));
             //jwtToken = await app.jwt.sign({ userId: user.uuid });
             const info = { online: 1, uuid: user.uuid }
            
@@ -481,7 +483,7 @@ app.get('/google/callback', async(request, reply) => {
         } else {
             const uuid = crypto.randomUUID();
             db.prepare('INSERT INTO user (uuid, google_id, username, email, password, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, google_id, given_name, email, null, picture);
-            jwtToken, refreshToken = generateTokens(uuid, given_name, email);
+            ({jwtToken, refreshToken} = generateTokens(uuid, given_name, email));
             
             //jwtToken = await app.jwt.sign({ userId: uuid });
 
@@ -503,6 +505,7 @@ app.get('/google/callback', async(request, reply) => {
             }, 'Google OAuth new user sucess');
         }
         reply.send({ message: 'logged in successfully', token: jwtToken, refreshToken });
+        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}|refreshToken=${refreshToken}`);
 
     } catch (err) {
         request.log.error({
@@ -512,8 +515,7 @@ app.get('/google/callback', async(request, reply) => {
                 code: err.code
             },
         }, 'Google OAuth callback failed');
-        reply.code(500).send({ error: 'internal Server Error' 
-        });
+        return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('oauth_error')}`);
     }
 });
 
@@ -566,25 +568,43 @@ app.get('/github/callback', async function (request, reply) {
                     Authorization: `token ${token.access_token}`
                 }
         });
+
+        // Parse GitHub user first to obtain login for fallback email if needed
+        const { login, avatar_url, id } = await userResponse.json();
+        
         const emails = await emailResponse.json();
         const emailPrimary = await emails.find(email => email.primary)?.email || null;
+        //a voir si on garde
+        // let emailPrimary = (Array.isArray(emails) && (
+        // // emails.find(e => e.primary && e.verified)?.email ||
+        // // emails.find(e => e.verified)?.email ||
+        // // emails[0]?.email
+        // // )) || null;
+        //Fallback for users with hidden email on GitHub
+        // // if (!emailPrimary && login) {
+            // // emailPrimary = `${login}@users.noreply.github.com`;
+        // // } 
+        // if (!emailPrimary) {
+            //Cannot proceed without an email; redirect back with an error
+            // return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('no_email_from_github')}`);
+        // }
+
         const local = db.prepare('SELECT password FROM user WHERE email = ?').get(emailPrimary);
         if (local && local.password){
             request.log.warn({
                 event: 'github_oauth_attempt',
                 user: { email: emailPrimary }
                 }, 'GitHub OAuth failed: email already registered locally');
-            return reply.code(403).send({ error: "SSO forbidden: email already registered locally" }) 
+            return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('sso_forbidden')}`);
         }
 
-        const { login, avatar_url, id } = await userResponse.json();
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(emailPrimary);
         let jwtToken; 
         let refreshToken;
 
         if (user) {
-            jwtToken, refreshToken  = generateTokens(user.uuid, user.username, user.email);
+            ({jwtToken, refreshToken}  = generateTokens(user.uuid, user.username, user.email));
             //jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
             
             const info = { online: 1, uuid: user.uuid }
@@ -622,7 +642,7 @@ app.get('/github/callback', async function (request, reply) {
             if (!response.ok)
                 throw new Error(`HTTP error! status: ${response.status}`);
 
-            jwtToken, refreshToken = generateTokens(uuid, login, emailPrimary);
+            ({jwtToken, refreshToken} = generateTokens(uuid, login, emailPrimary));
             //jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
             request.log.info({
                 event: 'github_oauth_attempt',
@@ -631,6 +651,7 @@ app.get('/github/callback', async function (request, reply) {
 
         }
         reply.send({ access_token: token.access_token, jwtToken, refreshToken });
+        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}|refreshToken=${refreshToken}`);
      } catch (err) {
         request.log.error({
             event: 'github_oauth_attempt',
@@ -639,7 +660,7 @@ app.get('/github/callback', async function (request, reply) {
                 code: err.code
             },
         }, 'Github OAuth callback failed');
-        reply.code(500).send({ error: 'Internal Server Error' });
+        return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('oauth_error')}`);
     }
 })
 
