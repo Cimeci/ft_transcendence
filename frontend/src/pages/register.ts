@@ -132,7 +132,7 @@ export function RegisterPage(): HTMLElement {
 			});
 			const data = await resp.json();
 			if (!resp.ok) throw new Error(data?.error || "Register failed");
-			// Use the token returned by backend and log the user in
+			// Use the token returned by backend andg the user in
 			const jwt = data.token || data.jwtToken;
 			if (jwt) {
 				localStorage.setItem('jwt', jwt);

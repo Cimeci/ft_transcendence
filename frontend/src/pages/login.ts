@@ -10,7 +10,8 @@ export function OAuthCallbackPage(): HTMLElement {
   root.textContent = 'Connexion...';
 
   const params = new URLSearchParams(location.search);
-  const token = params.get('token');
+  const token = (params.get('token'))?.split("|")[0];
+  console.log(token);
   const error = params.get('error');
 
   const showError = (msg: string) => {

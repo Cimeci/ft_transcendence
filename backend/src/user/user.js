@@ -801,18 +801,26 @@ app.get('/me', async(request, reply) => {
     return reply.send({ user })
 })
 
-
+//! a voir pour delete /me
 app.get('/:uuid', async(request, reply) => {
     const uuid  = request.params.uuid;
 
     const user = db.prepare(`
     SELECT
-        uuid,
-        username,
-        email,
-        avatar,
-        is_online
-    FROM user WHERE uuid = ?`).get(uuid);
+        u.uuid,
+        u.username,
+        u.email,
+        u.avatar,
+        u.is_online,
+        h.games,
+        h.game_win,
+        h.game_ratio,
+        h.tournament,
+        h.tournament_win,
+        h.tournament_ratio
+    FROM user u
+    JOIN historic h ON u.uuid = h.user_uuid
+    WHERE u.uuid = ?`).get(uuid);
 
     if (!user) {
         request.log.warn({

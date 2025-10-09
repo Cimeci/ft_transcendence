@@ -9,6 +9,8 @@ import nodemailer from 'nodemailer';
 
 dotenv.config();
 
+const FRONT = process.env.FRONT_URL
+
 // Configuration du logger fastify
 // const loggerConfig = {
 //     transport: {
@@ -162,22 +164,22 @@ app.post('/login', async (request, reply) => {
             return reply.code(401).send({ error: 'Invalid identifier or password'});
         }
 
-        const is2FAEnabled = user.twofa_enabled === 1;
-        if (is2FAEnabled) {
-            const code = createCode(user.uuid);
+        // const is2FAEnabled = user.twofa_enabled === 1;
+        // if (is2FAEnabled) {
+        //     const code = createCode(user.uuid);
 
-            const emailResult = await send2FACode(email, code);
-            if (!emailResult.success) {
-                request.log.error({
-                    event: 'login_attempt',
-                    user: { email },
-                    error: emailResult.error
-                }, 'Login failed: unable to send 2FA code');
-                return reply.code(500).send({ error: 'Unable to send 2FA code' });
-            }
+        //     const emailResult = await send2FACode(email, code);
+        //     if (!emailResult.success) {
+        //         request.log.error({
+        //             event: 'login_attempt',
+        //             user: { email },
+        //             error: emailResult.error
+        //         }, 'Login failed: unable to send 2FA code');
+        //         return reply.code(500).send({ error: 'Unable to send 2FA code' });
+        //     }
             
-            return reply.send({ uuid: user.uuid });
-        }
+        //     return reply.send({ uuid: user.uuid });
+        // }
 
         const info = { online: 1, uuid: user.uuid }
         const response = await fetch('http://user:4000/online', {
@@ -192,8 +194,8 @@ app.post('/login', async (request, reply) => {
         if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
 
-        const { jwtToken, refreshToken } = await generateTokens(uuid, username, email);
-
+        //const { jwtToken, refreshToken } = await generateTokens(uuid, username, email);
+        const { jwtToken, refreshToken } = await generateTokens(user.uuid, user.username, user.email);
         // const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
         request.log.info({
             event: 'login_attempt',
@@ -427,7 +429,7 @@ app.get('/google/callback', async(request, reply) => {
     try {
         //recuperation du token d'acces et du token de rafraichisement
         const { token } = await app.google.getAccessTokenFromAuthorizationCodeFlow(request);
-
+        
         //requete HTTP pour recuperer la data
         const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             method: 'GET',
@@ -456,7 +458,8 @@ app.get('/google/callback', async(request, reply) => {
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
         if (user) {
-            jwtToken, refreshToken = generateTokens(user.uuid, user.username, user.email);
+            ({jwtToken, refreshToken} = await generateTokens(user.uuid, user.username, user.email));
+            console.log({jwtToken: jwtToken})
             //jwtToken = await app.jwt.sign({ userId: user.uuid });
             const info = { online: 1, uuid: user.uuid }
            
@@ -481,7 +484,7 @@ app.get('/google/callback', async(request, reply) => {
         } else {
             const uuid = crypto.randomUUID();
             db.prepare('INSERT INTO user (uuid, google_id, username, email, password, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, google_id, given_name, email, null, picture);
-            jwtToken, refreshToken = generateTokens(uuid, given_name, email);
+            jwtToken, refreshToken = await generateTokens(uuid, given_name, email);
             
             //jwtToken = await app.jwt.sign({ userId: uuid });
 
@@ -502,8 +505,9 @@ app.get('/google/callback', async(request, reply) => {
                 user: { email }
             }, 'Google OAuth new user sucess');
         }
-        reply.send({ message: 'logged in successfully', token: jwtToken, refreshToken });
-
+        // reply.send({ message: 'logged in successfully', token: jwtToken, refreshToken });
+        console.log(jwtToken);
+        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}|refreshToken=${refreshToken}`);
     } catch (err) {
         request.log.error({
             event: 'google_oauth_attempt',
@@ -584,7 +588,7 @@ app.get('/github/callback', async function (request, reply) {
         let refreshToken;
 
         if (user) {
-            jwtToken, refreshToken  = generateTokens(user.uuid, user.username, user.email);
+            ({jwtToken, refreshToken  }= await generateTokens(user.uuid, user.username, user.email));
             //jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
             
             const info = { online: 1, uuid: user.uuid }
@@ -622,7 +626,7 @@ app.get('/github/callback', async function (request, reply) {
             if (!response.ok)
                 throw new Error(`HTTP error! status: ${response.status}`);
 
-            jwtToken, refreshToken = generateTokens(uuid, login, emailPrimary);
+            ({jwtToken, refreshToken} = await generateTokens(uuid, login, emailPrimar));
             //jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
             request.log.info({
                 event: 'github_oauth_attempt',
@@ -630,7 +634,8 @@ app.get('/github/callback', async function (request, reply) {
                 }, 'GitHub OAuth new user sucess');
 
         }
-        reply.send({ access_token: token.access_token, jwtToken, refreshToken });
+        //reply.send({ access_token: token.access_token, jwtToken, refreshToken });
+        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}|refreshToken=${refreshToken}`);
      } catch (err) {
         request.log.error({
             event: 'github_oauth_attempt',
@@ -754,7 +759,6 @@ async function checkToken(request) {
 
 async function generateTokens(uuid, username, email) {
     const jwtToken = await app.jwt.sign({ uuid: uuid, username: username, email: email });
-    
     const refreshToken = crypto.randomBytes(64).toString('hex');
 
     // Le refresh token expirera dans 7 jours
