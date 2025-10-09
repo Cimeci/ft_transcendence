@@ -1,4 +1,5 @@
 services:
+
   prometheus:
     container_name: monitor_prometheus
     networks:
@@ -12,8 +13,29 @@ services:
       - "9090:9090"
     restart: unless-stopped
 
+  alertmanager:
+    container_name: monitor_alertmanager
+    networks:
+      - monitoring
+    build:
+      context: ./src/alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+    environment:
+      - DISCORD_HOOK_URL=${DISCORD_HOOK_URL}
+    restart: unless-stopped
+
+
+
+
   #grafana:
     #container_name: monitor_grafana
+    #network:
+      #- monitoring
+    #restart: unless-stopped
+
+  #cadvisor:
+    #container_name: monitor_cadvisor
     #network:
       #- monitoring
     #restart: unless-stopped

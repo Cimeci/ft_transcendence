@@ -1,10 +1,10 @@
 ### Backend configuration
 **fastify-metrics**
 - [x] auth
-- [] game
-- [] tournament
-- [] user
-- [] websocket
+- [x] game
+- [x] tournament
+- [x] user
+- [x] websocket
 [] Add hook on gateway to prevent `http://localhost:4443/auth/metrics` exposition
 
 ### Completing setup
@@ -15,13 +15,16 @@
 [] data retention ans storage
 [] secure connection between component
 [] control mecansim for sensible datas (grafana)
-[] rule files into prometheus.yml ??
+[x] rule files into prometheus.yml ??
 
 ### Adds
 [] cAdvisor (docker metrics)
 [] nginx-exporter if reverseproxy
 [] databases metrics
 [] remove ports from prometheus container
+[] check if auto-mnotoring prom is not a secured issue (`localhost:900`)
+[] monitor ELK as well
+[] monitor front as well
 
 ---
 ### MONITORING DOCUMENTATION
@@ -35,10 +38,19 @@ await app.register(fastifyMetrics, {
 Ainsi on expose les metrics de chaque service sur une route et Prometheus va pouvoir scrapper ces données en faisant des requetes HTTP GET vers la route. On ne passe pas par le Gateway pour ne pas avoir de latence supplémentaire.
 #### Prometheus
 
-### Grafana
+#### Alertmanager
+Stocke les alertes et les envoit vers discord via l webhook. Gère le https tout seul. Il est ici exposé en local 127.0.0.1:9093:9093 pour monitorer les alertes
+
+Comme alertmanager est en busybox il ne gère pas les ${VAR} donc nous avons du créer un Dockerfile custom qui avec alpine et sh fait une substitution des variables dans le fichier. Anisi notre webhook peut etre spécifié dans un .env et rester en privé.
+Sur des grosses prods, des outils comme kubernetees secrets sont utilisés.
+
+#### Grafana
+
 
 
 ### Doc
 - [Fasttify-metrics Offical Documentation](https://www.npmjs.com/package/fastify-metrics?activeTab=readme)
-
+- [Prometheus Official Documentation](https://prometheus.io/docs/prometheus/latest/getting_started/)
+- [Alterting philosophy by Bob Ewaschuk from observations at Google](https://docs.google.com/document/d/199PqyG3UsyXlwieHaqbGiWVa8eMWi8zzAn0YfcApr8Q/edit?pli=1&tab=t.0#heading=h.fs3knmjt7fjy)
+- [Github issue for variable substitution](https://github.com/prometheus/prometheus/issues/2357)
 
