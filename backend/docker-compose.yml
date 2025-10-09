@@ -1,0 +1,74 @@
+services:
+  gateway:
+    container_name: gateway_container
+    build: ./src/gateway
+    networks:
+      - backend
+    ports:
+      - "4443:443"
+    depends_on:
+      - auth
+      - game
+      - tournament
+      - user
+      - websocket
+    restart: on-failure
+    env_file:
+      - .env
+  auth:
+    container_name: auth_container
+    build: ./src/auth
+    networks:
+      - backend
+    volumes:
+      - ./src/auth/data:/app/data
+    restart: on-failure
+    env_file:
+      - .env
+  game:
+    container_name: game_container
+    build: ./src/game
+    networks:
+      - backend
+    volumes:
+      - ./src/game/data:/app/data
+    restart: on-failure
+    env_file:
+      - .env
+  tournament:
+    container_name: tournament_container
+    build: ./src/tournament
+    networks:
+      - backend
+    volumes:
+      - ./src/tournament/data:/app/data
+    restart: on-failure
+    env_file:
+      - .env
+  user:
+    container_name: user_container
+    build: ./src/user
+    networks:
+      - backend
+    volumes:
+      - ./src/user/data:/app/data
+    restart: on-failure
+    env_file:
+      - .env
+  websocket:
+    container_name: websocket_container
+    build: ./src/websocket  
+    networks:
+      - backend
+    volumes:
+      - ./src/websocket/data:/app/data
+    ports:
+      - "4000:4000"
+    restart: on-failure
+    env_file:
+      - .env
+
+networks:
+  backend:
+    name: back
+    driver: bridge
