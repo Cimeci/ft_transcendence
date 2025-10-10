@@ -14,7 +14,7 @@ import { PongTournamentMenuPage, PongTournamentPageJoin, PongTournamentPageHost,
 import { LandingPage } from './pages/landing';
 import { CreditsPage } from './pages/credits';
 import { FriendsPage, type InvitePayload } from './pages/friends';
-import { UserFriendsPage, UserPage } from './pages/user';
+import { UserPage } from './pages/user';
 import { addNotification, removeNotification } from './components/notifications_overlay'
 import { ensureUser, onUserChange, getUser } from './linkUser';
 
@@ -42,7 +42,6 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/settings': SettingsPage,
 	'/credits': CreditsPage,
 	'/profile': UserPage,
-	'/friend_profile': UserFriendsPage,
 	'/oauth/callback': OAuthCallbackPage
 };
 
