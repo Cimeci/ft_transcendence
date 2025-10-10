@@ -2,6 +2,7 @@ import { translations } from "../i18n";
 import { getCurrentLang } from "./settings";
 import { userInventory } from "./inventory";
 import { getUser, onUserChange } from "../linkUser";
+import { navigateTo } from "../routes";
 
 export let inputRef: HTMLInputElement | null = null;
 
@@ -72,7 +73,7 @@ export function FriendsPage(): HTMLElement {
 		profileContainer.appendChild(imgBox);
 
 		const imgProfile = document.createElement("img");
-		imgProfile.src = userInventory.avatar[0].id;
+		imgProfile.src = getUser()?.avatar || "/avatar/default_avatar.png";
 		imgProfile.alt = "profile";
 		imgProfile.className = "w-full h-full object-cover hover:scale-105 transition-transform duration-300 p-1 border-2 rounded-xl";
 		imgBox.appendChild(imgProfile);
@@ -156,7 +157,6 @@ export function FriendsPage(): HTMLElement {
 		let receivedData: Friend[] = [];
 		let sentData: Friend[] = [];
 
-
 			const createUserActionsDropdown = (u: Friend, onRemove: () => void, onBlock: () => void): HTMLElement => {
 				const wrap = document.createElement("div");
 				wrap.className = "relative justify-self-end";
@@ -193,19 +193,10 @@ export function FriendsPage(): HTMLElement {
 				const ul = document.createElement("ul");
 				ul.className = "py-2 text-sm text-gray-700 dark:text-gray-200";
 
-				const liProfile = document.createElement("li");
-				const aProfile = document.createElement("a");
-				aProfile.href = `/friend_profile?id=${encodeURIComponent(u.id)}`;
-				aProfile.setAttribute("data-link", "");
-				aProfile.className = "block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white";
-				aProfile.textContent = translations[getCurrentLang()].profile ?? "Profile";
-				liProfile.appendChild(aProfile);
-				ul.appendChild(liProfile);
-
 				const liRemove = document.createElement("li");
 				const btnRemove = document.createElement("button");
 				btnRemove.type = "button";
-				btnRemove.className = "inline-flex w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white";
+				btnRemove.className = "inline-flex w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-red-500 duration-300";
 				btnRemove.textContent = translations[getCurrentLang()].delete ?? "Remove";
 				btnRemove.addEventListener("click", async () => {
 					const token = localStorage.getItem("jwt") || "";
@@ -273,7 +264,8 @@ export function FriendsPage(): HTMLElement {
 
 				return wrap;
 
-				}
+			}
+		
 			{
                 const FriendContainer = document.createElement("div");
                 FriendContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8";
@@ -353,9 +345,10 @@ export function FriendsPage(): HTMLElement {
                         const li = document.createElement("li");
 						li.className = ROW_CLASS;
 
-                        const name = document.createElement("span");
-                        name.className = "font-medium truncate";
-                        name.textContent = u.username;
+    					const name = document.createElement("span");
+    					name.className = "font-medium truncate cursor-pointer hover:scale-101 duration-300";
+    					name.textContent = u.username;
+						name.addEventListener(("click"), () => {navigateTo(`/profile?id=${u.id}`)});
 
                         const uid = document.createElement("span");
                         uid.className = "text-sm text-gray-400 truncate";
@@ -582,65 +575,67 @@ export function FriendsPage(): HTMLElement {
 						return;
 					}
 					for (const u of filtered) {
-						const li = document.createElement("li");
-						li.className = ROW_CLASS;
+    					const li = document.createElement("li");
+    					li.className = ROW_CLASS;
 
-						const name = document.createElement("span");
-						name.className = "font-medium truncate";
-						name.textContent = u.username;
+    					const name = document.createElement("span");
+    					name.className = "font-medium truncate cursor-pointer hover:scale-101 duration-300";
+    					name.textContent = u.username;
+						name.addEventListener(("click"), () => {navigateTo(`/profile?id=${u.id}`)});
 
-						const uid = document.createElement("span");
-						uid.className = "text-sm text-gray-400 truncate";
-						uid.textContent = u.id;
+    					const uid = document.createElement("span");
+    					uid.className = "text-sm text-gray-400 truncate";
+    					uid.textContent = u.id;
 
-						const add_btn = document.createElement("button");
-						add_btn.type = "button";
-						add_btn.textContent = translations[getCurrentLang()].add;
-						add_btn.className = `${ACTION_BTN} justify-self-end bg-green-500 hover:bg-green-600`;
-
-						add_btn.addEventListener(("click"), async () => {
+    					const btnAdd = document.createElement("button");
+						btnAdd.type = "button";
+						btnAdd.className = "inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
+						btnAdd.textContent = translations[getCurrentLang()].add ?? "Add";
+						btnAdd.addEventListener(("click"), async () => {
 							const token = localStorage.getItem("jwt") || "";
- 							add_btn.disabled = true;
- 							const old = add_btn.textContent;
- 							add_btn.textContent = "…";
-						try {
-						    const resp = await fetch(`/user/friendship/${encodeURIComponent(u.id)}`, {
-						      method: "POST",
-						      headers: { Authorization: `Bearer ${token}` },
-						      // si votre auth est en cookie, ajoutez: credentials: 'include'
-						    });
-						    if (resp.ok) {
-						      // Retirer de la liste des non-amis
-						      searchData = searchData.filter(x => x.id !== u.id);
-						      render();
-						      return;
-						    }
-						    if (resp.status === 409) {
-						      add_btn.textContent = "Déjà invité";
-						      add_btn.classList.remove("bg-green-500", "hover:bg-green-600");
-						      add_btn.classList.add("bg-gray-500");
-						      return;
-						    }
-						    if (resp.status === 401) {
-						      alert("Session expirée. Reconnecte-toi.");
-						      add_btn.textContent = old;
-						      return;
-						    }
-						    console.error("POST /friendship failed:", resp.status);
-						    add_btn.textContent = old;
-						  } catch (e) {
-						    console.error(e);
-						    add_btn.textContent = old;
-						  } finally {
-						    add_btn.disabled = false;
-						  }
+ 							btnAdd.disabled = true;
+ 							const old = btnAdd.textContent;
+ 							btnAdd.textContent = "…";
+							try {
+							    const resp = await fetch(`/user/friendship/${encodeURIComponent(u.id)}`, {
+							      	method: "POST",
+							      	headers: { Authorization: `Bearer ${token}` },
+							    });
+							    if (resp.ok) {
+							      	searchData = searchData.filter(x => x.id !== u.id);
+                		    		window.location.reload();
+							      	return;
+							    }
+							    if (resp.status === 409) {
+							      	btnAdd.textContent = "Déjà invité";
+							      	btnAdd.classList.remove("bg-green-500", "hover:bg-green-600");
+							      	btnAdd.classList.add("bg-gray-500");
+							      	return;
+							    }
+							    if (resp.status === 401) {
+							      	alert("Session expirée. Reconnecte-toi.");
+							      	btnAdd.textContent = old;
+							      	return;
+							    }
+							    console.error("POST /friendship failed:", resp.status);
+							    btnAdd.textContent = old;
+							} catch (e) {
+							    console.error(e);
+								   btnAdd.textContent = old;
+							} finally {
+							    btnAdd.disabled = false;
+							}
 						});
 
-                        li.appendChild(name);
-                        li.appendChild(uid);
-                        li.appendChild(add_btn);
-                        Results.appendChild(li);
-                    }
+						const addIcon = document.createElement("img");
+            			addIcon.src = "/icons/plus.svg";
+            			btnAdd.prepend(addIcon);
+
+    					li.appendChild(name);
+    					li.appendChild(uid);
+    					li.appendChild(btnAdd);
+    					Results.appendChild(li);
+					}
                 };
 
 				input.addEventListener("input", render);
@@ -761,9 +756,10 @@ export function FriendsPage(): HTMLElement {
                         const li = document.createElement("li");
                         li.className = "p-3 min-w-0 grid grid-cols-[1fr_1fr_auto] items-center lg:gap-3 sm:gap-2 gap-1";
 
-                        const name = document.createElement("span");
-                        name.className = "font-medium truncate";
-                        name.textContent = u.username;
+    					const name = document.createElement("span");
+    					name.className = "font-medium truncate cursor-pointer hover:scale-101 duration-300";
+    					name.textContent = u.username;
+						name.addEventListener(("click"), () => {navigateTo(`/profile?id=${u.id}`)});
 
                         const uid = document.createElement("span");
                         uid.className = "text-sm text-gray-400 truncate";
@@ -937,9 +933,10 @@ export function FriendsPage(): HTMLElement {
 						const li = document.createElement("li");
 						li.className = ROW_CLASS;
 
-						const name = document.createElement("span");
-						name.className = "font-medium truncate";
-						name.textContent = u.username;
+    					const name = document.createElement("span");
+    					name.className = "font-medium truncate cursor-pointer hover:scale-101 duration-300";
+    					name.textContent = u.username;
+						name.addEventListener(("click"), () => {navigateTo(`/profile?id=${u.id}`)});
 
 						const uid = document.createElement("span");
 						uid.className = "text-sm text-gray-400 truncate";
@@ -1040,10 +1037,13 @@ export function FriendsPage(): HTMLElement {
 
 	const setActive = (name: "friends"|"search"|"invites"|"requests") => {
 		current = name;
+		localStorage.setItem("lastSection", name);
+
 		sections.friends().classList.toggle("hidden", name !== "friends");
 		sections.search().classList.toggle("hidden", name !== "search");
 		sections.invites().classList.toggle("hidden", name !== "invites");
 		sections.requests().classList.toggle("hidden", name !== "requests");
+
 		Object.entries(selectors).forEach(([k, el]) => {
 			el.classList.toggle("text-green-400", k === name);
 			el.classList.toggle("font-semibold", k === name);
@@ -1051,19 +1051,25 @@ export function FriendsPage(): HTMLElement {
 		moveIndicator(selectors[name]);
 	};
 
-	FriendsSelector.addEventListener("click", () => setActive("friends"));
-	SearchSelector.addEventListener("click", () => setActive("search"));
-	RequestsRecievedSelector.addEventListener("click", () => setActive("invites"));
-	RequestSelector.addEventListener("click", () => setActive("requests"));
+	const savedSection = (localStorage.getItem("lastSection") as typeof current) || "friends";
+	requestAnimationFrame(() => setActive(savedSection));
+
+	FriendsSelector.addEventListener("click", () => { localStorage.setItem("lastSection", "friends"); window.location.reload(); });
+	SearchSelector.addEventListener("click", () => { localStorage.setItem("lastSection", "search"); window.location.reload(); });
+	RequestsRecievedSelector.addEventListener("click", () => { localStorage.setItem("lastSection", "invites"); window.location.reload(); });
+	RequestSelector.addEventListener("click", () => { localStorage.setItem("lastSection", "requests"); window.location.reload(); });
+
 	[FriendsSelector, SearchSelector, RequestsRecievedSelector, RequestSelector].forEach(el => {
 		(el as HTMLElement).tabIndex = 0;
 		el.addEventListener("keydown", (e: KeyboardEvent) => {
-			if (e.key === "Enter" || e.key === " ") setActive(
-				el === FriendsSelector ? "friends" : el === SearchSelector ? "search" : el === RequestsRecievedSelector ? "invites" : "requests"
-			);
+			if (e.key === "Enter" || e.key === " ") {
+				const name = el === FriendsSelector ? "friends" : el === SearchSelector ? "search" : el === RequestsRecievedSelector ? "invites" : "requests";
+      			localStorage.setItem("lastSection", name);
+      			window.location.reload();
+			}
 		});
 	});
-	requestAnimationFrame(() => setActive("friends"));
+	// requestAnimationFrame(() => setActive("friends"));
 	window.addEventListener("resize", () => moveIndicator(selectors[current]));
 	return mainContainer;
 }
