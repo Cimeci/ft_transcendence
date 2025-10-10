@@ -1,5 +1,5 @@
 import { translations } from '../i18n';
-import { getCurrentLang } from '../pages/settings';
+import { getCurrentLang, t } from '../pages/settings';
 import { navigateTo } from '../routes';
 import { getUser, onUserChange } from '../linkUser';
 import { notifications, removeNotification } from './notifications_overlay';
@@ -13,6 +13,25 @@ export type Notification = {
 	onAccept?: () => void;
 	onRefuse?: () => void;
 	createdAt: number;
+};
+
+//! le changement en OFFLINE ne fonctionne pas
+const setUserOnline = async (uuid: string, online: string) => {
+	console.log("USER ONLINE", uuid, online);
+  	const response = await fetch('/online', {
+    	method: 'PATCH',
+    	headers: {
+      		'Content-Type': 'application/json',
+      		'x-internal-key': 'ta_clef_secrète_ici'
+    	},
+    	body: JSON.stringify({ uuid, online })
+  	});
+
+  	if (!response.ok) {
+    	console.error('Erreur:', await response.json());
+  	} else {
+    	console.log('Mise à jour réussie !');
+  	}
 };
 
 export function createNavbar(routes: { [key: string]: string }): HTMLElement {
@@ -154,9 +173,9 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 			(document.documentElement as HTMLElement);
 		if (root) {
 			root.classList.add('fade-out');
-			root.addEventListener('animationend', () => navigateTo("/user"), { once: true });
+			root.addEventListener('animationend', () => navigateTo("/profile"), { once: true });
 			// Fallback si l’animation ne se déclenche pas
-			setTimeout(() => {navigateTo("/profile"); root.classList.remove('fade-out');}, 600);
+			setTimeout(() => {navigateTo(`/profile?id=${encodeURIComponent(getUser()?.uuid || t.err_id)}`); root.classList.remove('fade-out');}, 600);
 		}
 	});
 
@@ -202,7 +221,9 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	deconnection.setAttribute('data-link', '');
 	deconnection.textContent = translations[getCurrentLang()].logout;
 	deconnection.className = 'absolute bottom-5 left-5 text-xl text-red-600 hover:font-bold hover:scale-102 hover:text-red-700';
-	deconnection.addEventListener(("click"), () => {
+	deconnection.addEventListener(("click"), async () => {
+		const uuid = getUser()?.uuid || "";
+		await setUserOnline(uuid || "", "0");
 		localStorage.clear();
 	})
 	navLinks.appendChild(deconnection);
