@@ -1,9 +1,30 @@
 import { getCurrentLang } from "./settings";
 import { translations } from '../i18n';
-import { userInventory } from "./inventory";
+// import { userInventory } from "./inventory";
 
-type ShopType = 'avatar' | 'background' | 'bar' | 'ball';
+type ShopType = 'avatar' | 'background' | 'paddle' | 'ball';
 interface ShopItem { id: string; name: string; type: ShopType; price: number; }
+
+async function getShop() {
+    const jwt = localStorage.getItem("jwt") || "";
+
+    const response = await fetch('/user/shop', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        console.error('Erreur:', response.status);
+        return;
+    }
+
+    const data = await response.json();
+    console.log('Inventaire:', data.filteredInventory);
+    return data.filteredInventory;
+}
 
 export function ShopPage(): HTMLElement {
     // @ts-ignore
@@ -71,9 +92,10 @@ export function ShopPage(): HTMLElement {
         { v: "all", l: t.all },
         { v: "avatar", l: t.avatar },
         { v: "background", l: t.gamebackground },
-        { v: "bar", l: t.bar },
+        { v: "paddle", l: t.bar },
         { v: "ball", l: t.ball },
     ];
+
     filterItems.forEach(o => {
         const li = document.createElement("li");
         const btn = document.createElement("button");
@@ -91,6 +113,7 @@ export function ShopPage(): HTMLElement {
         li.appendChild(btn);
         ul.appendChild(li);
     });
+
     filterMenu.appendChild(ul);
     filterBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -101,6 +124,7 @@ export function ShopPage(): HTMLElement {
         filterMenu.classList.toggle("shop-filter-open", hidden);
         filterBtn.setAttribute("aria-expanded", hidden ? "true" : "false");
     });
+
     document.addEventListener("click", (e) => {
         if (!filterWrap.contains(e.target as Node)) {
             filterMenu.classList.add("hidden");
@@ -134,18 +158,24 @@ export function ShopPage(): HTMLElement {
     // État filtres
     let currentType: "all" | ShopType = "all";
     let query = "";
+    let shopData: any = null;
 
-    // Aplatit userInventory -> ShopItem[]
+    async function init() {
+        shopData = await getShop();
+        render();
+    }
+
     function allInventoryItems(): ShopItem[] {
-        const types: ShopType[] = ["avatar","background","bar","ball"];
+        if (!shopData) return [];
+        const types: ShopType[] = ["avatar", "background", "paddle", "ball"];
         return types.flatMap(type =>
-            (userInventory as any)[type]?.map((i: any) => ({
+            (shopData[type] || []).map((i: any) => ({
                 id: i.id ?? i.src ?? "",
                 name: i.name,
                 type,
                 price: i.price ?? 0,
-            })) ?? []
-        ) as ShopItem[];
+            }))
+        );
     }
 
     search.addEventListener("input", () => { query = search.value.toLowerCase(); render(); });
@@ -177,14 +207,18 @@ export function ShopPage(): HTMLElement {
         card.appendChild(price);
 
         // Interaction "Buy" maquette
-        price.addEventListener("click", () => {
-            const old = price.textContent || "";
-            price.textContent = "B U Y";
+        price.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // éviter de déclencher le bouton parent
+            price.textContent = "B U Y ...";
             price.classList.add("text-white");
-            setTimeout(() => {
-                price.textContent = old;
+                
+            const success = await buyItem(it);
+                
+            if (!success) {
+                price.textContent = `${it.price} $`;
                 price.classList.remove("text-white");
-            }, 800);
+            }
         });
 
         return card;
@@ -192,17 +226,47 @@ export function ShopPage(): HTMLElement {
 
     function render() {
         grid.innerHTML = "";
-        // Filtre: ne pas afficher les items contenant "default"
         const items = allInventoryItems().filter(it =>
             !/default/i.test(it.name) && !/default/i.test(it.id)
         );
+
         items.forEach(it => {
             if (currentType !== "all" && it.type !== currentType) return;
             if (query && !it.name.toLowerCase().includes(query)) return;
             grid.appendChild(makeCard(it));
         });
     }
-    render();
+
+    async function buyItem(item: ShopItem) {
+        const jwt = localStorage.getItem("jwt") || "";
+
+        const body: any = { [item.type]: item.name };
+
+        const response = await fetch('/user/shop', {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            console.error('Erreur achat:', response.status, err);
+            alert(err?.error || 'Erreur lors de l\'achat');
+            return false;
+        }
+
+        alert(`✅ ${item.name} est maintenant actif !`);
+        // Recharge les données du shop pour mettre à jour l'UI
+        shopData = await getShop();
+        render();
+        return true;
+    }
+
+    search.addEventListener("input", () => { query = search.value.toLowerCase(); render(); });
+    init();
 
     return mainContainer;
 }
