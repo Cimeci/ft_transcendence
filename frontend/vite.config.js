@@ -4,12 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   publicDir: './public',
   server: {
+    host: '0.0.0.0',
+    port: 5173,
     proxy: {
-      '/auth': 'http://localhost:4443',
-      '/user': 'http://localhost:4443',
-      '/game': 'http://localhost:4443',
-      '/tournament': 'http://localhost:4443',
-      '/ws': { target: 'ws://localhost:4000', ws: true, changeOrigin: true },
+      '/auth': 'http://backend_gateway:443',
+      '/user': 'http://backend_gateway:443',
+      '/game': 'http://backend_gateway:443',
+      '/tournament': 'http://backend_gateway:443',
+      '/ws': { target: 'ws://backend_websocket:4000', ws: true, changeOrigin: true },
     },
     allowedHosts: true,
     cors: true

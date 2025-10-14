@@ -6,6 +6,7 @@
 ### Workflows
 [ ] Create `frontend` and `fullstack` Makeffile rule
 [ ] Create container for Frontend
+[ ] Need a network for frontend ??
 
 ### Documentation
 [ ] Details about the .env

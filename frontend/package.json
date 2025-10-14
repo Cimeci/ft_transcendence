@@ -1,12 +1,17 @@
 {
+  "name": "frontend",
   "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "devDependencies": {
     "typescript": "^5.9.2",
     "vite": "^7.1.8"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
-    "tailwindcss": "^4.1.11",
-    "v20": "^0.1.0"
+    "tailwindcss": "^4.1.11"
   }
 }

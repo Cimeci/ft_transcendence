@@ -4,6 +4,20 @@ include:
   - ./backend/compose-backend.yml
   - ./elk/compose-elk.yml
 
+services:
+  frontend:
+    container_name: frontend
+    networks:
+      - backend
+    depends_on:
+      - gateway
+    build:
+      context: ./frontend
+    ports:
+      - 5173:80
+    restart: unless-stopped
+
+
 volumes:
   certs:
     driver: local
@@ -20,6 +34,8 @@ volumes:
     driver: local
 
 networks:
+  #frontend:
+    #driver: bridge
   backend:
     driver: bridge
   elk:
