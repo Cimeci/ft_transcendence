@@ -7,8 +7,6 @@ services:
       - backend
     volumes:
       - app_logs:/var/log/app
-    ports:
-      - "4443:443"
     depends_on:
       - auth
       - game
@@ -75,8 +73,6 @@ services:
     volumes:
       - ./src/websocket/data:/app/data
       - app_logs:/var/log/app
-    ports:
-      - "4000:4000"
     restart: on-failure
     env_file:
       - .env

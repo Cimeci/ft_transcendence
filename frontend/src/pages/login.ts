@@ -194,14 +194,14 @@ export function LoginPage(): HTMLElement {
   GithubBtn.className = 'px-8 py-3 rounded-xl bg-gray-800 text-white text-2xl hover:bg-gray-900 duration-300 transtion-all focus:scale-103 w-full flex items-center justify-center gap-2';
   GithubBtn.innerHTML = `<img src="/icons/github.svg" class="w-8 h-8" /> GitHub`;
   GithubBtn.addEventListener(('click'), async () => {
-    window.location.href = 'http://localhost:4443/auth/github/login';
+    window.location.href = 'https://localhost:443/auth/github/login';
   })
 
   const GoogleBtn = document.createElement('button');
   GoogleBtn.className = 'mt-10 px-8 py-3 rounded-xl bg-white text-black text-2xl hover:bg-gray-200 duration-300 transtion-all focus:scale-103 w-full flex items-center justify-center gap-2';
   GoogleBtn.innerHTML = `<img src="/icons/google.svg" class="w-8 h-8" /> Google`;
   GoogleBtn.addEventListener(('click'), async () => {
-    window.location.href = 'http://localhost:4443/auth/google/login';
+    window.location.href = 'https://localhost:443/auth/google/login';
   })
 
   SocialLogin.appendChild(GithubBtn);

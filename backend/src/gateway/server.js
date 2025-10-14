@@ -61,9 +61,9 @@ app.get('/', (request, reply) => {
 })
 
 // Lance le serveur sur le port spécifié
-app.listen({ port: 443, host: '0.0.0.0'})
+app.listen({ port: 4000, host: '0.0.0.0'})
     .then(() => {
-        app.log.info({ event: 'server_start' }, 'Serveur Fastify started on https://localhost:443');
+        app.log.info({ event: 'server_start' }, 'Serveur Fastify started on http://localhost:4000');
     })
     .catch ((err) => {
         app.log.error({ err, event: 'server_start_failure' }, 'Failed to launch the server');

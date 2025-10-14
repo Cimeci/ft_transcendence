@@ -13,8 +13,22 @@ services:
       - gateway
     build:
       context: ./frontend
+    expose:
+      - 80
+    restart: unless-stopped
+
+  reverse-proxy:
+    container_name: reverse_proxy
+    networks:
+      - backend
+    depends_on:
+      - frontend
+      - gateway
+    build:
+      context: ./reverse-proxy
     ports:
-      - 5173:80
+      - 80:80
+      - 443:443
     restart: unless-stopped
 
 
@@ -34,8 +48,6 @@ volumes:
     driver: local
 
 networks:
-  #frontend:
-    #driver: bridge
   backend:
     driver: bridge
   elk:

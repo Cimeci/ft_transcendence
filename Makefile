@@ -4,7 +4,7 @@
 #	USED CONTAINERS															   #
 ################################################################################
 ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs kibana-dashboards
-BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket
+BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket reverse-proxy
 FRONTEND_CONTAINERS	=	frontend
 
 ################################################################################
