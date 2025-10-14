@@ -120,10 +120,6 @@ function creationInventory(user_uuid) {
         { src: 'playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250, usable: false},
         { src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250, usable: false},
         { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
 
     ]);
 
@@ -551,65 +547,53 @@ app.patch('/shop', async(request, reply) => {
         return reply.code(404).send({ error: 'Inventory not found' });
     }
 
+    // Helper to persist array back
+    function saveArray(column, arr){
+        db.prepare(`UPDATE items set ${column} = ? WHERE user_uuid = ?`).run(JSON.stringify(arr), uuid);
+    }
+
     if (ball){
         const currentBall = JSON.parse(inventory.ball);
-        console.log(currentBall);
-        let ballupdate = currentBall.find(item => item.name === ball);
+        const ballupdate = currentBall.find(item => item.name === ball);
         if (!ballupdate) {
-            request.log.warn({
-                event: 'update-inventory_attempt'
-            }, 'Update Inventory Failed: ball not owned');
+            request.log.warn({ event: 'update-inventory_attempt' }, 'Update Inventory Failed: ball not owned');
             return reply.code(400).send({ error: 'You do not own this ball' });
         }
-        ballupdate.usable = true;
-        currentBall.push(ballupdate);
-        const ballJSON = JSON.stringify(currentBall);
-        db.prepare('UPDATE items set ball = ? WHERE user_uuid = ?').run(ballJSON, uuid);
+        if (!ballupdate.usable) ballupdate.usable = true;
+        saveArray('ball', currentBall);
     }
     
     if (background){
         const currentBackground = JSON.parse(inventory.background);
-        let backgroundupdate = currentBackground.find(item => item.name === background);
+        const backgroundupdate = currentBackground.find(item => item.name === background);
         if (!backgroundupdate) {
-            request.log.warn({
-                event: 'update-inventory_attempt'
-            }, 'Update Inventory Failed: background not owned');
+            request.log.warn({ event: 'update-inventory_attempt' }, 'Update Inventory Failed: background not owned');
             return reply.code(400).send({ error: 'You do not own this background' });
         }
-        backgroundupdate.usable = true;
-        currentBackground.push(backgroundupdate);
-        const backgroundJSON = JSON.stringify(currentBackground);
-        db.prepare('UPDATE items set background = ? WHERE user_uuid = ?').run(backgroundJSON, uuid);
+        if (!backgroundupdate.usable) backgroundupdate.usable = true;
+        saveArray('background', currentBackground);
     }
 
     if (paddle){
         const currentPaddle = JSON.parse(inventory.paddle);
-        let paddleupdate = currentPaddle.find(item => item.name === paddle);
+        const paddleupdate = currentPaddle.find(item => item.name === paddle);
         if (!paddleupdate) {
-            request.log.warn({
-                event: 'update-inventory_attempt'
-            }, 'Update Inventory Failed: paddle not owned');
+            request.log.warn({ event: 'update-inventory_attempt' }, 'Update Inventory Failed: paddle not owned');
             return reply.code(400).send({ error: 'You do not own this paddle' });
         }
-        paddleupdate.usable = true;
-        currentPaddle.push(paddleupdate);
-        const paddleJSON = JSON.stringify(currentPaddle);
-        db.prepare('UPDATE items set paddle = ? WHERE user_uuid = ?').run(paddleJSON, uuid);
+        if (!paddleupdate.usable) paddleupdate.usable = true;
+        saveArray('paddle', currentPaddle);
     }
 
     if (avatar){
         const currentAvatar = JSON.parse(inventory.avatar);
-        let avatarupdate = currentAvatar.find(item => item.name === avatar);
+        const avatarupdate = currentAvatar.find(item => item.name === avatar);
         if (!avatarupdate) {
-            request.log.warn({
-                event: 'update-inventory_attempt'
-            }, 'Update Inventory Failed: avatar not owned');
+            request.log.warn({ event: 'update-inventory_attempt' }, 'Update Inventory Failed: avatar not owned');
             return reply.code(400).send({ error: 'You do not own this avatar' });
         }
-        avatarupdate.usable = true;
-        currentAvatar.push(avatarupdate);
-        const avatarJSON = JSON.stringify(currentAvatar);
-        db.prepare('UPDATE items set avatar = ? WHERE user_uuid = ?').run(avatarJSON, uuid);
+        if (!avatarupdate.usable) avatarupdate.usable = true;
+        saveArray('avatar', currentAvatar);
     }
     request.log.info({
         event: 'update-inventory_attempt'
@@ -628,7 +612,7 @@ app.get('/inventory', async(request, reply) => {
         reply.code(401).send({ error: 'Unauthorized'});
     }
 
-    const inventory = db.prepare('SELECT ball_use, background_use, paddle_use, avatar_use FROM items WHERE user_uuid = ?').get(uuid);
+    const inventory = db.prepare('SELECT ball, background, paddle, avatar, ball_use, background_use, paddle_use, avatar_use FROM items WHERE user_uuid = ?').get(uuid);
     if (!inventory) {
         request.log.warn({
             event: 'get-inventory_attempt'
@@ -637,6 +621,10 @@ app.get('/inventory', async(request, reply) => {
     }
 
     const filteredInventory = {
+        ball: JSON.parse(inventory.ball),
+        background: JSON.parse(inventory.background),
+        paddle: JSON.parse(inventory.paddle),
+        avatar: JSON.parse(inventory.avatar),
         ball_use: JSON.parse(inventory.ball_use),
         background_use: JSON.parse(inventory.background_use),
         paddle_use: JSON.parse(inventory.paddle_use),
