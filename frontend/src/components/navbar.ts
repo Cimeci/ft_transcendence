@@ -15,6 +15,28 @@ export type Notification = {
 	createdAt: number;
 };
 
+type CosmeticType = 'avatar' | 'background' | 'paddle' | 'ball';
+
+interface CosmeticItem {
+    src?: string;
+    id: string;
+    name: string;
+    type?: string;
+    price: number;
+    usable?: boolean;
+};
+
+interface InventoryResponse {
+	ball: CosmeticItem[];
+	background: CosmeticItem[];
+	 paddle: CosmeticItem[];
+	avatar: CosmeticItem[];
+	ball_use: { id: string; name: string }[];
+	background_use: { id: string; name: string }[];
+	paddle_use: { id: string; name: string }[];
+	avatar_use: { id: string; name: string }[];
+}
+
 //! le changement en OFFLINE ne fonctionne pas
 const setUserOnline = async (uuid: string, online: string) => {
 	console.log("USER ONLINE", uuid, online);
@@ -149,9 +171,30 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	profileBox.className = 'z-[3500] flex items-center gap-2 p-1 rounded-lg hover:bg-white/10 cursor-default transition-opacity duration-200 md:opacity-100';
 
 	const avatarImg = document.createElement('img');
-	avatarImg.src = getUser()?.avatar || '/avatar/default_avatar.png';
+	// avatarImg.src = getUser()?.avatar || '/avatar/default_avatar.png';
 	avatarImg.alt = 'avatar';
 	avatarImg.className = 'z-[3500] w-8 h-8 rounded-full object-cover border border-white/20';
+
+	async function setAvatar()
+	{
+    	const token = localStorage.getItem("jwt") || "";
+    	if (!token) return null;
+
+    	try {
+    		const res = await fetch("/user/inventory", { headers: { Authorization: `Bearer ${token}` } });
+    		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    		const data = await res.json();
+    		// avatar_use est un tableau: [{ id, name }]
+    		const avatarUseArr = data?.filteredInventory?.avatar_use;
+    		const id = avatarUseArr?.[0]?.id || getUser()?.avatar || 'avatar/default_avatar.png';
+    		avatarImg.src = '/' + id.replace(/^\/+/, '');
+			console.log("IMG ID:", id);
+    	} catch (e) {
+    		console.warn('Avatar fetch failed', e);
+    	}
+	}
+
+	setAvatar();
 
 	const nameSpan = document.createElement('span');
 	nameSpan.textContent = getUser()?.username || "default";

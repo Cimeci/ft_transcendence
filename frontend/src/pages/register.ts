@@ -165,7 +165,7 @@ export function RegisterPage(): HTMLElement {
             			navigateTo("/home");
 					}
 					overlay.addEventListener("transitionend", onTransitionEnd);
-        		}, 5000);
+        		}, 4000);
 				navigateTo("/home");
 			}
 		} catch (e: any) {

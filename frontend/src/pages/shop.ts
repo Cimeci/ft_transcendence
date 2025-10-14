@@ -141,6 +141,7 @@ export function ShopPage(): HTMLElement {
     search.className = "flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500";
     toolbar.appendChild(search);
 
+    //! .get WALLET
     const wallet = document.createElement("div");
     wallet.className = "ml-auto px-4 py-2 rounded-lg border border-white/40 text-white/90";
     wallet.textContent = "600 $";
@@ -258,8 +259,6 @@ export function ShopPage(): HTMLElement {
             return false;
         }
 
-        alert(`✅ ${item.name} est maintenant actif !`);
-        // Recharge les données du shop pour mettre à jour l'UI
         shopData = await getShop();
         render();
         return true;
