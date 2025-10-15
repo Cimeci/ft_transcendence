@@ -38,7 +38,7 @@ const user = `
         email TEXT NOT NULL,
         password TEXT,
         avatar TEXT,
-        wallet INTEGER DEFAULT 0,
+        wallet INTEGER DEFAULT 10000,
         is_online INTERGER
     );
 `
@@ -103,45 +103,45 @@ function creationInventory(user_uuid) {
     const uuid = crypto.randomUUID();
     
     const ball = JSON.stringify([
-        { id: 'ball/default_ball.png', name: 'default ball', type: 'ball', price: 0, usable: true},
-        { id: 'ball/tennis_ball.png', name: 'tennis ball', type: 'ball', price: 250, usable: false},
-        { id: 'ball/swenn_ball.gif', name: 'swenn ball', type: 'ball', price: 250, usable: false},
+        { id: '/ball/default_ball.png', name: 'default ball', type: 'ball', price: 0, usable: true},
+        { id: '/ball/tennis_ball.png', name: 'tennis ball', type: 'ball', price: 250, usable: false},
+        { id: '/ball/swenn_ball.gif', name: 'swenn ball', type: 'ball', price: 250, usable: false},
     ]);
 
     const background = JSON.stringify([
-        { id: 'bg/default_bg.png', name: 'default bg', type: 'background', price: 250, usable: true},
-        { id: 'bg/transcendence_bg.png', name: 'transcendence bg', type: 'background', price: 250, usable: false},
-        { id: 'bg/matrix_bg.gif', name: 'matrix bg', type: 'background', price: 250, usable: false},
+        { id: '/bg/default_bg.png', name: 'default bg', type: 'background', price: 250, usable: true},
+        { id: '/bg/transcendence_bg.png', name: 'transcendence bg', type: 'background', price: 250, usable: false},
+        { id: '/bg/matrix_bg.gif', name: 'matrix bg', type: 'background', price: 250, usable: false},
 
     ]);
 
     const paddle = JSON.stringify([
-        { src: 'playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar', price: 0, usable: true},
-        { src: 'playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar', price: 250, usable: false},
-        { src: 'playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250, usable: false},
-        { src: 'playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250, usable: false},
-        { src: 'playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+        { src: '/playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar', price: 0, usable: true},
+        { src: '/playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar', price: 250, usable: false},
+        { src: '/playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250, usable: false},
+        { src: '/playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250, usable: false},
+        { src: '/playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
 
     ]);
 
     const avatar = JSON.stringify([
-        { id: 'avatar/default_avatar.png', name: 'default avatar', type: 'avatar', price: 0, usable: true},
-        { id: 'avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/xavierchad.gif', name: 'xavierchad avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar', price: 250, usable: false},
-        { id: 'avatar/rgodet.jpg', name: 'rgodet avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/default_avatar.png', name: 'default avatar', type: 'avatar', price: 0, usable: true},
+        { id: '/avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/alaualik.jpg', name: 'alaualik avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/xavierchad.gif', name: 'xavierchad avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/jodougla.jpg', name: 'jodougla avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/ael-atmi.jpg', name: 'ael-atmi avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/pjurdana.jpg', name: 'pjurdana avatar', type: 'avatar', price: 250, usable: false},
+        { id: '/avatar/rgodet.jpg', name: 'rgodet avatar', type: 'avatar', price: 250, usable: false},
 
     ]);
 
-    const ball_use = JSON.stringify([{ id: 'ball/default_ball.png', name: 'default ball'}]); 
-    const background_use =  JSON.stringify([{ id: 'bg/default_bg.png', name: 'default bg'}]);
-    const paddle_use = JSON.stringify([{ id: 'bar/default_bar.png', name: 'default bar'}]);
-    const avatar_use = JSON.stringify([{ id: 'avatar/default_avatar.png', name: 'default avatar'}]);
+    const ball_use = JSON.stringify([{ id: '/ball/default_ball.png', name: 'default ball'}]); 
+    const background_use =  JSON.stringify([{ id: '/bg/default_bg.png', name: 'default bg'}]);
+    const paddle_use = JSON.stringify([{ id: '/bar/default_bar.png', name: 'default bar'}]);
+    const avatar_use = JSON.stringify([{ id: '/avatar/default_avatar.png', name: 'default avatar'}]);
 
     console.log(ball);
     db.prepare('INSERT INTO items (uuid, user_uuid, ball, background, paddle, avatar, ball_use, background_use, paddle_use, avatar_use) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
@@ -878,7 +878,11 @@ app.get('/:uuid', async(request, reply) => {
         i.ball_use,
         i.background_use,
         i.paddle_use,
-        i.avatar_use
+        i.avatar_use,
+        i.ball,
+        i.background,
+        i.paddle,
+        i.avatar
     FROM user u
     JOIN historic h ON u.uuid = h.user_uuid
     JOIN items i ON u.uuid = i.user_uuid
@@ -890,6 +894,11 @@ app.get('/:uuid', async(request, reply) => {
         }, 'Get uuid Failed: User not found');
         return reply.code(404).send({ error: 'User not found' });
     }
+    user.avatar_use = JSON.parse(user.avatar_use);
+    user.background_use = JSON.parse(user.background_use);
+    user.paddle_use = JSON.parse(user.paddle_use);
+    user.ball_use = JSON.parse(user.ball_use);
+
     request.log.info({
         event: 'get-uuid-infos_attempt'
     }, 'User uuid Sucess');
