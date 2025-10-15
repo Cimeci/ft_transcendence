@@ -38,6 +38,7 @@ const user = `
         email TEXT NOT NULL,
         password TEXT,
         avatar TEXT,
+        wallet INTEGER DEFAULT 0,
         is_online INTERGER
     );
 `
@@ -249,6 +250,59 @@ app.patch('/update-info', async(request, reply) => {
         user: { email, username }
     }, 'Update user infos success');
     reply.send('Profile update')
+});
+
+app.get('/wallet', async(request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'get-wallet_attempt'
+        }, 'Get Wallet Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const wallet = db.prepare('SELECT wallet FROM user WHERE uuid = ?').get(uuid);
+    
+    if (!wallet) {
+        request.log.warn({
+            event: 'get-wallet_attempt'
+        }, 'Get Wallet Failed: wallet not found');
+        return reply.code(404).send({ error: 'Wallet not found' });
+    }
+    request.log.info({
+        event: 'get-wallet_attempt'
+    }, 'Get Wallet Success');
+    reply.send({ wallet: wallet.wallet });
+});
+
+app.patch('/wallet', async(request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'update-wallet_attempt',
+        }, 'Update Wallet Unauthorized: invalid jwt token');
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+
+    const { uuid, amount } = request.body;
+    
+    try {
+        db.prepare('UPDATE user set wallet = wallet + ? WHERE uuid = ?').run(amount, uuid);
+        request.log.info({
+            event: 'update-wallet_attempt'
+        }, 'Update Wallet Success');
+        reply.send('Wallet updated')
+    } catch(err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'update-wallet_attempt'
+        }, 'Update Wallet Failed');
+    }
 });
 
 app.get('/friendship', async(request, reply) => {
@@ -529,7 +583,15 @@ app.patch('/shop', async(request, reply) => {
         }, 'Get Inventory Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
- 
+    
+    const wallet = db.prepare('SELECT wallet FROM user WHERE uuid = ?').get(uuid);
+    if (!wallet || wallet.wallet < 250) {
+        request.log.warn({
+            event: 'update-inventory_attempt'
+        }, 'Update Inventory Failed: Not enough money');
+        return reply.code(400).send({ error: 'Not enough money' });
+    }
+
     const { ball, background, paddle, avatar } = request.body;
 
     if (!ball && !background && !paddle && !avatar){
@@ -595,6 +657,10 @@ app.patch('/shop', async(request, reply) => {
         if (!avatarupdate.usable) avatarupdate.usable = true;
         saveArray('avatar', currentAvatar);
     }
+    
+    const walletAmount = wallet.wallet - 250;
+    db.prepare('UPDATE user set wallet = ? WHERE uuid = ?').run(walletAmount, uuid);
+    
     request.log.info({
         event: 'update-inventory_attempt'
     }, 'Update Inventory Success');
@@ -768,6 +834,7 @@ app.get('/me', async(request, reply) => {
             u.email,
             u.avatar,
             u.is_online,
+            u.wallet,
             h.games,
             h.game_win,
             h.game_ratio,
@@ -801,14 +868,20 @@ app.get('/:uuid', async(request, reply) => {
         u.email,
         u.avatar,
         u.is_online,
+        u.wallet,
         h.games,
         h.game_win,
         h.game_ratio,
         h.tournament,
         h.tournament_win,
-        h.tournament_ratio
+        h.tournament_ratio,
+        i.ball_use,
+        i.background_use,
+        i.paddle_use,
+        i.avatar_use
     FROM user u
     JOIN historic h ON u.uuid = h.user_uuid
+    JOIN items i ON u.uuid = i.user_uuid
     WHERE u.uuid = ?`).get(uuid);
 
     if (!user) {

@@ -133,7 +133,6 @@ function updateGame() {
 		ball.speedY *= 1.0005;
 
     // Envoyer l'état du jeu à tous les clients
-    console.log({score: score})
     const gameState = { ball, leftPaddle, rightPaddle, score };
     app.websocketServer.clients.forEach((client) => {
         if (client.readyState === 1) {

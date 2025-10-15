@@ -297,7 +297,7 @@ export function PongOnlineOverlayPage(): HTMLElement {
 function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
   // Utilise l’origine (5173) + proxy Vite /ws -> back
 //   const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const socket = new WebSocket(`ws://localhost:4000/ws`);
+  const socket = new WebSocket(`wss://localhost:4443/websocket`);
 
   socket.onopen = () => {
     console.log('[WS] open', socket.url);
