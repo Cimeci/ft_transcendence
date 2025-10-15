@@ -1,10 +1,8 @@
 import { translations } from '../i18n';
-import { userInventory } from './inventory';
 import { getUser, onUserChange, ensureUser } from '../linkUser';
 
 export const t = translations[getCurrentLang()];
 
-let username: string = "default";
 let email:string = "ilan@42angouleme.fr";
 let password:string = "1234";
 
@@ -234,18 +232,6 @@ function CreateLine():HTMLElement{
 	return (line);
 }
 
-export function emitProfileUpdate() {
-    window.dispatchEvent(new CustomEvent('profile:update', {
-        detail: {
-            username,
-            avatar: userInventory.avatar?.[0]?.id,
-            background: userInventory.background?.[0]?.id,
-            bar: userInventory.bar?.[0]?.id,
-            ball: userInventory.ball?.[0]?.id
-        }
-    }));
-}
-
 export function SettingsPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "flex flex-col justify-center items-center bg-linear-to-br from-green-500 via-black to-green-800 pt-20 h-screen gap-4";
@@ -291,7 +277,6 @@ export function SettingsPage(): HTMLElement {
 			try {
 				await updateProfileInfo({ username: newVal });
 				NameContent.textContent = getUser()?.username || newVal;
-				emitProfileUpdate();
 			} catch (e: any) {
 				alert(e.message || 'Update failed');
 			}
@@ -360,7 +345,7 @@ export function SettingsPage(): HTMLElement {
 	const PasswordContent = document.createElement("p");
 	PasswordContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
 	const maskPassword = (v: string) => "•".repeat(v.length);
-	PasswordContent.textContent = maskPassword(getUser()?.password || password);
+	PasswordContent.textContent = maskPassword(getUser()?.password || password); //!password user pas forcer present, a voir pour modif ou non !! 
 	changePasswordSection.appendChild(PasswordContent);
 
 	const ChangePasswordBtn = document.createElement("button");

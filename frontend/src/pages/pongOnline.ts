@@ -1,11 +1,10 @@
 import { getCurrentLang } from "./settings";
 import { translations } from '../i18n';
 import { navigateTo } from '../routes';
-import { userInventory } from "./inventory";
 import { CreateWrappedButton } from "../components/utils";
 import { getUser } from "../linkUser";
 import { t } from "./settings";
-import { users } from "./friends";
+import type { Friend } from "./friends";
 
 export const gameHistory: string[] = [];
 
@@ -43,7 +42,45 @@ export function PongOnlineMenuPage(): HTMLElement {
 	lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
 	rightContainer.appendChild(lstFriends);
 
-	users.forEach(e => {
+
+	let friendData: Friend[] = [];
+
+	const token = localStorage.getItem("jwt") || "";
+	(async () => {
+	  	try {
+	  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+	  	  	if (!resp.ok) throw new Error(String(resp.status));
+
+	  	  	const data = await resp.json();
+	  	  	const me = getUser()?.uuid;
+			const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
+
+			const list = await Promise.all(rows.map(async (r) => {
+	  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
+	  	  	  	try {
+	  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+	  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
+	  	  	  	  	});
+	  	  	  	  	if (r2.ok) {
+	  	  	  	  	  	const { user } = await r2.json();
+	  	  	  	  	  	return {
+	  	  	  	  	  	  	id: other,
+	  	  	  	  	  	  	username: user.username || other,
+	  	  	  	  	  	  	invitation: "Friend",
+	  	  	  	  	  	  	avatar: user.avatar || "/avatar/default_avatar.png"
+	  	  	  	  	  	};
+	  	  	  	  	}
+	  	  	  	} catch {}
+	  	  	  	return { id: other, username: other, invitation: "Friend", avatar: "/avatar/default_avatar.png" };
+	  	  	}));
+	  	  	friendData = list;
+	  	} catch (e) {
+	  	  	console.error("load friendship failed", e);
+	  	  	friendData = [];
+	  	}
+	})();
+
+	friendData.forEach(e => {
 		const li: HTMLLIElement = document.createElement("li");
 		li.className = "flex justify-between items-center p-2 w-full min-h-12"
 
@@ -64,12 +101,12 @@ export function PongOnlineMenuPage(): HTMLElement {
 
 		const btn = document.createElement("button");
 		btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
-		btn.textContent = "Invite"; //! i18n
+		btn.textContent = t.invite;
 		btn.addEventListener("click", () => {
 			window.showInvite({
-				username: getUser()?.username || "default",
-				id: getUser()?.uuid.split("-")[0] || t.err_id,
-				avatar: getUser()?.avatar || "/avatar/default_avatar.png",
+				username: e.username || "default",
+				id: e.id.split("-")[0] || t.err_id,
+				avatar: e.avatar || "/avatar/default_avatar.png",
 				message: "Invitation to play against " + getUser()?.username || "default",
 			});
 		});
@@ -80,7 +117,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 
 	const TitlePong = document.createElement("h1");
 	TitlePong.className = "pt-25 text-6xl sm:text-8xl tracking-widest absolute top-0 text-green-400 neon-matrix w-full text-center";
-	TitlePong.textContent = "P O N G";
+	TitlePong.textContent = t.online;
 	mainContainer.appendChild(TitlePong);
 
 	const container1 = document.createElement("div");{

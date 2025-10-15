@@ -210,7 +210,7 @@ export function ShopPage(): HTMLElement {
         // Interaction "Buy" maquette
         price.addEventListener("click", async (e) => {
             e.preventDefault();
-            e.stopPropagation(); // éviter de déclencher le bouton parent
+            e.stopPropagation();
             price.textContent = "B U Y ...";
             price.classList.add("text-white");
                 
@@ -259,6 +259,7 @@ export function ShopPage(): HTMLElement {
             return false;
         }
 
+        document.location.reload();
         shopData = await getShop();
         render();
         return true;

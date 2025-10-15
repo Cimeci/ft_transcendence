@@ -1,5 +1,4 @@
 import { t } from "./settings";
-import { emitProfileUpdate } from './settings';
 
 export type CosmeticType = 'avatar' | 'background' | 'paddle' | 'ball';
 
@@ -41,7 +40,7 @@ async function fetchUserInventory(): Promise<InventoryResponse | null> {
     return data.filteredInventory as InventoryResponse;
 }
 
-async function getUserInventory(): Promise<InventoryResponse | null> {
+export async function getUserInventory(): Promise<InventoryResponse | null> {
     if (!cachedInventory) cachedInventory = await fetchUserInventory();
     return cachedInventory;
 }
@@ -193,7 +192,6 @@ export function InventoryPage(): HTMLElement {
         }
         await refreshInventory();
         await displayInventoryPreview();
-        emitProfileUpdate();
         renderGrid();
     }
 

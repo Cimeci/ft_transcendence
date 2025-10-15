@@ -1,61 +1,161 @@
-import { getCurrentLang } from "./settings";
+import { getCurrentLang, t } from "./settings";
 import { translations } from '../i18n';
 import { navigateTo } from '../routes';
 import { onUserChange } from "../linkUser";
 import { CreateWrappedButton } from "../components/utils";
+import { getUser } from "../linkUser";
+import { getUserInventory } from "./inventory";
 
 export const gameHistory: string[] = [];
 
 export function PongLocalMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
-	mainContainer.className = "pt-25 min-h-screen w-full flex items-center justify-center bg-linear-to-bl from-black via-green-900 to-black"
+	mainContainer.className = "p-10 pt-25 min-h-screen w-full flex flex-col xl:flex-row items-center justify-center gap-10 bg-linear-to-bl from-black via-green-900 to-black"
+
 
 	const TitlePong = document.createElement("h1");
 	TitlePong.className = "pt-25 text-6xl sm:text-8xl tracking-widest absolute top-0 text-green-400 neon-matrix w-full text-center";
-	TitlePong.textContent = "P O N G";
+	TitlePong.textContent = t.local;
 	mainContainer.appendChild(TitlePong);
 
-	const GridContainer = document.createElement("div");
-	GridContainer.className = "mt-20 w-8/10 gap-20 flex flex-col xl:flex-row justify-center items-center";
+	const container1 = document.createElement("div");{
+	container1.className = "mt-30 xl:mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
+	mainContainer.appendChild(container1);
 
-	const PlayContainer = document.createElement("div");
-	PlayContainer.className = "h-[50vh] w-1/3 flex flex-col justify-center items-center gap-20";
+	const username = document.createElement("p");
+	username.className = "w-9/10 glass-blur text-xl py-1";
+	username.textContent = getUser()?.username || "default";
+	container1.appendChild(username);
 
-	const PlayBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].play, "/pong/local/game", 7)
-	PlayBtn.onclick = () => { user1.score = 0; user2.score = 0; };
-	PlayContainer.appendChild(PlayBtn);
+	const inventory = document.createElement("div");
+	inventory.className = "w-9/10 flex justify-around";
+	container1.appendChild(inventory);
 
-	const getName2 = document.createElement("input");
-	getName2.className = "text-xl sm:text-2xl text-green-400 neon-matrix rounded-full px-6 md:px-8 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none"
-	getName2.placeholder = translations[getCurrentLang()].username2;
-	getName2.maxLength = 16;
-	getName2.addEventListener("input", () => {
-		user2.name = getName2.value;
-	});
-	PlayContainer.appendChild(getName2);
+	const barContainer = document.createElement("div");
+		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		inventory.appendChild(barContainer);
 
-	const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "/pong/menu", 1);
-	PlayContainer.appendChild(BackToMenuBtn);
+		const bar = document.createElement("img");
+		bar.src = "/bar/default_bar.png";
+		bar.className = "w-full h-full rounded-xl";
+		barContainer.appendChild(bar);
 
-	GridContainer.appendChild(PlayContainer);
+	async function getSetupUser1() {
+		const inventory = await getUserInventory();
+       	if (!inventory) return;
 
-	mainContainer.appendChild(GridContainer);
+		console.log("INVENTORY: ", inventory)
+		bar.src = "/" + inventory["paddle_use"]?.[0]?.id;
+		user1.paddle = "/" + inventory["paddle_use"]?.[0]?.id;
+	}
+	getSetupUser1();
+	
+	}
+
+	const container2 = document.createElement("div");{
+	container2.className = "mt-15 p-5 w-9/10 xl:w-2/3 h-[60vh] flex flex-col gap-4 glass-blur justify-around items-center text-center";
+	mainContainer.appendChild(container2);
+
+	const playBtn = CreateWrappedButton(mainContainer, t.play, "/pong/local/game", 5);
+	container2.appendChild(playBtn);
+
+	const GlobalValue = document.createElement("div");
+	GlobalValue.className = "w-full flex justify-around"
+	container2.appendChild(GlobalValue);
+
+	const bgContainer = document.createElement("div");
+		bgContainer.className = "glass-blur h-[14rem] w-[14rem] flex flex-col gap-2 p-1";
+		GlobalValue.appendChild(bgContainer);
+		
+		const bgTxt = document.createElement("p");
+		bgTxt.textContent = t.gamebackground;
+		bgContainer.appendChild(bgTxt);
+
+		const bg = document.createElement("img");
+		bg.src = "/bg/default_bg.gif";
+		bg.className = "m-auto w-full rounded-xl";
+		bgContainer.appendChild(bg);
+
+	const ballContainer = document.createElement("div");
+		ballContainer.className = "glass-blur h-[14rem] w-[14rem] flex flex-col gap-2 p-1";
+		GlobalValue.appendChild(ballContainer);
+		
+		const ballTxt = document.createElement("p");
+		ballTxt.textContent = t.ball;
+		ballContainer.appendChild(ballTxt);
+
+		const ball = document.createElement("img");
+		ball.src = "/ball/default_ball.gif";
+		ball.className = "m-auto w-8/10 rounded-xl";
+		ballContainer.appendChild(ball);
+
+	
+	const backBtn = CreateWrappedButton(mainContainer, t.back, "/pong/menu", 0);
+	container2.appendChild(backBtn);
+
+	async function getSetupUser() {
+		const inventory = await getUserInventory();
+       	if (!inventory) return;
+
+		console.log("INVENTORY: ", inventory)
+		ball.src = "/" + inventory["ball_use"]?.[0]?.id;
+		Ball_src = "/" + inventory["ball_use"]?.[0]?.id;
+		bg.src = "/" + inventory["background_use"]?.[0]?.id;
+		Bg_src = "/" + inventory["background_use"]?.[0]?.id;
+	}
+	getSetupUser();
+
+	}
+
+	const container3 = document.createElement("div");{
+	container3.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
+	mainContainer.appendChild(container3);
+
+	const username = document.createElement("input");
+	username.className = "w-9/10 glass-blur text-xl px-1 py-1";
+	username.textContent = "second Username";
+	username.addEventListener(("input"), () => {
+		user2.name = username.value;
+	})
+	container3.appendChild(username);
+
+	const inventory = document.createElement("div");
+	inventory.className = "w-9/10 flex justify-around";
+	container3.appendChild(inventory);
+
+	const barContainer = document.createElement("div");{
+		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		inventory.appendChild(barContainer);
+		
+		const bar = document.createElement("img");
+		bar.src = "/bar/default_bar.png";
+		user2.paddle = "/bar/default_bar.png";
+		bar.className = "w-full h-full rounded-xl";
+		barContainer.appendChild(bar);
+	}
+	}
 
 	return (mainContainer);
 }
 
+let Bg_src = "/bg/default_bg.png";
+let Ball_src = "/ball/default_ball.png";
+
 export interface User {
 	name: string;
+	paddle: string;
 	score: number;
 }
 
 export const user1: User = {
 	name: "user1",
+	paddle: "/playbar/default_bar.png",
 	score: 0,
 };
 
 export const user2: User = {
 	name: "user2",
+	paddle: "/playbar/default_bar.png",
 	score: 0,
 };
 
@@ -137,7 +237,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	}
 
 	const resolveBallPath = () => {
-		const raw = '/ball/default_ball.png';
+		const raw = Ball_src;
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBallSrc = resolveBallPath();
@@ -147,7 +247,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	ballImg.onload = () => { ballImgLoaded = true; };
 
 	const resolveBarPath = () => {
-		const raw = '/playbar/default_bar.png';
+		const raw = user1.paddle.replace("/bar/", "/playbar/");
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBarSrc = resolveBarPath();
@@ -157,7 +257,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	leftBarImg.onload = () => { leftBarImgLoaded = true; };
 
 	const resolveRightBarPath = () => {
-		const raw = '/playbar/default_bar.png';
+		const raw = user2.paddle.replace("bar", "playbar");
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentRightBarSrc = resolveRightBarPath();
@@ -166,10 +266,11 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	let rightBarImgLoaded = false;
 	rightBarImg.onload = () => { rightBarImgLoaded = true; };
 
+
 	const canvas = document.createElement("canvas");
 	canvas.width = 1400;
 	canvas.height = 800;
-	const bgUrl = '/bg/default_bg.png'
+	const bgUrl = Bg_src;
 	canvas.className = "border-2 w-[70vw] h-[80vh]";
 	canvas.style.backgroundImage = `url('${bgUrl}')`;
 	canvas.style.backgroundSize = "cover";
@@ -349,7 +450,6 @@ export function PongLocalGamePage(): HTMLElement {
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "gap-2 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800"
 
-	// Nettoyage du container avant d'ajouter le jeu
 	mainContainer.innerHTML = "";
 
 	const TitlePong = document.createElement("h1");
@@ -363,9 +463,17 @@ export function PongLocalGamePage(): HTMLElement {
 	const Profile1 = document.createElement("div");
 	Profile1.className = "flex items-end gap-3"
 
+	async function getAvatarUser1() {
+		const inventory = await getUserInventory();
+        if (!inventory) return;
+
+		Avatar1.src = "/" + inventory["avatar_use"]?.[0]?.id;
+	}
+
 	const Avatar1 = document.createElement("img");
 	Avatar1.src = "/avatar/default_avatar.png";
 	Avatar1.className = "border-1 size-15 rounded-lg";
+	getAvatarUser1();
 	Profile1.appendChild(Avatar1);
 
 	const Score1 = document.createElement("h1");
@@ -377,7 +485,7 @@ export function PongLocalGamePage(): HTMLElement {
 	Profile2.className = "flex items-end gap-3"
 
 	const Avatar2 = document.createElement("img");
-	Avatar2.src = "/public/avatar/default_avatar.png";
+	Avatar2.src = "/avatar/default_avatar.png";
 	Avatar2.className = "border-1 size-15 rounded-lg";
 	Profile2.appendChild(Avatar2);
 

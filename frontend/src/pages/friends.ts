@@ -1,6 +1,6 @@
 import { translations } from "../i18n";
-import { getCurrentLang } from "./settings";
-import { userInventory } from "./inventory";
+import { getCurrentLang, t } from "./settings";
+import { getUserInventory } from "./inventory";
 import { getUser, onUserChange } from "../linkUser";
 import { navigateTo } from "../routes";
 
@@ -15,19 +15,7 @@ export type InvitePayload = {
   	onRefuse?: () => void;
 };
 
-type Friend = { id: string; username: string; invitation: string, avatar: string };
-// Démo: remplace par tes données //! DB //! trad invitation
-export const users: Friend[] = [
-	{ id: "u1001", username: "neo", invitation: "Send invitation to play tournament", avatar: "/avatar/default_avatar.png" },
-	{ id: "u1002", username: "trinity", invitation: "Send friend request", avatar: "/avatar/default_avatar.png" },
-	{ id: "u1003", username: "ilan", invitation: "Send 1v1", avatar: "/avatar/inowak--.jpg" },
-	{ id: "u1004", username: "pierre louis", invitation: "Send invitation to play tournament", avatar: "/avatar/pjurdana.jpg" },
-	{ id: "u1005", username: "xavier", invitation: "Send invitation to play tournament", avatar: "/avatar/xavierchad.gif" },
-	{ id: "u1006", username: "timothy", invitation: "Send 1v1", avatar: "/avatar/tcybak.jpg" },
-	{ id: "u1007", username: "amaury", invitation: "Send 1v1", avatar: "/avatar/amblanch.jpg" },
-	{ id: "u1008", username: "manuarii", invitation: "Send friend request", avatar: "/avatar/mdegache.jpg" },
-	{ id: "u1009", username: "remy", invitation: "Send friend request", avatar: "/avatar/rgodet.jpg" },
-];
+export type Friend = { id: string; username: string; invitation: string, avatar: string };
 
 export function FriendsPage(): HTMLElement {
 
@@ -73,10 +61,19 @@ export function FriendsPage(): HTMLElement {
 		profileContainer.appendChild(imgBox);
 
 		const imgProfile = document.createElement("img");
-		imgProfile.src = getUser()?.avatar || "/avatar/default_avatar.png";
+		imgProfile.src = "/avatar/default_avatar.png";
 		imgProfile.alt = "profile";
 		imgProfile.className = "w-full h-full object-cover hover:scale-105 transition-transform duration-300 p-1 border-2 rounded-xl";
 		imgBox.appendChild(imgProfile);
+
+		async function getSetupUser() {
+			const inventory = await getUserInventory();
+			if (!inventory) return;
+		
+			console.log("INVENTORY: ", inventory)
+			imgProfile.src = "/" + inventory["avatar_use"]?.[0]?.id;
+		}
+		getSetupUser();
 
 		const txtBox = document.createElement("div");
 		txtBox.className = "text-xl sm:text-2xl text-center whitespace-nowrap w-full gap-10 flex flex-col";
@@ -222,7 +219,7 @@ export function FriendsPage(): HTMLElement {
 									searchData = raw.map(nf => ({
 										id: nf.uuid,
 										username: nf.username || 'default',
-										invitation: 'Add',
+										invitation: t.add,
 										avatar: nf.avatar || 'avatar/default_avatar.png'
 									}));
 								} else {

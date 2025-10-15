@@ -139,32 +139,32 @@ export function RegisterPage(): HTMLElement {
 			}
 			console.log("jwt:", jwt);
 			{ // Connect
-				const overlay = document.createElement("div");
-        		overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
-				overlay.style.opacity = "0";
-        		overlay.style.transition = "opacity 1s ease";
+				// const overlay = document.createElement("div");
+        		// overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
+				// overlay.style.opacity = "0";
+        		// overlay.style.transition = "opacity 1s ease";
+				// // 
+        		// const msg = document.createElement("h1");
+        		// msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
+        		// msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
+        		// overlay.appendChild(msg);
+				// // 
+        		// document.body.appendChild(overlay);
+        		// requestAnimationFrame(() => {
+        		//     overlay.style.opacity = "1";
+        		// });
+				// // 
+        		// RegisterContainer.classList.add("fade-out");
 				// 
-        		const msg = document.createElement("h1");
-        		msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
-        		msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
-        		overlay.appendChild(msg);
-				// 
-        		document.body.appendChild(overlay);
-        		requestAnimationFrame(() => {
-        		    overlay.style.opacity = "1";
-        		});
-				// 
-        		RegisterContainer.classList.add("fade-out");
-				// 
-        		setTimeout(() => {
-					overlay.style.opacity = "0";
-					const onTransitionEnd = () => {
-						overlay.removeEventListener("transitionend", onTransitionEnd);
-            			if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            			navigateTo("/home");
-					}
-					overlay.addEventListener("transitionend", onTransitionEnd);
-        		}, 4000);
+        		// setTimeout(() => {
+				// 	overlay.style.opacity = "0";
+				// 	const onTransitionEnd = () => {
+				// 		overlay.removeEventListener("transitionend", onTransitionEnd);
+            	// 		if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            	// 		navigateTo("/home");
+				// 	}
+				// 	overlay.addEventListener("transitionend", onTransitionEnd);
+        		// }, 4000);
 				navigateTo("/home");
 			}
 		} catch (e: any) {

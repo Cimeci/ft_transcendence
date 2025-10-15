@@ -1,7 +1,5 @@
 import { getCurrentLang, t } from "./settings";
 import { translations } from "../i18n";
-import { userInventory } from "./inventory";
-import { navigateTo } from "../routes";
 import { getUser } from "../linkUser";
 
 function getUuid(): string {
@@ -162,7 +160,6 @@ export function UserPage(): HTMLElement {
         avatarWrap.className = "relative"
         
         const avatar = document.createElement("img");
-        avatar.src = userInventory.avatar?.[0]?.id || "/avatar/default_avatar.png";
         avatar.alt = "avatar";
         avatar.className = "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-green-500/50";
         avatarWrap.appendChild(avatar)
@@ -172,7 +169,6 @@ export function UserPage(): HTMLElement {
         avatarWrap.appendChild(status);
 
         const name = document.createElement("h2");
-        name.textContent = getUser()?.username || "default";
         name.className = "text-white font-semibold text-lg";
 
         center.appendChild(avatarWrap);
@@ -192,7 +188,7 @@ export function UserPage(): HTMLElement {
         barLabel.className = "text-xs uppercase text-white/60";
         barLabel.textContent = "Bar";
         const barImg = document.createElement("img");
-        barImg.src = userInventory.bar?.[0]?.id || "/bar/default_bar.png";
+        barImg.src = "/bar/default_bar.png"; //! BAR USER LOOK
         barImg.alt = "bar";
         barImg.className = "h-6 sm:h-8 object-contain drop-shadow";
 
@@ -205,7 +201,7 @@ export function UserPage(): HTMLElement {
         ballLabel.className = "text-xs uppercase text-white/60";
         ballLabel.textContent = "Ball";
         const ballImg = document.createElement("img");
-        ballImg.src = userInventory.ball?.[0]?.id || "/ball/default_ball.png";
+        ballImg.src = "/ball/default_ball.png"; //! BALL USER LOOK
         ballImg.alt = "ball";
         ballImg.className = "w-6 h-6 sm:w-8 sm:h-8 object-contain drop-shadow";
 
@@ -313,32 +309,32 @@ export function UserPage(): HTMLElement {
         const invBody = document.createElement("div");
         invBody.className = "flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden scroll_bar";
 
-        const barsGrid = document.createElement("div");
+        const barsGrid = document.createElement("div"); //! ALL BARS USER LOOK
         barsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6";
-        (Array.isArray(userInventory.bar) ? userInventory.bar.slice(1) : []).forEach((it) => {
-            const tile = document.createElement("div");
-            tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
-            const img = document.createElement("img");
-            img.src = it.id;
-            img.alt = it.name;
-            img.className = "max-w-full h-16 sm:h-20 object-contain drop-shadow";
-            tile.appendChild(img);
-            barsGrid.appendChild(tile);
-        });
+        // (Array.isArray(userInventory.bar) ? userInventory.bar.slice(1) : []).forEach((it) => {
+        //     const tile = document.createElement("div");
+        //     tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
+        //     const img = document.createElement("img");
+        //     img.src = it.id;
+        //     img.alt = it.name;
+        //     img.className = "max-w-full h-16 sm:h-20 object-contain drop-shadow";
+        //     tile.appendChild(img);
+        //     barsGrid.appendChild(tile);
+        // });
         invBody.appendChild(barsGrid);
 
-        const ballsGrid = document.createElement("div");
+        const ballsGrid = document.createElement("div"); //! ALL BALLS USER LOOK
         ballsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4";
-        (Array.isArray(userInventory.ball) ? userInventory.ball.slice(1) : []).forEach((it) => {
-           const tile = document.createElement("div");
-           tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
-           const img = document.createElement("img");
-           img.src = it.id;
-           img.alt = it.name;
-           img.className = "w-10 h-10 sm:w-12 sm:h-12 object-contain max-w-full drop-shadow";
-           tile.appendChild(img);
-           ballsGrid.appendChild(tile);
-        });
+        // (Array.isArray(userInventory.ball) ? userInventory.ball.slice(1) : []).forEach((it) => {
+        //    const tile = document.createElement("div");
+        //    tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
+        //    const img = document.createElement("img");
+        //    img.src = it.id;
+        //    img.alt = it.name;
+        //    img.className = "w-10 h-10 sm:w-12 sm:h-12 object-contain max-w-full drop-shadow";
+        //    tile.appendChild(img);
+        //    ballsGrid.appendChild(tile);
+        // });
         invBody.appendChild(ballsGrid);
         invCard.appendChild(invHeader);
         invCard.appendChild(invBody);

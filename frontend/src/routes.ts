@@ -5,8 +5,7 @@ import { LoginPage, OAuthCallbackPage } from './pages/login';
 import { RegisterPage } from './pages/register';
 import { ShopPage } from './pages/shop';
 import { InventoryPage } from './pages/inventory';
-import { SettingsPage, getCurrentLang } from './pages/settings';
-import { translations } from './i18n';
+import { SettingsPage } from './pages/settings';
 import { PongMenuPage } from './pages/pong';
 import { PongLocalMenuPage, PongLocalGamePage, PongLocalOverlayPage } from './pages/pongLocal';
 import { PongOnlineMenuPage, PongOnlineGamePage, PongOnlineOverlayPage } from './pages/pongOnline';
@@ -16,7 +15,7 @@ import { CreditsPage } from './pages/credits';
 import { FriendsPage, type InvitePayload } from './pages/friends';
 import { UserPage } from './pages/user';
 import { addNotification, removeNotification } from './components/notifications_overlay'
-import { ensureUser, onUserChange, getUser } from './linkUser';
+import { ensureUser, onUserChange} from './linkUser';
 
 document.getElementById("jschef")?.remove();
 
@@ -206,7 +205,7 @@ window.addEventListener('invite:show', (e: Event) => {
 
 // Helper pour déclencher depuis n’importe où
 window.showInvite = (payload: InvitePayload) => {
-	const n = addNotification(payload);
+	addNotification(payload);
    	window.dispatchEvent(new CustomEvent<InvitePayload>('invite:show', { detail: payload }));
  };
 

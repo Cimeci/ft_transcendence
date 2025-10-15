@@ -22,7 +22,7 @@ export function PongMenuPage(): HTMLElement {
 	MenuContainer.appendChild(LocalContainer);
 
 	const Txt = document.createElement("p");
-	Txt.textContent = t.local || "Local";
+	Txt.textContent = t.local;
 	Txt.className = "text-3xl neon-matrix tracking-wide font-bold";``
 	LocalContainer.appendChild(Txt);
 
@@ -44,7 +44,7 @@ export function PongMenuPage(): HTMLElement {
 	
 		const HistoryTitle = document.createElement("h2");
 		HistoryTitle.className = "border-green-400 w-full rounded-xl p-2 text-5xl tracking-widest neon-matrix";
-		HistoryTitle.textContent = t.history.toUpperCase();
+		HistoryTitle.textContent = (t.history).toUpperCase();
 		HistoryContainer.appendChild(HistoryTitle);
 	
 		const line = document.createElement("p");
@@ -62,7 +62,7 @@ export function PongMenuPage(): HTMLElement {
 	MenuContainer.appendChild(OnlineContainer);
 
 	const Txt = document.createElement("p");
-	Txt.textContent = t.online || "Online";
+	Txt.textContent = t.online;
 	Txt.className = "text-3xl neon-matrix tracking-wide font-bold";
 	OnlineContainer.appendChild(Txt);
 

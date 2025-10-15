@@ -33,6 +33,9 @@ export const translations = {
 		logout: "Déconnexion",
 		// PongPage
 		play: "Jouer",
+		local: "Local",
+		online: "En ligne",
+		invite: "Inviter",
 		// Tournament
 		player: "Joueur",
 		name: "Nom",
@@ -125,6 +128,9 @@ export const translations = {
 		logout: "Logout",
 		// PongPage
 		play: "Play",
+		local: "Local",
+		online: "Online",
+		invite: "Invite",
 		// Tournament
 		player: "Player",
 		name: "Name",
@@ -217,6 +223,9 @@ export const translations = {
 		logout: "Cerrar sesión",
 		// PongPage
 		play: "Jugar",
+		local: "Local",
+		online: "Online",
+		invite: "Invitar",
 		// Tournament
 		player: "Jugadore",
 		name: "Nombre",
