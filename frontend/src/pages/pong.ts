@@ -1,7 +1,6 @@
 import { t } from "./settings";
 import { translations } from '../i18n';
 import { navigateTo } from '../routes';
-import { userInventory } from "./inventory";
 import { onUserChange } from "../linkUser";
 
 

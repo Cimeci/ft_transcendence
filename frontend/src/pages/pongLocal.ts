@@ -1,7 +1,6 @@
 import { getCurrentLang } from "./settings";
 import { translations } from '../i18n';
 import { navigateTo } from '../routes';
-import { userInventory } from "./inventory";
 import { onUserChange } from "../linkUser";
 import { CreateWrappedButton } from "../components/utils";
 
@@ -138,7 +137,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	}
 
 	const resolveBallPath = () => {
-		const raw = userInventory.ball[0]?.id || '';
+		const raw = '/ball/default_ball.png';
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBallSrc = resolveBallPath();
@@ -148,7 +147,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	ballImg.onload = () => { ballImgLoaded = true; };
 
 	const resolveBarPath = () => {
-		const raw = userInventory.bar[0]?.src || '';
+		const raw = '/playbar/default_bar.png';
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBarSrc = resolveBarPath();
@@ -158,7 +157,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	leftBarImg.onload = () => { leftBarImgLoaded = true; };
 
 	const resolveRightBarPath = () => {
-		const raw = userInventory.bar[1]?.src || userInventory.bar[0]?.src || '';
+		const raw = '/playbar/default_bar.png';
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentRightBarSrc = resolveRightBarPath();
@@ -170,9 +169,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	const canvas = document.createElement("canvas");
 	canvas.width = 1400;
 	canvas.height = 800;
-	const bgUrl = userInventory.background[0].id.startsWith('/')
-		? userInventory.background[0].id
-		: '/' + userInventory.background[0].id;
+	const bgUrl = '/bg/default_bg.png'
 	canvas.className = "border-2 w-[70vw] h-[80vh]";
 	canvas.style.backgroundImage = `url('${bgUrl}')`;
 	canvas.style.backgroundSize = "cover";
@@ -367,7 +364,7 @@ export function PongLocalGamePage(): HTMLElement {
 	Profile1.className = "flex items-end gap-3"
 
 	const Avatar1 = document.createElement("img");
-	Avatar1.src = "/" + userInventory.avatar[0].id;
+	Avatar1.src = "/avatar/default_avatar.png";
 	Avatar1.className = "border-1 size-15 rounded-lg";
 	Profile1.appendChild(Avatar1);
 

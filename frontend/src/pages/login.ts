@@ -77,15 +77,14 @@ export function LoginPage(): HTMLElement {
   const SelfLogin = document.createElement('div');
   SelfLogin.className = 'flex flex-col justify-center items-center w-1/2 gap-6';
 
-  const InputName = document.createElement('input');
-  InputName.className = 'text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103';
-  InputName.placeholder = translations[getCurrentLang()].email;
-  InputName.maxLength = 20;
+  const InputMail = document.createElement('input');
+  InputMail.className = 'text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103';
+  InputMail.placeholder = translations[getCurrentLang()].email;
 
   const InputPassword = document.createElement('input');
   InputPassword.className = 'text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transition-all focus:scale-103 pr-12';
   InputPassword.placeholder = translations[getCurrentLang()].password;
-  InputName.maxLength = 30;
+  InputPassword.maxLength = 30;
   InputPassword.type = 'password';
 
   function togglePassword(input: HTMLInputElement, icon: HTMLImageElement) {
@@ -116,12 +115,12 @@ export function LoginPage(): HTMLElement {
   LoginBtn.className = 'mt-4 px-8 py-3 rounded-xl bg-green-600 text-white text-2xl duration-300 focus:scale-105 hover:scale-105 hover:bg-green-700 transition-all w-full';
   LoginBtn.textContent = translations[getCurrentLang()].login;
   LoginBtn.addEventListener('click', async () => {
-        if (InputName.value == '' || InputPassword.value == '' || InputPassword.value.length < 8) {
-            if (InputName.value == '') {
-				InputName.value = '';
-				InputName.placeholder = translations[getCurrentLang()].empty_input;
-				InputName.classList.add('placeholder:text-red-500');
-				InputName.classList.add('shake');
+        if (InputMail.value == '' || InputPassword.value == '' || InputPassword.value.length < 8) {
+            if (InputMail.value == '') {
+				InputMail.value = '';
+				InputMail.placeholder = translations[getCurrentLang()].empty_input;
+				InputMail.classList.add('placeholder:text-red-500');
+				InputMail.classList.add('shake');
 			}
 			if (InputPassword.value == '') {
 				InputPassword.value = '';
@@ -139,10 +138,10 @@ export function LoginPage(): HTMLElement {
 				EyePassword.classList.add('shake');
 			}
 
-			setTimeout(() => InputName.value = InputName.value, 800);
-			setTimeout(() => InputName.placeholder = translations[getCurrentLang()].username, 800);
-			setTimeout(() => InputName.classList.remove('placeholder:text-red-500'), 800);
-			setTimeout(() => InputName.classList.remove('shake'), 800);
+			setTimeout(() => InputMail.value = InputMail.value, 800);
+			setTimeout(() => InputMail.placeholder = translations[getCurrentLang()].username, 800);
+			setTimeout(() => InputMail.classList.remove('placeholder:text-red-500'), 800);
+			setTimeout(() => InputMail.classList.remove('shake'), 800);
 				
 			setTimeout(() => InputPassword.value = InputPassword.value, 800);
 			setTimeout(() => InputPassword.placeholder = translations[getCurrentLang()].password, 800);
@@ -154,7 +153,7 @@ export function LoginPage(): HTMLElement {
 				const resp = await fetch('/auth/login', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ email: InputName.value.trim(), password: InputPassword.value })
+					body: JSON.stringify({ email: InputMail.value.trim(), password: InputPassword.value })
 				});
 				const data = await resp.json();
 				if (!resp.ok) throw new Error(data?.error || 'Login failed');
@@ -180,7 +179,7 @@ export function LoginPage(): HTMLElement {
   linkRegister.textContent = translations[getCurrentLang()].go_to_register;
   linkRegister.href = '/register';
   
-  SelfLogin.appendChild(InputName);
+  SelfLogin.appendChild(InputMail);
   SelfLogin.appendChild(InputPassword);
   SelfLogin.appendChild(createInputWithEye(InputPassword, EyePassword));
   SelfLogin.appendChild(LoginBtn);
@@ -194,14 +193,14 @@ export function LoginPage(): HTMLElement {
   GithubBtn.className = 'px-8 py-3 rounded-xl bg-gray-800 text-white text-2xl hover:bg-gray-900 duration-300 transtion-all focus:scale-103 w-full flex items-center justify-center gap-2';
   GithubBtn.innerHTML = `<img src="/icons/github.svg" class="w-8 h-8" /> GitHub`;
   GithubBtn.addEventListener(('click'), async () => {
-    window.location.href = 'https://localhost:443/auth/github/login';
+    window.location.href = 'https://localhost:4443/auth/github/login';
   })
 
   const GoogleBtn = document.createElement('button');
   GoogleBtn.className = 'mt-10 px-8 py-3 rounded-xl bg-white text-black text-2xl hover:bg-gray-200 duration-300 transtion-all focus:scale-103 w-full flex items-center justify-center gap-2';
   GoogleBtn.innerHTML = `<img src="/icons/google.svg" class="w-8 h-8" /> Google`;
   GoogleBtn.addEventListener(('click'), async () => {
-    window.location.href = 'https://localhost:443/auth/google/login';
+    window.location.href = 'https://localhost:4443/auth/google/login';
   })
 
   SocialLogin.appendChild(GithubBtn);

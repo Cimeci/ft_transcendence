@@ -73,7 +73,6 @@ export function RegisterPage(): HTMLElement {
 	const InputEmail = document.createElement("input");
 	InputEmail.className = "text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103";
 	InputEmail.placeholder = translations[getCurrentLang()].email;
-	InputEmail.maxLength = 20;
 	InputEmail.focus();
 	InputEmail.addEventListener("input", () => {
 		newuser.email = InputEmail.value;

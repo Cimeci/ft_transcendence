@@ -2,7 +2,6 @@ import { getCurrentLang } from "./settings";
 import { translations } from '../i18n';
 import { navigateTo } from '../routes';
 import { userInventory } from "./inventory";
-import { onUserChange } from "../linkUser";
 import { CreateWrappedButton } from "../components/utils";
 import { getUser } from "../linkUser";
 import { t } from "./settings";
@@ -93,7 +92,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 	username.textContent = getUser()?.username || "default";
 	container1.appendChild(username);
 
-	onUserChange(u => { username.textContent = u?.username || "default"; });
+	// onUserChange(u => { username.textContent = u?.username || "default"; });
 
 	const inventory = document.createElement("div");
 	inventory.className = "w-9/10 flex justify-around";
@@ -353,7 +352,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
 
   // 3) Assets (render only)
   const resolveBallPath = () => {
-    const raw = userInventory.ball[0]?.id || '';
+    const raw = '/bar/default_ball.png';
     return raw.startsWith('/') ? raw : '/' + raw;
   };
   let currentBallSrc = resolveBallPath();
@@ -363,7 +362,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
   ballImg.onload = () => { ballImgLoaded = true; };
 
   const resolveBarPath = () => {
-    const raw = userInventory.bar[0]?.src || '';
+    const raw = '/bar/default_bar.png';
     return raw.startsWith('/') ? raw : '/' + raw;
   };
   let currentBarSrc = resolveBarPath();
@@ -373,7 +372,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
   leftBarImg.onload = () => { leftBarImgLoaded = true; };
 
   const resolveRightBarPath = () => {
-    const raw = userInventory.bar[1]?.src || userInventory.bar[0]?.src || '';
+    const raw = '/bar/default_bar.png';
     return raw.startsWith('/') ? raw : '/' + raw;
   };
   let currentRightBarSrc = resolveRightBarPath();
@@ -386,7 +385,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
   const canvas = document.createElement("canvas");
   canvas.width = 1400;
   canvas.height = 800;
-  const bgUrl = userInventory.background[0].id.startsWith('/') ? userInventory.background[0].id : '/' + userInventory.background[0].id;
+  const bgUrl = '/bg/default_bar.png';
   canvas.className = "border-2 w-[70vw] h-[80vh]";
   canvas.style.backgroundImage = `url('${bgUrl}')`;
   canvas.style.backgroundSize = "cover";
@@ -538,7 +537,7 @@ export function PongOnlineGamePage(): HTMLElement {
 	Profile1.className = "flex items-end gap-3"
 
 	const Avatar1 = document.createElement("img");
-	Avatar1.src = "/" + userInventory.avatar[0].id;
+	Avatar1.src = "/avatar/default_avatar.png";
 	Avatar1.className = "border-1 size-15 rounded-lg";
 	Profile1.appendChild(Avatar1);
 
@@ -571,4 +570,4 @@ export function PongOnlineGamePage(): HTMLElement {
 	return mainContainer;
 }
 
-onUserChange(u => { if (u) user1.name = u.username; });
+// onUserChange(u => { if (u) user1.name = u.username; });
