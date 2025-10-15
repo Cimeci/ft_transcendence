@@ -142,9 +142,29 @@ export function ShopPage(): HTMLElement {
     toolbar.appendChild(search);
 
     //! .get WALLET
+    async function getWallet(){
+        const jwt = localStorage.getItem("jwt") || "";
+
+        const response = await fetch('/user/wallet', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            console.error('Erreur:', response.status);
+            return;
+        }
+
+        const data = await response.json();
+        wallet.textContent = data.wallet + " $";
+    }
+
     const wallet = document.createElement("div");
     wallet.className = "ml-auto px-4 py-2 rounded-lg border border-white/40 text-white/90";
-    wallet.textContent = "600 $";
+    getWallet();
     toolbar.appendChild(wallet);
 
     // Panneau scrollable + grille

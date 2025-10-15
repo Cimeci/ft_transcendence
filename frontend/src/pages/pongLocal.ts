@@ -45,8 +45,8 @@ export function PongLocalMenuPage(): HTMLElement {
        	if (!inventory) return;
 
 		console.log("INVENTORY: ", inventory)
-		bar.src = "/" + inventory["paddle_use"]?.[0]?.id;
-		user1.paddle = "/" + inventory["paddle_use"]?.[0]?.id;
+		bar.src = inventory["paddle_use"]?.[0]?.id;
+		user1.paddle = inventory["paddle_use"]?.[0]?.id;
 	}
 	getSetupUser1();
 	
@@ -98,10 +98,10 @@ export function PongLocalMenuPage(): HTMLElement {
        	if (!inventory) return;
 
 		console.log("INVENTORY: ", inventory)
-		ball.src = "/" + inventory["ball_use"]?.[0]?.id;
-		Ball_src = "/" + inventory["ball_use"]?.[0]?.id;
-		bg.src = "/" + inventory["background_use"]?.[0]?.id;
-		Bg_src = "/" + inventory["background_use"]?.[0]?.id;
+		ball.src = inventory["ball_use"]?.[0]?.id;
+		Ball_src = inventory["ball_use"]?.[0]?.id;
+		bg.src = inventory["background_use"]?.[0]?.id;
+		Bg_src = inventory["background_use"]?.[0]?.id;
 	}
 	getSetupUser();
 
@@ -467,7 +467,7 @@ export function PongLocalGamePage(): HTMLElement {
 		const inventory = await getUserInventory();
         if (!inventory) return;
 
-		Avatar1.src = "/" + inventory["avatar_use"]?.[0]?.id;
+		Avatar1.src = inventory["avatar_use"]?.[0]?.id;
 	}
 
 	const Avatar1 = document.createElement("img");

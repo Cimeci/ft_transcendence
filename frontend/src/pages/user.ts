@@ -120,7 +120,7 @@ export function UserPage(): HTMLElement {
 
         const s1b = document.createElement("p");
 	    s1b.className = "text-lg font-semibold";
-	    s1b.textContent = "1956";
+	    s1b.textContent = "err";
 
         s1.appendChild(s1a); s1.appendChild(s1b);
 
@@ -133,7 +133,7 @@ export function UserPage(): HTMLElement {
 
         const s2b = document.createElement("p");
 	    s2b.className = "text-lg font-semibold";
-	    s2b.textContent = "85%";
+	    s2b.textContent = "err";
 
         s2.appendChild(s2a); s2.appendChild(s2b);
 
@@ -146,7 +146,7 @@ export function UserPage(): HTMLElement {
 
         const s3b = document.createElement("p");
 	    s3b.className = "text-lg font-semibold";
-	    s3b.textContent = "25%";
+	    s3b.textContent = "err";
 
         s3.appendChild(s3a); s3.appendChild(s3b);
 
@@ -161,6 +161,7 @@ export function UserPage(): HTMLElement {
         
         const avatar = document.createElement("img");
         avatar.alt = "avatar";
+        avatar.src = "/avatar/default_avatar.png"
         avatar.className = "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-green-500/50";
         avatarWrap.appendChild(avatar)
 
@@ -460,8 +461,16 @@ export function UserPage(): HTMLElement {
         bottom.appendChild(histCard);
  
     (async () => { const u = await GetData(); if (!u) return;
+        console.log('USER: ', u);
         name.textContent = u.username || u.uuid || "unknown";
-        avatar.src = u.avatar || "/avatar/default_avatar.png";
+        avatar.src = u.avatar_use?.[0]?.id;
+        bg.src = u.background_use?.[0]?.id;
+        barImg.src = u.paddle_use?.[0]?.id;
+        ballImg.src = u.ball_use?.[0]?.id;
+        const games_info = u.games;
+        s1b.textContent = games_info ? games_info.lenght : "0";
+        s2b.textContent = u.game_ratio + "%";
+	    s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
         u.is_online == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
     })();
 
