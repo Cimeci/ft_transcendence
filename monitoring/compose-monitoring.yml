@@ -19,10 +19,12 @@ services:
       - monitoring
     build:
       context: ./src/alertmanager
+      args:
+       DISCORD_HOOK_URL: ${DISCORD_HOOK_URL}
     ports:
       - "127.0.0.1:9093:9093"
     environment:
-      - DISCORD_HOOK_URL=${DISCORD_HOOK_URL}
+      - DISCORD_HOOK_URL=${DISCORD_HOOK_URL} ## needded ??
     restart: unless-stopped
 
 

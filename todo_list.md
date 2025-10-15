@@ -3,6 +3,7 @@
 [ ] .dockerignore on all containers
 [ ] .gitignore (no env !!)
 [ ] change all the var from ELK compose (pass only the env var or assign default value)
+[ ] check ARG after FROM statement into ELK DOCKERS
 
 ### Workflows
 [ ] Create `frontend` and `fullstack` Makeffile rule
