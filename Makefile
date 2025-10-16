@@ -5,7 +5,8 @@
 ################################################################################
 ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs kibana-dashboards
 BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket
-# FRONTEND_CONTAINERS	=	
+# FRONTEND_CONTAINERS	=
+MONITOR_CONTAINERS	= 	prometheus alertmanager
 
 ################################################################################
 #	RECIPES																	   #
@@ -25,6 +26,9 @@ back: pre-start
 # 	docker compose up $(FRONTEND_CONTAINERS)
 
 # fullstack: 
+
+monitor:
+	docker compose up --build $(MONITOR_CONTAINERS)
 
 down:
 	docker compose down

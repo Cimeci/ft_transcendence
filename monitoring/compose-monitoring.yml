@@ -11,6 +11,10 @@ services:
       - prometheus-data:/prometheus
     ports:
       - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.retention.size=1GB'
     restart: unless-stopped
 
   alertmanager:
@@ -23,8 +27,8 @@ services:
        DISCORD_HOOK_URL: ${DISCORD_HOOK_URL}
     ports:
       - "127.0.0.1:9093:9093"
-    environment:
-      - DISCORD_HOOK_URL=${DISCORD_HOOK_URL} ## needded ??
+    #environment:
+      #- DISCORD_HOOK_URL=${DISCORD_HOOK_URL} ## needded ??
     restart: unless-stopped
 
 
