@@ -474,26 +474,27 @@ app.patch('/historic', async (request, reply) => {
     const {tournament, game} = request.body;
     if (game){
         const player1 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player1_uuid)
-        const player2 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player2_uuid)
-        
         let player1games = player1.games ? JSON.parse(player1.games) : [];
-        let player2games = player2.games ? JSON.parse(player2.games) : [];
-
-        player2games.push(game);
         player1games.push(game);
-        
         const game1JSON = JSON.stringify(player1games);
-        const game2JSON = JSON.stringify(player2games);
-
         const game_win1 = player1games.filter(g => g.winner === game.player1_uuid).length;
         const game_ratio1 = (game_win1 * 100 / player1games.length).toFixed(2);
-        const game_win2 = player2games.filter(g => g.winner === game.player2_uuid).length;
-        const game_ratio2 = (game_win2 * 100 / player2games.length).toFixed(2);
+        let game2JSON, game_win2, game_ratio2;
 
+        if (game.mode === "online"){
+            const player2 = db.prepare('SELECT games FROM historic where user_uuid = ?').get(game.player2_uuid)
+            let player2games = player2.games ? JSON.parse(player2.games) : [];
+            player2games.push(game);      
+            game2JSON = JSON.stringify(player2games);
+            const game_win2 = player2games.filter(g => g.winner === game.player2_uuid).length;
+            game_ratio2 = (game_win2 * 100 / player2games.length).toFixed(2);
+        }
+        
         try {
             // Mettre à jour la base de données avec les nouveaux tableaux de jeux
             db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game1JSON, Number(game_win1), Number(game_ratio1), game.player1_uuid);
-            db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, Number(game_win2), Number(game_ratio2), game.player2_uuid);
+            if (game.mode === "online")
+                db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, Number(game_win2), Number(game_ratio2), game.player2_uuid);
             request.log.info({
                 event: 'update-historic_attempt'
             }, 'Update Historic Success');

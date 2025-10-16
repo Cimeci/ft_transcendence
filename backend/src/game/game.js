@@ -1,8 +1,10 @@
 import fastify from 'fastify';
 import Database from 'better-sqlite3/lib/database.js';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
+import jwt from '@fastify/jwt';
 import crypto from 'crypto';
 
+dotenv.config();
 
 // Configuration du logger fastify
 // const loggerConfig = {
@@ -21,6 +23,11 @@ import crypto from 'crypto';
 // const app = fastify({ logger: loggerConfig });
 const app = fastify({ logger: true });
 
+await app.register(jwt, {
+  secret: process.env.JWT_SECRET,
+  sign: { expiresIn: '2h' }
+});
+
 const db = new Database('./data/game.sqlite');
 
 const game = `
@@ -32,6 +39,7 @@ const game = `
         player2_uuid TEXT,
         score1 INTEGER DEFAULT 0,
         score2 INTEGER DEFAULT 0,
+        mode TEXT,
         tournament TEXT,
         winner TEXT
     );
@@ -42,11 +50,23 @@ app.addHook('onClose', async (instance) => {
 });
 
 app.post('/game', async (request, reply) => {
-    const { player1, player1_uuid, player2, player2_uuid, tournament } = request.body;
-    const uuid = crypto.randomUUID();
-
+    let player1_uuid;
     try {
-        db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, tournament || null, null);
+        player1_uuid = await checkToken(request);
+    } catch {
+        request.log.warn({
+            event: 'new-game_attempt',
+        }, 'New Game Unauthorized: invalid jwt token');
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+    const { player1, player2, player2_uuid, mode ,tournament } = request.body;
+    const uuid = crypto.randomUUID();
+    try {
+        if (mode === "local"){
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null);
+            console.log("local game created");}
+        else
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
         request.log.info({
             event: 'new-game_attempt'
         }, 'New Game Sucess: Game created');
@@ -67,8 +87,17 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     const { gameId } = request.params;
     const { score1, score2, winner } = request.body;
 
+    const data = db.prepare('SELECT player1_uuid, player2_uuid FROM game WHERE uuid = ?').get(gameId);
+    if (!data) {
+        request.log.warn({
+            event: 'update-game_attempt'
+        }, 'Update Game Failed: Game not found');
+        return reply.code(404).send({ error: 'Game not found' });
+    }
+    console.log("DATA:", data);
+    let winner_uuid = score1 === 5 ? data.player2_uuid : data.player1_uuid || null;;
     try {
-        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner, gameId);
+        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
 
         // faire les matchs dans l'ordre avec ce code
         const game = db.prepare('SELECT * FROM game WHERE uuid = ?').get(gameId);
@@ -161,12 +190,18 @@ app.delete('/delete-game', async(request, reply) => {
     }
 })
 
-// Définis une route pour traiter les messages
-app.post('/handle-message', async (req, reply) => {
-  console.log('Message reçu par Service B :', req.body);
-  // Traite le message ici
-  const response = { message: 'Réponse de Service B', data: req.body };
-  reply.send(response);
-});
+// Middleware pour vérifier le JWT et récupérer le uuid
+async function checkToken(request) {
+    const authHeader = request.headers.authorization;
+    console.log('Auth Header:', authHeader);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
+    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    console.log('Payload:', payload.uuid);
+    return payload.uuid;
+}
 
 app.listen({ port: 4000, host: '0.0.0.0' })
