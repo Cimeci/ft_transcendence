@@ -116,11 +116,11 @@ function creationInventory(user_uuid) {
     ]);
 
     const paddle = JSON.stringify([
-        { src: '/playbar/default_bar.png' ,id: 'bar/default_bar.png', name: 'default bar', type: 'bar', price: 0, usable: true},
-        { src: '/playbar/ice_bar.png', id: 'bar/ice_bar.png', name: 'ice bar', type: 'bar', price: 250, usable: false},
-        { src: '/playbar/fire_bar.png', id: 'bar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250, usable: false},
-        { src: '/playbar/amethyst_bar.png', id: 'bar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250, usable: false},
-        { src: '/playbar/matrix_bar.png', id: 'bar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+        { id: '/playbar/default_bar.png' , name: 'default bar', type: 'bar', price: 0, usable: true},
+        { id: '/playbar/ice_bar.png', name: 'ice bar', type: 'bar', price: 250, usable: false},
+        { id: '/playbar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250, usable: false},
+        { id: '/playbar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250, usable: false},
+        { id: '/playbar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
 
     ]);
 
