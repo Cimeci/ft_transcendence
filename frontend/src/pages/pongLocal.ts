@@ -140,6 +140,7 @@ export function PongLocalMenuPage(): HTMLElement {
 
 let Bg_src = "/bg/default_bg.png";
 let Ball_src = "/ball/default_ball.png";
+let gameId: string | null = null;
 
 export interface User {
 	name: string;
@@ -328,7 +329,17 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	let overlayTriggered = false;
 
 	function update() {
-		if (isGameOver) return;
+		if (isGameOver){
+			// try
+			// {
+			// 	const resp = await fetch(`game/`, {
+			// 		method: 'POST',
+			// 		headers: { 'Content-Type': 'application/json' },
+			// 		body: JSON.stringify({
+			// });
+			// fetch('')
+			return;
+		}
 		if (keys["Escape"]) return;
 		if (keys["q"]) user1.score = 5;
 		if (keys["e"]) {ball.speedX *= 1.1; ball.speedY *= 1.1;}
@@ -360,6 +371,30 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 
 		if (user1.score === 5 || user2.score === 5) {
 			isGameOver = true;
+			(async () => {
+				console.log("GAMEID", gameId);
+				if (gameId) {
+					const token = localStorage.getItem("jwt") || "";
+					try {
+						await fetch(`/game/update-game/${encodeURIComponent(gameId)}`, {
+							method: 'PATCH',
+							headers: { 
+								'Content-Type': 'application/json',
+								'Authorization': `Bearer ${token}`  // Assurez-vous que le token est stocké dans le localStorage
+							},
+							body: JSON.stringify({
+								winner: (user1.score === 5) ? user1.name : user2.name,
+								score1: `${user1.score}`,
+								score2: `${user2.score}`
+							})
+						});
+					} catch(e){
+						console.error("Erreur lors de la mise à jour du jeu :", e);
+						return;
+					};
+				}
+			})();
+			// Annule un éventuel timer de relance
 			if (launchTimeout !== null) {
 				clearTimeout(launchTimeout);
 				launchTimeout = null;
@@ -429,6 +464,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 
 	function loop() {
 		if (!isGameOver) {
+
 			update();
 			draw();
 			requestAnimationFrame(loop);
@@ -502,6 +538,30 @@ export function PongLocalGamePage(): HTMLElement {
 	const canvas = LocalPong(Score1, Score2);
 	mainContainer.appendChild(canvas);
 
+	const token = localStorage.getItem("jwt") || "";
+	(async () => {
+		try {
+			const resp = await fetch('/game/game', {
+				method: 'POST',
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`  // Assurez-vous que le token est stocké dans le localStorage
+				},
+				body: JSON.stringify({
+					player1: user1.name,
+					player2: user2.name,
+					mode: "local"
+				})
+			});
+			const data = await resp.json();
+			gameId = data.uuid;
+			console.log("GAME CREATED with ID:", gameId);
+	} catch(e){
+		console.error("Erreur lors de la création du jeu :", e);
+		navigateTo("/pong/local/menu");
+		return;
+	};
+	})();
 	return mainContainer;
 }
 

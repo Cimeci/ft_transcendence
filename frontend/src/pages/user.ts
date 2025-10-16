@@ -470,8 +470,10 @@ export function UserPage(): HTMLElement {
         bg.src = u.background_use?.[0]?.id;
         barImg.src = u.paddle_use?.[0]?.id;
         ballImg.src = u.ball_use?.[0]?.id;
-        const games_info = u.games;
-        s1b.textContent = games_info ? games_info.lenght : "0";
+        const games_info = JSON.parse(u.games);
+        console.log("GAMES_INFO:", games_info.length);
+        s1b.textContent = games_info ? games_info.length : "0";
+        console.log("GAME RATIO:", u.game_ratio);
         s2b.textContent = u.game_ratio + "%";
 	    s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
         u.is_online == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
