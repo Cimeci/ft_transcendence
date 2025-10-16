@@ -296,6 +296,21 @@ export function UserPage(): HTMLElement {
         profileContainer.appendChild(bottom);
 
         // Inventory card (left)
+        function inventory(items: any[], grid: HTMLElement) {
+            items.forEach(item => {
+                if (item.usable === true){
+                    const tile = document.createElement("div");
+                    tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
+                    const img = document.createElement("img");
+                    img.src = item.id;
+                    img.alt = item.name;
+                    img.className = "max-w-full h-16 sm:h-20 object-contain drop-shadow";
+                    tile.appendChild(img);
+                    grid.appendChild(tile);
+                }
+            })
+        }
+
         const invCard = document.createElement("section");
         invCard.className = "flex flex-col bg-white/10 backdrop-blur border border-white/10 rounded-2xl shadow-xl min-h-[45vh] max-h-[60vh]";
         
@@ -312,31 +327,19 @@ export function UserPage(): HTMLElement {
 
         const barsGrid = document.createElement("div"); //! ALL BARS USER LOOK
         barsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6";
-        // (Array.isArray(userInventory.bar) ? userInventory.bar.slice(1) : []).forEach((it) => {
-        //     const tile = document.createElement("div");
-        //     tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
-        //     const img = document.createElement("img");
-        //     img.src = it.id;
-        //     img.alt = it.name;
-        //     img.className = "max-w-full h-16 sm:h-20 object-contain drop-shadow";
-        //     tile.appendChild(img);
-        //     barsGrid.appendChild(tile);
-        // });
+        let allBars = [{"id":"/playbar/default_bar.png","name":"default bar","type":"bar","price":0,"usable":true}]; // replace by user inventory bars
         invBody.appendChild(barsGrid);
 
         const ballsGrid = document.createElement("div"); //! ALL BALLS USER LOOK
-        ballsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4";
-        // (Array.isArray(userInventory.ball) ? userInventory.ball.slice(1) : []).forEach((it) => {
-        //    const tile = document.createElement("div");
-        //    tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
-        //    const img = document.createElement("img");
-        //    img.src = it.id;
-        //    img.alt = it.name;
-        //    img.className = "w-10 h-10 sm:w-12 sm:h-12 object-contain max-w-full drop-shadow";
-        //    tile.appendChild(img);
-        //    ballsGrid.appendChild(tile);
-        // });
+        ballsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6";
+        let allBalls = [{"src":"/ball/default_ball.png","id":"ball/default_ball.png","name":"default ball","type":"ball","price":0,"usable":true}]; // replace by user inventory balls
         invBody.appendChild(ballsGrid);
+        
+        const backgroundGrid = document.createElement("div"); //! ALL BACKGROUNDS USER LOOK
+        backgroundGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4";
+        let allBackgrounds = [{"src":"/bg/default_bg.png","id":"bg/default_bg.png","name":"default bg","type":"background","price":0,"usable":true}]; // replace by user inventory backgrounds
+        invBody.appendChild(backgroundGrid);
+        
         invCard.appendChild(invHeader);
         invCard.appendChild(invBody);
         bottom.appendChild(invCard);
@@ -472,7 +475,13 @@ export function UserPage(): HTMLElement {
         s2b.textContent = u.game_ratio + "%";
 	    s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
         u.is_online == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
-    })();
+        allBars = JSON.parse(u.paddle);
+        allBalls = JSON.parse(u.ball);
+        allBackgrounds = JSON.parse(u.background);
+        inventory(allBars, barsGrid);
+        inventory(allBalls, ballsGrid);
+        inventory(allBackgrounds, backgroundGrid);
+    })()
 
      main.appendChild(profileContainer);
  
