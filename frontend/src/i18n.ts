@@ -224,7 +224,7 @@ export const translations = {
 		// PongPage
 		play: "Jugar",
 		local: "Local",
-		online: "Online",
+		online: "En línea",
 		invite: "Invitar",
 		// Tournament
 		player: "Jugadore",

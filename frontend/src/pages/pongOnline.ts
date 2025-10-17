@@ -39,7 +39,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 	btnRightBar.appendChild(iconRightBar);
 
 	const lstFriends = document.createElement("ul");
-	lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
+	lstFriends.className = "glass-blur w-9/10 h-9/10 overflow-y-auto divide-y";
 	rightContainer.appendChild(lstFriends);
 
 
@@ -55,6 +55,8 @@ export function PongOnlineMenuPage(): HTMLElement {
 	  	  	const me = getUser()?.uuid;
 			const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
 
+			console.log("Data", data);
+			console.log("Rows", rows);
 			const list = await Promise.all(rows.map(async (r) => {
 	  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
 	  	  	  	try {
@@ -63,6 +65,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 	  	  	  	  	});
 	  	  	  	  	if (r2.ok) {
 	  	  	  	  	  	const { user } = await r2.json();
+						console.log("USER", user);
 	  	  	  	  	  	return {
 	  	  	  	  	  	  	id: other,
 	  	  	  	  	  	  	username: user.username || other,
@@ -78,41 +81,42 @@ export function PongOnlineMenuPage(): HTMLElement {
 	  	  	console.error("load friendship failed", e);
 	  	  	friendData = [];
 	  	}
-	})();
 
-	friendData.forEach(e => {
-		const li: HTMLLIElement = document.createElement("li");
-		li.className = "flex justify-between items-center p-2 w-full min-h-12"
-
-		const profil = document.createElement("div");{
-		profil.className = "flex gap-2 justify-center items-center";
-		li.appendChild(profil);
-
-		const icon = document.createElement("img");
-		icon.src = e.avatar;
-		icon.className = "w-8 h-8 rounded-full object-cover";
-		profil.appendChild(icon);
-
-		const name = document.createElement("p");
-		name.className = "text-base";
-		name.textContent = e.username;
-		profil.appendChild(name);
-		}
-
-		const btn = document.createElement("button");
-		btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
-		btn.textContent = t.invite;
-		btn.addEventListener("click", () => {
-			window.showInvite({
-				username: e.username || "default",
-				id: e.id.split("-")[0] || t.err_id,
-				avatar: e.avatar || "/avatar/default_avatar.png",
-				message: "Invitation to play against " + getUser()?.username || "default",
+		console.log("FRIEND_DATA", friendData);
+		friendData.forEach(e => {
+			const li: HTMLLIElement = document.createElement("li");
+			li.className = "flex justify-between items-center p-2 w-full min-h-12"
+		
+			const profil = document.createElement("div");{
+			profil.className = "flex gap-2 justify-center items-center";
+			li.appendChild(profil);
+			
+			const icon = document.createElement("img");
+			icon.src = e.avatar;
+			icon.className = "w-8 h-8 rounded-full object-cover";
+			profil.appendChild(icon);
+			
+			const name = document.createElement("p");
+			name.className = "text-base";
+			name.textContent = e.username;
+			profil.appendChild(name);
+			}
+		
+			const btn = document.createElement("button");
+			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
+			btn.textContent = t.invite;
+			btn.addEventListener("click", () => {
+				window.showInvite({
+					username: e.username || "default",
+					id: e.id.split("-")[0] || t.err_id,
+					avatar: e.avatar || "/avatar/default_avatar.png",
+					message: "Invitation to play against " + getUser()?.username || "default",
+				});
 			});
+			li.appendChild(btn);
+			lstFriends.appendChild(li);
 		});
-		li.appendChild(btn);
-		lstFriends.appendChild(li);
-	});
+	})();
 	}
 
 	const TitlePong = document.createElement("h1");

@@ -112,8 +112,8 @@ export function PongLocalMenuPage(): HTMLElement {
 	mainContainer.appendChild(container3);
 
 	const username = document.createElement("input");
-	username.className = "w-9/10 glass-blur text-xl px-1 py-1";
-	username.textContent = "second Username";
+	username.className = "w-9/10 glass-blur text-xl px-2 py-1";
+	username.placeholder = "Insert second username"; //!i18n
 	username.addEventListener(("input"), () => {
 		user2.name = username.value;
 	})
