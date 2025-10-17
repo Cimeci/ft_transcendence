@@ -361,7 +361,7 @@ export function UserPage(): HTMLElement {
         //! Données démo – remplace par tes données (DB)
         type TournamentRow = { name: string; place: string };
         type ClassicRow = { opponent: string; score: string };
-        const tournaments: TournamentRow[] = [
+        const tournament: TournamentRow[] = [
             { name: "ilan tournament", place: "first" },
             { name: "test tournament", place: "third" },
             { name: "test tournament", place: "5" },
@@ -409,19 +409,35 @@ export function UserPage(): HTMLElement {
 
         const tournList = document.createElement("ul");
         tournList.className = "flex-1 divide-y divide-white/10 overflow-y-auto overflow-x-hidden min-h-0 pr-1 scroll_bar";
-        tournaments.forEach((row) => {
-            const li = document.createElement("li");
-            li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
-            const name = document.createElement("span");
-            name.className = "truncate min-w-0";
-            name.textContent = row.name;
-            const place = document.createElement("span");
-            place.className = "text-right text-white/70";
-            place.textContent = row.place;
-            li.appendChild(name);
-            li.appendChild(place);
-            tournList.appendChild(li);
-        });
+        let tournaments = []; // replace by user tournaments
+        function Tournaments(Tournaments: any[], List: HTMLElement, uuid: string) {
+            Tournaments.forEach((tournament) => {
+                const li = document.createElement("li");
+                li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
+                const name = document.createElement("span");
+                name.className = "truncate min-w-0";
+                name.textContent = tournament.name;
+                const place = document.createElement("span");
+                place.className = "text-right text-white/70";
+                place.textContent = tournament.place;
+                li.appendChild(name);
+                li.appendChild(place);
+                List.appendChild(li);
+            });
+        }
+            // tournament.forEach((row) => {
+            //     const li = document.createElement("li");
+            //     li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
+            //     const name = document.createElement("span");
+            //     name.className = "truncate min-w-0";
+            //     name.textContent = row.name;
+            //     const place = document.createElement("span");
+            //     place.className = "text-right text-white/70";
+            //     place.textContent = row.place;
+            //     li.appendChild(name);
+            //     li.appendChild(place);
+            //     tournList.appendChild(li);
+            // });
         tournCol.appendChild(tournHead);
         tournCol.appendChild(tournList);
 
@@ -438,19 +454,25 @@ export function UserPage(): HTMLElement {
 
         const classList = document.createElement("ul");
         classList.className = "flex-1 divide-y divide-white/10 overflow-y-auto overflow-x-hidden min-h-0 pr-1 scroll_bar";
-        classics.forEach((row) => {
-            const li = document.createElement("li");
-            li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
-            const vs = document.createElement("span");
-            vs.className = "truncate min-w-0";
-            vs.textContent = `vs ${row.opponent}`;
-            const score = document.createElement("span");
-            score.className = "text-right text-white/70";
-            score.textContent = row.score;
-            li.appendChild(vs);
-            li.appendChild(score);
-            classList.appendChild(li);
-        });
+        let games = []; // replace by user classic games
+        function Games(Games: any[], List: HTMLElement, uuid: string) {
+            Games.forEach((game) => {
+                const li = document.createElement("li");
+                li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
+                const vs = document.createElement("span");
+                vs.className = "truncate min-w-0";
+                if (game.player1_uuid === uuid)
+                    vs.textContent = `vs ${game.player2}`;
+                else
+                    vs.textContent = `vs ${game.player1}`;
+                const score = document.createElement("span");
+                score.className = "text-right text-white/70";
+                score.textContent = `${game.score1} - ${game.score2}`;
+                li.appendChild(vs);
+                li.appendChild(score);
+                List.appendChild(li);
+            });
+        }
 
         classCol.appendChild(classHead);
         classCol.appendChild(classList);
@@ -471,9 +493,7 @@ export function UserPage(): HTMLElement {
         barImg.src = u.paddle_use?.[0]?.id;
         ballImg.src = u.ball_use?.[0]?.id;
         const games_info = JSON.parse(u.games);
-        console.log("GAMES_INFO:", games_info.length);
         s1b.textContent = games_info ? games_info.length : "0";
-        console.log("GAME RATIO:", u.game_ratio);
         s2b.textContent = u.game_ratio + "%";
 	    s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
         u.is_online == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
@@ -483,6 +503,12 @@ export function UserPage(): HTMLElement {
         inventory(allBars, barsGrid);
         inventory(allBalls, ballsGrid);
         inventory(allBackgrounds, backgroundGrid);
+        games = JSON.parse(u.games);
+        if (games)
+            Games(games, classList, u.uuid);
+        tournaments = JSON.parse(u.tournament);
+        if (tournaments)
+            Tournaments(tournaments, tournList, u.uuid);
     })()
 
      main.appendChild(profileContainer);

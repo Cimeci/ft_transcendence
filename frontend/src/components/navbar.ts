@@ -40,11 +40,12 @@ interface InventoryResponse {
 //! le changement en OFFLINE ne fonctionne pas
 const setUserOnline = async (uuid: string, online: string) => {
 	console.log("USER ONLINE", uuid, online);
-  	const response = await fetch('/online', {
+	const res = await fetch('/user/env', { method: 'GET' });
+  	const response = await fetch('/user/online', {
     	method: 'PATCH',
     	headers: {
       		'Content-Type': 'application/json',
-      		'x-internal-key': 'ta_clef_secrète_ici'
+			'x-internal-key': (await res.json()).JWT_SECRET || ""
     	},
     	body: JSON.stringify({ uuid, online })
   	});
