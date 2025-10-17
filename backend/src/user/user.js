@@ -936,6 +936,11 @@ app.delete('/delete-user', async(request, reply) => {
     }
 })
 
+app.get('/env', async(request, reply) => {
+    console.log('JWT_SECRET:', process.env.JWT_SECRET);
+    return reply.send({ JWT_SECRET: process.env.JWT_SECRET });
+});
+
 // Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization;
