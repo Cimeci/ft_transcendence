@@ -225,7 +225,7 @@ export function InventoryPage(): HTMLElement {
                     cell.type="button";
                     cell.disabled = isEquipped || !isUsable;
                     cell.className = [
-                        "relative group rounded-lg border border-white/15 transition p-1 flex flex-col items-center",
+                        "relative group rounded-lg border border-white/15 transition p-1 flex flex-col items-center justify-between",
                         isEquipped ? "bg-green-900/40" : "bg-black/40 hover:bg-black/60",
                         // !isUsable && !isEquipped ? "opacity-50 cursor-not-allowed" : ""
                     ].join(" ");
@@ -233,7 +233,11 @@ export function InventoryPage(): HTMLElement {
                     const img = document.createElement("img");
                     img.src = imgPath(item.id);
                     img.alt = item.name;
-                    img.className = "w-full aspect-square object-cover rounded-md";
+                    console.log("BAR", item.id);
+                    if (!item.id.search("/playbar/"))
+                        img.className="rounded-xl bg-white/5 border border-white/10 flex items-center m-auto h-40"
+                    else
+                        img.className = "w-full aspect-square object-cover rounded-md";
                     const cap = document.createElement("span");
                     cap.textContent = item.name;
                     cap.className = "w-full mt-1 text-[10px] leading-tight text-white/80 text-center truncate";

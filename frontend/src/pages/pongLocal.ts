@@ -32,7 +32,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	container1.appendChild(inventory);
 
 	const barContainer = document.createElement("div");
-		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		barContainer.className = "glass-blur h-[18rem] w-[18rem] p-1";
 		inventory.appendChild(barContainer);
 
 		const bar = document.createElement("img");
@@ -64,7 +64,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	container2.appendChild(GlobalValue);
 
 	const bgContainer = document.createElement("div");
-		bgContainer.className = "glass-blur h-[14rem] w-[14rem] flex flex-col gap-2 p-1";
+		bgContainer.className = "glass-blur h-[20rem] w-[20rem] flex flex-col gap-2 p-1";
 		GlobalValue.appendChild(bgContainer);
 		
 		const bgTxt = document.createElement("p");
@@ -77,7 +77,7 @@ export function PongLocalMenuPage(): HTMLElement {
 		bgContainer.appendChild(bg);
 
 	const ballContainer = document.createElement("div");
-		ballContainer.className = "glass-blur h-[14rem] w-[14rem] flex flex-col gap-2 p-1";
+		ballContainer.className = "glass-blur h-[20rem] w-[20rem] flex flex-col gap-2 p-1";
 		GlobalValue.appendChild(ballContainer);
 		
 		const ballTxt = document.createElement("p");
@@ -124,7 +124,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	container3.appendChild(inventory);
 
 	const barContainer = document.createElement("div");{
-		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		barContainer.className = "glass-blur h-[18rem] w-[18rem] p-1";
 		inventory.appendChild(barContainer);
 		
 		const bar = document.createElement("img");
@@ -201,14 +201,6 @@ export function PongLocalOverlayPage(): HTMLElement {
 			navigateTo("/pong/local/menu");
 		}, 1000);
 	});
-	setTimeout(() => {
-		overlay.classList.add("fade-out");
-		setTimeout(() => {
-			user1.score = 0;
-			user2.score = 0;
-			navigateTo("/pong/local/menu");
-		}, 1000);
-	}, 5000);
 
 	BackBtnWrapper.appendChild(BackBtn);
 	BackContainer.appendChild(BackBtnWrapper);

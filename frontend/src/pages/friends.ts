@@ -71,7 +71,7 @@ export function FriendsPage(): HTMLElement {
 			if (!inventory) return;
 		
 			console.log("INVENTORY: ", inventory)
-			imgProfile.src = "/" + inventory["avatar_use"]?.[0]?.id;
+			imgProfile.src = inventory["avatar_use"]?.[0]?.id;
 		}
 		getSetupUser();
 

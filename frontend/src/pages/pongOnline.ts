@@ -278,14 +278,6 @@ export function PongOnlineOverlayPage(): HTMLElement {
 			navigateTo("/pong/menu");
 		}, 1000);
 	});
-	setTimeout(() => {
-		overlay.classList.add("fade-out");
-		setTimeout(() => {
-			user1.score = 0;
-			user2.score = 0;
-			navigateTo("/pong/menu");
-		}, 1000);
-	}, 5000);
 
 	BackBtnWrapper.appendChild(BackBtn);
 	BackContainer.appendChild(BackBtnWrapper);

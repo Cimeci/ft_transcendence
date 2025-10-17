@@ -503,11 +503,11 @@ export function PongTournamentPageHost(): HTMLElement {
 
 	const rightContainer = document.createElement("div");
 	rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
-	rightContainer.classList.add("hidden");
+	// rightContainer.classList.add("hidden");
 	mainContainer.appendChild(rightContainer);
 
 	const btnRightBar = document.createElement("button");
-	btnRightBar.className = "top-5 right-5 w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
+	btnRightBar.className = "top-5 right-[calc(15%+1.25rem)] w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
 	btnRightBar.onclick = () => {
 		if (rightContainer.classList.contains("hidden")) {
 			btnRightBar.classList.remove("right-5");
