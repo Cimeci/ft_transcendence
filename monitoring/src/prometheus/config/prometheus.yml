@@ -32,7 +32,7 @@ scrape_configs:
       #- targets: ['cadviser:8080']
     #metrics_path: '/metrics'
 
-  #- job_name: 'elasticsearch'
-    #static_configs:
-      #- targets: ['elasticsearch-exporter:9114']
-    #metrics_path: '/metrics'
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['es_exporter:9114']
+    metrics_path: '/metrics'
