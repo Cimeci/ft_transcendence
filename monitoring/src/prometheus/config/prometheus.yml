@@ -16,7 +16,8 @@ alerting:
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090'] 
+      - targets: ['localhost:9090']
+
   - job_name: 'microservices'
     static_configs:
       - targets:
@@ -27,10 +28,10 @@ scrape_configs:
         - 'websocket:4000'
     metrics_path: '/metrics'
 
-  #- job_name: 'cadvisor'
-    #static_configs:
-      #- targets: ['cadviser:8080']
-    #metrics_path: '/metrics'
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metrics_path: '/metrics'
 
   - job_name: 'filebeat-logstash'
     static_configs:

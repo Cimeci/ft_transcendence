@@ -5,13 +5,12 @@ services:
     networks:
       - monitoring
       - backend
-      - elk
     build:
       context: ./src/prometheus
     volumes:
       - prometheus-data:/prometheus
     ports:
-      - "9090:9090"
+      - "9090:9090" # <- Close it when grafana is set
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=7d'
@@ -27,7 +26,7 @@ services:
       args:
        DISCORD_HOOK_URL: ${DISCORD_HOOK_URL}
     ports:
-      - "127.0.0.1:9093:9093"
+      - "127.0.0.1:9093:9093" # <- Close when debug is over (just PORTS: 9093 should be ok)
     restart: unless-stopped
 
   #grafana:
@@ -36,11 +35,20 @@ services:
       #- monitoring
     #restart: unless-stopped
 
-  #cadvisor:
-    #container_name: monitor_cadvisor
-    #network:
-      #- monitoring
-    #restart: unless-stopped
+  cadvisor:
+    container_name: monitor_cadvisor
+    networks:
+      - monitoring
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    expose:
+      - 8080
+    restart: unless-stopped
 
   es_exporter:
     container_name: monitor_es_exporter
@@ -70,10 +78,10 @@ services:
     depends_on:
       logstash:
         condition: service_healthy
+      filebeat:
+        condition: service_started
     image: telegraf:1.36.2
     volumes:
       - ./src/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
     restart: unless-stopped
-
-  #kibana_exporter:
 
