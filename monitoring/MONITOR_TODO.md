@@ -7,7 +7,7 @@
 - [] Add hook on gateway to prevent `http://localhost:4443/auth/metrics` exposition
 
 ### Completing setup
-- [] Prometheus configuration
+- [x] Prometheus configuration
 - [] Grafana configuration
 - [] Creating dashboards .json
 - [x] Altermanager
@@ -21,11 +21,13 @@
 - [] nginx-exporter if reverseproxy
 - [] databases metrics
 - [] Remove ports from prometheus container
-- [] check if auto-mnotoring prom is not a secured issue (`localhost:900`)
-- [] Monitor ELK as well
+- [] check if auto-monitoring prometheus is not a secured issue (`localhost:9000`)
+- [x] Monitor ELK as well
 - [] monitor front as well
 - [] Check https conenction (prom, alert, grafana)
 - [] Setup specific network to prometheus exporter
+- [] Check if telegraf is scrapping the good metrics (test in production)
+
 
 ---
 ### MONITORING DOCUMENTATION
@@ -37,6 +39,9 @@ await app.register(fastifyMetrics, {
 
 ```
 Ainsi on expose les metrics de chaque service sur une route et Prometheus va pouvoir scrapper ces données en faisant des requetes HTTP GET vers la route. On ne passe pas par le Gateway pour ne pas avoir de latence supplémentaire.
+
+En production, ila stack ELK serait surveillé soit via l'écosystème Elastic natif (Metricbeat + Stack Monitoring). Afin de travailler avec Prometheus commme le demandait e suejt j'ai utilsé l'exporter elasticsearch maintenu par la communatué prometheus et cité dans leur documentation, en complément de Telegraf(Filebeat et Logstash. Ce collecteur très mature et largement utilisé en entreprise. Il supporte nativement Logstash et Filebeat et expose les métriques pour Prometheus."
+
 #### Prometheus
 
 #### Data retention and storage strategies

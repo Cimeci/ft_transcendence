@@ -62,7 +62,18 @@ services:
       - 9114
     restart: unless-stopped
 
-  #logstash_exporter:
+  telegraf:
+    container_name: monitor_telegraf
+    networks:
+      - monitoring
+      - elk
+    depends_on:
+      logstash:
+        condition: service_healthy
+    image: telegraf:1.36.2
+    volumes:
+      - ./src/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: unless-stopped
 
   #kibana_exporter:
 

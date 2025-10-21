@@ -32,6 +32,10 @@ scrape_configs:
       #- targets: ['cadviser:8080']
     #metrics_path: '/metrics'
 
+  - job_name: 'filebeat-logstash'
+    static_configs:
+      - targets: ['telegraf:9273']
+
   - job_name: 'elasticsearch'
     static_configs:
       - targets: ['es_exporter:9114']
