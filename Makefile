@@ -6,14 +6,14 @@
 ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs kibana-dashboards
 BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket
 # FRONTEND_CONTAINERS	=
-MONITOR_CONTAINERS	= 	prometheus alertmanager
+MONITOR_CONTAINERS	= 	prometheus alertmanager cadvisor es_exporter telegraf
 
 ################################################################################
 #	RECIPES																	   #
 ################################################################################
 all: up
 
-up:
+up: prom-crypt
 	docker compose up
 
 elk: pre-start
@@ -22,12 +22,8 @@ elk: pre-start
 back: pre-start
 	docker compose up $(BACKEND_CONTAINERS)
 
-# front: back
-# 	docker compose up $(FRONTEND_CONTAINERS)
 
-# fullstack: 
-
-monitor:
+monitor: prom-crypt
 	docker compose up --build $(MONITOR_CONTAINERS)
 
 down:
@@ -47,6 +43,10 @@ build:
 
 status:
 	docker ps
+
+prom-crypt:
+	python3 ./monitoring/generate_hash.py
+
 
 pre-start:
 	docker compose up --no-start

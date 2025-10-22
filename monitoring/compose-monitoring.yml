@@ -1,5 +1,7 @@
 services:
 
+  
+
   prometheus:
     container_name: monitor_prometheus
     networks:
@@ -7,12 +9,17 @@ services:
       - backend
     build:
       context: ./src/prometheus
+      args:
+        PROM_PASSWORD_HASH: ${PROM_PASSWORD_HASH}
     volumes:
       - prometheus-data:/prometheus
+    environment:
+      - PROM_PASSWORD_HASH=${PROM_PASSWORD_HASH}
     ports:
       - "9090:9090" # <- Close it when grafana is set
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.config.file=/etc/prometheus/web.yml'
       - '--storage.tsdb.retention.time=7d'
       - '--storage.tsdb.retention.size=1GB'
     restart: unless-stopped

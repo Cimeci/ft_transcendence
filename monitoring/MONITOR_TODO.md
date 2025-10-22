@@ -49,6 +49,9 @@ En production, la stack ELK serait plutot surveillée via l'écosystème Elastic
 
 Ici on ajoute une serveillance de Telegraf lui meme dans les metrics car on est sur une petite architecture. Une sureveillance du container sera necessaire et en cas de trop de ressources requises, on pourra mettre en place une resilience et un buffer pour prévenir les pertes de metrics en cas de crash.
 
+
+Comme nous utilisons Sqlite comme database pour simplifier le stockage, il n'y a pas de serveur à surveiller ou interroger. Monitorer notre DB avec des exporters customs risqueait de: alourdir le code du backend, mais surtout de bloquer le fichier de DB à chaque inspection du monitoring. Ainsi nous aurions obtenu peu de metrics (car espacées dans le temps) tout en augmentant le nombre de requetes sur la DB.
+
 #### Data retention and storage strategies
 Config simple, car tournera peut de temps (6GB dispo pour tous les services) évite de saturer docker. Prometheus supprimera les blocs les plus anciens du TSBD pour atteindre 1GB ou e pas conserver de metrics qui datent de plus de 7 jours. La persistence du volume docker en local suffit à gérer la persistence de données en cas de relance de services. Pour ce projet étudiant qui tournera quqleues heures en corrections on ne fera pas de snapshots.
 La compression du WAL est de son côté automatiquement enable sur les versions post 2.20.0, et permet de compresser le journal d'écriture et de le portéger en cas de crash de prometheus. 
@@ -57,7 +60,7 @@ La compression du WAL est de son côté automatiquement enable sur les versions 
 #### Alertmanager
 Stocke les alertes et les envoit vers discord via l webhook. Gère le https tout seul. Il est ici exposé en local 127.0.0.1:9093:9093 pour monitorer les alertes
 
-Comme alertmanager est en busybox il ne gère pas les ${VAR} donc nous avons du créer un Dockerfile custom qui avec alpine et sh fait une substitution des variables dans le fichier. Anisi notre webhook peut etre spécifié dans un .env et rester en privé.
+Comme alertmanager et prometheus sont en busybox il ne gère pas les ${VAR} donc nous avons du créer un Dockerfile custom qui avec alpine et sh fait une substitution des variables dans le fichier. Anisi notre webhook et notre mdp encrypté peuvent etre spécifiés dans un .env et rester en privé.
 Sur des grosses prods, des outils comme kubernetees secrets sont utilisés.
 
 #### Grafana
@@ -72,3 +75,4 @@ Sur des grosses prods, des outils comme kubernetees secrets sont utilisés.
 - [Official Telemetry Documentation](https://github.com/influxdata/telegraf/tree/master)
 - [Official Elasticsearch-exporter Documentation](https://github.com/prometheus-community/elasticsearch_exporter)
 - [Official CadvisorDocumentation](https://github.com/google/cadvisor)
+- [Official Grafana Documentation](https://grafana.com/docs/grafana/latest/)
