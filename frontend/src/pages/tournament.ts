@@ -1,10 +1,9 @@
 import { getCurrentLang, t } from "./settings";
 import { translations } from "../i18n";
-import { CreateWrappedButton } from "../components/utils";
+import { CreateWrappedButton, CreateSlider } from "../components/utils";
 import { createInputWithEye, togglePassword } from "./register"; 
 import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
-import { CreateSlider } from "../components/utils";
 import { getUser } from "../linkUser";
 import type { Friend } from "./friends";
 
@@ -16,9 +15,9 @@ export interface Tournament {
   maxPlayers: number;
   activePlayers: number;
   visibility: TournamentVisibility;
-  password?: string; // only in private
-  players?: string[];  // liste courante des joueurs
-  started?: boolean;   // état démarré
+  password?: string;
+  players?: string[];
+  started?: boolean;
 }
 
 export const tournamentList: Tournament[] = [];
@@ -30,7 +29,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 	const Title = document.createElement("h1");
 	Title.className = "absolute tracking-widest text-6xl neon-matrix top-25";
-	Title.textContent = translations[getCurrentLang()].tournament;
+	Title.textContent = t.tournament;
 	mainContainer.appendChild(Title);
 
 	const TournamentContainer = document.createElement("div");
@@ -41,20 +40,20 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 	const HostTitle = document.createElement("h2");
 	HostTitle.className = "top-2 neon-matrix";
-	HostTitle.textContent = translations[getCurrentLang()].host;
+	HostTitle.textContent = t.host;
 	HostContainer.appendChild(HostTitle);
 
-	HostContainer.appendChild(CreateSlider(nb_players, translations[getCurrentLang()].player_number, 2, 16)); // add render function for db
+	HostContainer.appendChild(CreateSlider(nb_players, t.player_number, 2, 16)); // add render function for db
 
 	const GameName = document.createElement("input");
 	GameName.className = "w-9/10 border-2 rounded-xl text-xl p-2";
-	GameName.placeholder = translations[getCurrentLang()].tournament_name;
+	GameName.placeholder = t.tournament_name;
 	GameName.maxLength = 20;
 	HostContainer.appendChild(GameName);
 
 	const GamePassword = document.createElement("input");
 	GamePassword.className = "w-9/10 border-2 rounded-xl text-xl p-2";
-	GamePassword.placeholder = translations[getCurrentLang()].password;
+	GamePassword.placeholder = t.password;
 	GamePassword.type = "password";
 
     const EyePassword = document.createElement("img");
@@ -72,7 +71,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 	const toggleSpan1 = document.createElement("span");
 	toggleSpan1.className = "mr-3 text-xl font-large text-gray-900 dark:text-gray-300";
-	toggleSpan1.textContent = "Public";
+	toggleSpan1.textContent = t.public;
 	toggleBtn.appendChild(toggleSpan1);
 
 	const toggleInput = document.createElement("input");
@@ -87,7 +86,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 	
 	const toggleSpan2 = document.createElement("span");
 	toggleSpan2.className = "ml-3 text-xl font-large text-gray-900 dark:text-gray-300";
-	toggleSpan2.textContent = "Private";
+	toggleSpan2.textContent = t.private;
 	toggleBtn.appendChild(toggleSpan2);
 
 	HostContainer.appendChild(toggleBtn);
@@ -121,7 +120,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 	const JoinTitle = document.createElement("h2");
 	JoinTitle.className = "top-2 neon-matrix";
-	JoinTitle.textContent = translations[getCurrentLang()].join;
+	JoinTitle.textContent = t.join;
 	JoinContainer.appendChild(JoinTitle);
 
 	let currentJoinForm: HTMLElement | null = null;
@@ -143,7 +142,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 		const PasswordInputJoin = document.createElement("input");
 		PasswordInputJoin.className = "w-full border-2 rounded-xl text-xl p-2 pr-12 duration-300 transition-all focus:scale-102";
-		PasswordInputJoin.placeholder = translations[getCurrentLang()].password;
+		PasswordInputJoin.placeholder = t.password;
 		PasswordInputJoin.type = "password";	
 
 		const EyePasswordJoin = document.createElement("img");
@@ -155,7 +154,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 		const ConfirmJoinBtn = document.createElement("button");
 		ConfirmJoinBtn.className = "h-[7vh] btn-fluid bg-green-600 text-white rounded-xl hover:scale-102 hover:bg-green-700 transition-all";
-		ConfirmJoinBtn.textContent = translations[getCurrentLang()].join;
+		ConfirmJoinBtn.textContent = t.join;
 		ConfirmJoinBtn.addEventListener("click", () => {
 			if (!tournament.password || PasswordInputJoin.value === tournament.password) {
 				currentTournament = tournament;
@@ -175,15 +174,15 @@ export function PongTournamentMenuPage(): HTMLElement {
 	titleList.className = "p-2 mt-5 w-full justify-around text-center items-center flex tracking-widest";
 	const tname = document.createElement("p");
 	tname.className = "w-1/3";
-	tname.textContent = translations[getCurrentLang()].name;
+	tname.textContent = t.name;
 	titleList.appendChild(tname);
 	const tnb = document.createElement("p");
 	tnb.className = "w-1/3";
-	tnb.textContent = translations[getCurrentLang()].nbplayer;
+	tnb.textContent = t.nbplayer;
 	titleList.appendChild(tnb);
 	const tvis = document.createElement("p");
 	tvis.className = "w-1/3";
-	tvis.textContent = translations[getCurrentLang()].visibilty;
+	tvis.textContent = t.visibilty;
 	titleList.appendChild(tvis);
 	JoinContainer.appendChild(titleList)
 
@@ -203,13 +202,15 @@ export function PongTournamentMenuPage(): HTMLElement {
 				tname.className = "w-1/3";
 				tname.textContent = tournament.name;
 				li.appendChild(tname);
+
 				const tnb = document.createElement("p");
 				tnb.className = "w-1/3";
 				tnb.textContent = `${tournament.activePlayers}/${tournament.maxPlayers}`;
 				li.appendChild(tnb);
+
 				const tvis = document.createElement("p");
 				tvis.className = "w-1/3";
-				tvis.textContent = translations[getCurrentLang()][tournament.visibility];
+				tvis.textContent = t[tournament.visibility];
 				li.appendChild(tvis);
     		};
     		renderLabel();
@@ -241,21 +242,21 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 	const HostBtn = document.createElement("button");
 	HostBtn.className = "h-[7vh] w-9/10 bg-green-600 text-white rounded-xl hover:bg-green-700 hover:scale-102 duration-300 transition-all";
-	HostBtn.textContent = translations[getCurrentLang()].host;
+	HostBtn.textContent = t.host;
     HostBtn.addEventListener("click", () => {
 		if (!GameName.value)
 		{
 			GameName.classList.add("text-red-600", "shake");
-			GameName.placeholder = translations[getCurrentLang()].empty_input;
-			setTimeout(() => {GameName.placeholder = translations[getCurrentLang()].tournament_name; GameName.classList.remove("text-red-600", "shake");}, 1000)
+			GameName.placeholder = t.empty_input;
+			setTimeout(() => {GameName.placeholder = t.tournament_name; GameName.classList.remove("text-red-600", "shake");}, 1000)
 		}
 		if (!GamePassword.value)
 		{
 			GamePassword.classList.add("text-red-600", "shake");
-			GamePassword.placeholder = translations[getCurrentLang()].empty_input;
+			GamePassword.placeholder = t.empty_input;
 			EyePassword.classList.add("shake");
 			setTimeout(() => {
-				GamePassword.placeholder = translations[getCurrentLang()].password;
+				GamePassword.placeholder = t.password;
 				GamePassword.classList.remove("text-red-600", "shake");
 				EyePassword.classList.remove("shake");
 			}, 1000)
@@ -304,13 +305,13 @@ export function PongTournamentPageJoin(): HTMLElement {
 
     const Title = document.createElement("h1");
     Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
-    Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
+    Title.textContent = currentTournament?.name + " " + t.tournament;
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
     const players = (currentTournament?.players?.length
         ? currentTournament.players.slice()
-        : Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`));
+        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
 	
 
     const bracket = createTournamentBracket(players);
@@ -370,12 +371,12 @@ export function PongTournamentPageJoin(): HTMLElement {
 						return {
 							id: other,
 							username: user.username || other,
-							invitation: "Friend",
+							invitation: t.friends,
 							avatar: user.avatar || "/avatar/default_avatar.png"
 						};
 					}
 				} catch {}
-				return { id: other, username: other, invitation: "Friend", avatar: "/avatar/default_avatar.png" };
+				return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
 			}));
 			friendData = list;
 		} catch (e) {
@@ -427,12 +428,12 @@ export function PongTournamentPageJoin(): HTMLElement {
 
 	const BackToMenuTitle = document.createElement("h1");
 	BackToMenuTitle.className = "text-5xl neon-matrix";
-	BackToMenuTitle.textContent = translations[getCurrentLang()].title_leave;
+	BackToMenuTitle.textContent = t.title_leave;
 	BackToMenuSure.appendChild(BackToMenuTitle);
 
 	const BackToMenuTxt = document.createElement("p");
 	BackToMenuTxt.className = "";
-	BackToMenuTxt.textContent = translations[getCurrentLang()].txt_leave;
+	BackToMenuTxt.textContent = t.txt_leave;
 	BackToMenuSure.appendChild(BackToMenuTxt);
 
 	const actions = document.createElement("div");
@@ -440,7 +441,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 
 	const CancelBtn = document.createElement("button");
 	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-	CancelBtn.textContent = translations[getCurrentLang()].cancel;
+	CancelBtn.textContent = t.cancel;
 	CancelBtn.onclick = () => {
 		BackToMenuOverlay.classList.add("hidden")
 	};
@@ -448,7 +449,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 
 	const ConfirmBtn = document.createElement("button");
 	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
-	ConfirmBtn.textContent = translations[getCurrentLang()].back;
+	ConfirmBtn.textContent = t.back;
 	ConfirmBtn.onclick = () => {
 		mainContainer.classList.add("fade-out");
 		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
@@ -459,7 +460,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 	BackToMenuOverlay.appendChild(BackToMenuSure);
 	mainContainer.appendChild(BackToMenuOverlay);
 
-	const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "null", 1);
+	const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
 	BackToMenuBtn.addEventListener("click", (e) => {
 		e.preventDefault();
 		BackToMenuOverlay.classList.remove("hidden");
@@ -485,13 +486,13 @@ export function PongTournamentPageHost(): HTMLElement {
 
     const Title = document.createElement("h1");
     Title.className = "mt-15 md:mt-10 tracking-widest lg:text-6xl md:text-4xl text-2xl neon-matrix";
-    Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
+    Title.textContent = currentTournament?.name + " " + t.tournament;
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
     const players = (currentTournament?.players?.length
         ? currentTournament.players
-        : Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`));
+        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
     const bracketContainer = document.createElement("div");
     bracketContainer.className = "mt-15 pl-5 w-full";
     const renderBracket = () => {
@@ -503,7 +504,6 @@ export function PongTournamentPageHost(): HTMLElement {
 
 	const rightContainer = document.createElement("div");
 	rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
-	// rightContainer.classList.add("hidden");
 	mainContainer.appendChild(rightContainer);
 
 	const btnRightBar = document.createElement("button");
@@ -554,12 +554,12 @@ export function PongTournamentPageHost(): HTMLElement {
 	  	  	  	  	  	return {
 	  	  	  	  	  	  	id: other,
 	  	  	  	  	  	  	username: user.username || other,
-	  	  	  	  	  	  	invitation: "Friend",
+	  	  	  	  	  	  	invitation: t.friends,
 	  	  	  	  	  	  	avatar: user.avatar || "/avatar/default_avatar.png"
 	  	  	  	  	  	};
 	  	  	  	  	}
 	  	  	  	} catch {}
-	  	  	  	return { id: other, username: other, invitation: "Friend", avatar: "/avatar/default_avatar.png" };
+	  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
 	  	  	}));
 	  	  	friendData = list;
 	  	} catch (e) {
@@ -607,12 +607,12 @@ export function PongTournamentPageHost(): HTMLElement {
     actionsCol.className = "w-9/10 p-3 flex flex-col items-center justify-center gap-3 glass-blur";
 
     const startBtn = document.createElement("button");
-	startBtn.textContent = translations[getCurrentLang()].host;
+	startBtn.textContent = t.host;
     startBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
 	startBtn.onclick = () => navigateTo("/tournament/game");
 
     const shuffleBtn = document.createElement("button");
-	shuffleBtn.textContent = translations[getCurrentLang()].shuffle;
+	shuffleBtn.textContent = t.shuffle;
     shuffleBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
     shuffleBtn.onclick = () => {
         for (let i = players.length - 1; i > 0; i--) {
@@ -639,12 +639,12 @@ export function PongTournamentPageHost(): HTMLElement {
 
 	const BackToMenuTitle = document.createElement("h1");
 	BackToMenuTitle.className = "text-5xl neon-matrix";
-	BackToMenuTitle.textContent = translations[getCurrentLang()].title_leave;
+	BackToMenuTitle.textContent = t.title_leave;
 	BackToMenuSure.appendChild(BackToMenuTitle);
 
 	const BackToMenuTxt = document.createElement("p");
 	BackToMenuTxt.className = "";
-	BackToMenuTxt.textContent = translations[getCurrentLang()].txt_leave;
+	BackToMenuTxt.textContent = t.txt_leave;
 	BackToMenuSure.appendChild(BackToMenuTxt);
 
 	const actions = document.createElement("div");
@@ -652,7 +652,7 @@ export function PongTournamentPageHost(): HTMLElement {
 
 	const CancelBtn = document.createElement("button");
 	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-	CancelBtn.textContent = translations[getCurrentLang()].cancel;
+	CancelBtn.textContent = t.cancel;
 	CancelBtn.onclick = () => {
 		BackToMenuOverlay.classList.add("hidden")
 	};
@@ -660,7 +660,7 @@ export function PongTournamentPageHost(): HTMLElement {
 
 	const ConfirmBtn = document.createElement("button");
 	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
-	ConfirmBtn.textContent = translations[getCurrentLang()].back;
+	ConfirmBtn.textContent = t.back;
 	ConfirmBtn.onclick = () => {
 		mainContainer.classList.add("fade-out");
 		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
@@ -673,7 +673,7 @@ export function PongTournamentPageHost(): HTMLElement {
 	mainContainer.appendChild(BackToMenuOverlay);
 
     const BackToMenuBtn = document.createElement("button");
-	BackToMenuBtn.textContent = translations[getCurrentLang()].back;
+	BackToMenuBtn.textContent = t.back;
     BackToMenuBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
     BackToMenuBtn.addEventListener("click", (e) => {
          e.preventDefault();
@@ -705,13 +705,13 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
     const Title = document.createElement("h1");
     Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
-    Title.textContent = currentTournament?.name + " " + translations[getCurrentLang()].tournament;
+    Title.textContent = currentTournament?.name + " " + t.tournament;
     mainContainer.appendChild(Title);
 
     const size = currentTournament?.maxPlayers ?? nb_players.value;
     const players = (currentTournament?.players?.length
         ? currentTournament.players.slice()
-        : Array.from({ length: size }, (_, i) => `${translations[getCurrentLang()].player} ${i + 1}`));
+        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
 	
 
     const bracket = createTournamentBracket(players);
@@ -726,12 +726,12 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
 	const BackToMenuTitle = document.createElement("h1");
 	BackToMenuTitle.className = "text-5xl neon-matrix";
-	BackToMenuTitle.textContent = translations[getCurrentLang()].title_leave;
+	BackToMenuTitle.textContent = t.title_leave;
 	BackToMenuSure.appendChild(BackToMenuTitle);
 
 	const BackToMenuTxt = document.createElement("p");
 	BackToMenuTxt.className = "";
-	BackToMenuTxt.textContent = translations[getCurrentLang()].txt_leave;
+	BackToMenuTxt.textContent = t.txt_leave;
 	BackToMenuSure.appendChild(BackToMenuTxt);
 
 	const actions = document.createElement("div");
@@ -739,7 +739,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
 	const CancelBtn = document.createElement("button");
 	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-	CancelBtn.textContent = translations[getCurrentLang()].cancel;
+	CancelBtn.textContent = t.cancel;
 	CancelBtn.onclick = () => {
 		BackToMenuOverlay.classList.add("hidden")
 	};
@@ -747,7 +747,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
 	const ConfirmBtn = document.createElement("button");
 	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
-	ConfirmBtn.textContent = translations[getCurrentLang()].back;
+	ConfirmBtn.textContent = t.back;
 	ConfirmBtn.onclick = () => {
 		mainContainer.classList.add("fade-out");
 		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
@@ -758,7 +758,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 	BackToMenuOverlay.appendChild(BackToMenuSure);
 	mainContainer.appendChild(BackToMenuOverlay);
 
-	const BackToMenuBtn = CreateWrappedButton(mainContainer, translations[getCurrentLang()].back, "null", 1);
+	const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
 	BackToMenuBtn.className = "absolute bottom-2 right-2";
 	BackToMenuBtn.addEventListener("click", (e) => {
 		e.preventDefault();

@@ -1,7 +1,6 @@
 import '../style.css';
 import { navigateTo } from '../routes';
-import { translations } from '../i18n';
-import { getCurrentLang, createLangSection } from './settings';
+import { t, createLangSection } from './settings';
 
 export function LandingPage(): HTMLElement {
 	localStorage.clear();
@@ -30,7 +29,7 @@ export function LandingPage(): HTMLElement {
 
 	const LoginBtn = document.createElement("button");
 	LoginBtn.className = "relative z-10 cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
-	LoginBtn.textContent = translations[getCurrentLang()].login;
+	LoginBtn.textContent = t.login;
 
 	LoginBtn.addEventListener('click', () => {
 		mainContainer.classList.add("fade-out");

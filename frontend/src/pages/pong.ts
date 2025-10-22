@@ -1,8 +1,5 @@
 import { t } from "./settings";
-import { translations } from '../i18n';
 import { navigateTo } from '../routes';
-import { onUserChange } from "../linkUser";
-
 
 export function PongMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");

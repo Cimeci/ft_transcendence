@@ -4,6 +4,8 @@ import { navigateTo } from '../routes';
 import { getUser, onUserChange } from '../linkUser';
 import { notifications, removeNotification } from './notifications_overlay';
 
+
+
 export type Notification = {
 	key: string;
 	username: string;

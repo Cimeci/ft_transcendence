@@ -13,7 +13,6 @@ export interface CosmeticItem {
     usable?: boolean;
 };
 
-// Shape returned by GET /user/inventory
 interface InventoryResponse {
     ball: CosmeticItem[];
     background: CosmeticItem[];
@@ -25,7 +24,6 @@ interface InventoryResponse {
     avatar_use: { id: string; name: string }[];
 }
 
-/* Data access */
 let cachedInventory: InventoryResponse | null = null;
 
 async function fetchUserInventory(): Promise<InventoryResponse | null> {
@@ -35,7 +33,7 @@ async function fetchUserInventory(): Promise<InventoryResponse | null> {
     const res = await fetch("/user/inventory", {
         headers: { Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTPS ${res.status}`);
     const data = await res.json();
     return data.filteredInventory as InventoryResponse;
 }
@@ -53,15 +51,13 @@ async function refreshInventory(): Promise<InventoryResponse | null> {
 /* ---- Page ---- */
 export function InventoryPage(): HTMLElement {
     const main = document.createElement("div");
-    main.className =
-        "w-full min-h-screen bg-linear-to-t from-green-500 via-black to-green-800 pt-30 flex flex-col items-center";
+    main.className = "w-full min-h-screen bg-linear-to-t from-green-500 via-black to-green-800 pt-30 flex flex-col items-center";
 
     const title = document.createElement("h2");
     title.textContent = t.inventory;
     title.className = "tracking-widest fixed top-0 p-6 z-1000";
     main.appendChild(title);
 
-    /* Layout principal: gauche (visuel) / droite (liste) */
     const layout = document.createElement("div");
     layout.className = "w-19/20 lg:w-9/10 xl:w-8/10 flex flex-col xl:flex-row gap-5 items-center xl:items-stretch min-h-0 justify-center";
     main.appendChild(layout);
@@ -70,15 +66,9 @@ export function InventoryPage(): HTMLElement {
     left.className = "items-center w-8/10 xl:w-2/6 min-h-0 h-full flex flex-col overflow-hidden mx-auto xl:mx-0";
     layout.appendChild(left);
 
-    /* Equipped preview */
     const previewsWrap = document.createElement("div");
     previewsWrap.className = "grid grid-cols-4 xl:grid-cols-2 grid-rows-1 xl:grid-rows-2 gap-4 h-full w-full";
     left.appendChild(previewsWrap);
-
-    function imgPath(p: string | undefined): string {
-        if (!p) return '';
-        return '/' + p.replace(/^\/+/, '');
-    }
 
     function makePreviewBox(label: string, type: CosmeticType, inventory: InventoryResponse): HTMLElement {
         const box = document.createElement("div");
@@ -88,20 +78,35 @@ export function InventoryPage(): HTMLElement {
         header.textContent = label;
         header.className = "w-full max-w-full text-xs sm:text-sm tracking-wide font-semibold text-white text-center bg-white/10 rounded px-2 py-1 truncate";
         header.title = label;
+        box.appendChild(header);
 
-        const img = document.createElement("img");
-        const key = `${type}_use` as keyof InventoryResponse;
-        const equipped = (inventory[key] as any)?.[0];
-        img.src = imgPath(equipped?.id || inventory[type]?.[0]?.id);
-        img.alt = type;
-        img.className = "w-full aspect-square object-cover rounded-lg bg-black/40 mt-2 sm:mt-5 xl:mt-10";
+        if (type === "paddle")
+        {
+            const img_box = document.createElement("div");
+            img_box.className = "w-full aspect-square object-cover rounded-lg bg-black/40 mt-2 sm:mt-5 xl:mt-10 flex justify-center items-center"; 
+            box.appendChild(img_box);
+
+            const img = document.createElement("img");
+            const key = `${type}_use` as keyof InventoryResponse;
+            img.src = inventory[key]?.[0]?.id;
+            img.alt = type;
+            img.className = "flex items-center m-auto h-40";
+            img_box.appendChild(img);
+        }
+        else
+        {
+            const img = document.createElement("img");
+            const key = `${type}_use` as keyof InventoryResponse;
+            img.src = inventory[key]?.[0]?.id;
+            img.alt = type;
+            img.className = "w-full aspect-square object-cover rounded-lg bg-black/40 mt-2 sm:mt-5 xl:mt-10";
+            box.appendChild(img);
+        }
 
         const cap = document.createElement("div");
         cap.className = "text-white/80 text-xs truncate w-full text-center";
-        cap.textContent = equipped?.name || inventory[type]?.[0]?.name || '';
+        cap.textContent = inventory[type]?.[0]?.name || '';
 
-        box.appendChild(header);
-        box.appendChild(img);
         box.appendChild(cap);
         return box;
     }
@@ -134,7 +139,6 @@ export function InventoryPage(): HTMLElement {
         {v:"all", l:t.all},
         {v:"avatar", l:t.avatar},
         {v:"background", l:t.gamebackground},
-        // value must be 'paddle' (backend field), label can remain the translated 'bar'
         {v:"paddle", l:t.bar},
         {v:"ball", l:t.ball},
     ].forEach(o=>{
@@ -217,7 +221,7 @@ export function InventoryPage(): HTMLElement {
             items.forEach((item)=>{
                 if (query && !item.name.toLowerCase().includes(query)) return;
                 const isEquipped = item.name === equippedName;
-                const isUsable = item.usable !== false; // default true if undefined
+                const isUsable = item.usable !== false;
 
                 if  (isUsable)
                 {
@@ -227,28 +231,22 @@ export function InventoryPage(): HTMLElement {
                     cell.className = [
                         "relative group rounded-lg border border-white/15 transition p-1 flex flex-col items-center justify-between",
                         isEquipped ? "bg-green-900/40" : "bg-black/40 hover:bg-black/60",
-                        // !isUsable && !isEquipped ? "opacity-50 cursor-not-allowed" : ""
                     ].join(" ");
                 
                     const img = document.createElement("img");
-                    img.src = imgPath(item.id);
+                    img.src = item.id;
                     img.alt = item.name;
                     console.log("BAR", item.id);
                     if (!item.id.search("/playbar/"))
                         img.className="rounded-xl bg-white/5 border border-white/10 flex items-center m-auto h-40"
                     else
                         img.className = "w-full aspect-square object-cover rounded-md";
+                    
                     const cap = document.createElement("span");
                     cap.textContent = item.name;
                     cap.className = "w-full mt-1 text-[10px] leading-tight text-white/80 text-center truncate";
                 
                     if (isEquipped) cell.appendChild(badge('Equipped'));
-                    // if (!isUsable && !isEquipped) {
-                    //     const lock = document.createElement('span');
-                    //     lock.textContent = 'Locked';
-                    //     lock.className = 'absolute top-1 right-1 z-10 text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white';
-                    //     cell.appendChild(lock);
-                    // }
                 
                     cell.appendChild(img);
                     cell.appendChild(cap);

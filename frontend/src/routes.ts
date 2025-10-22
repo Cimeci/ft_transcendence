@@ -1,4 +1,5 @@
 import './style.css';
+import { t } from './pages/settings'
 import { createNavbar} from './components/navbar';
 import { HomePage } from './pages/home';
 import { LoginPage, OAuthCallbackPage } from './pages/login';
@@ -146,9 +147,9 @@ function makeInviteToast(p: InvitePayload): HTMLDivElement {
   	const toast = document.createElement('div');
   	toast.className = 'pointer-events-auto glass-blur text-white rounded-xl border border-white/20 shadow px-3 py-2 w-[min(92vw,380px)] flex items-center gap-3 toast-right-enter';
 
-  	// Avatar rond noir
   	const avatarWrap = document.createElement('div');
   	avatarWrap.className = 'w-10 h-10 rounded-full bg-black flex items-center justify-center flex-none';
+
   	const avatar = document.createElement('img');
   	avatar.src = p.avatar || '/avatar/default_avatar.png';
   	avatar.alt = '';
@@ -156,12 +157,13 @@ function makeInviteToast(p: InvitePayload): HTMLDivElement {
   	avatarWrap.appendChild(avatar);
   	toast.appendChild(avatarWrap);
 
-  	// Texte (nom + activité/message)
   	const textWrap = document.createElement('div');
   	textWrap.className = 'min-w-0 flex-1';
+
   	const title = document.createElement('p');
   	title.className = 'font-semibold truncate';
   	title.textContent = p.username;
+	
   	const sub = document.createElement('p');
   	sub.className = 'text-sm text-white/80 truncate';
   	sub.textContent = p.message ?? 'invites you to play';
@@ -171,18 +173,19 @@ function makeInviteToast(p: InvitePayload): HTMLDivElement {
   	// Actions
   	const actions = document.createElement('div');
   	actions.className = 'flex items-center gap-2';
+
   	const accept = document.createElement('button');
   	accept.className = 'px-2 py-1 rounded-md bg-green-600 hover:bg-green-700 text-sm';
-  	accept.textContent = 'Accept';
+  	accept.textContent = t.accept;
   	accept.onclick = () => { p.onAccept?.(); close(); };
+
   	const refuse = document.createElement('button');
   	refuse.className = 'px-2 py-1 rounded-md bg-red-600 hover:bg-red-700 text-sm';
-  	refuse.textContent = 'Refuse';
+  	refuse.textContent = t.refuse;
   	refuse.onclick = () => { p.onRefuse?.(); close(); };
   	actions.appendChild(accept); actions.appendChild(refuse);
   	toast.appendChild(actions);
 
-  	// Lifecycle 5s (pause au survol)
   	let timer: number | undefined;
   	const start = () => { timer = window.setTimeout(close, 5000); };
   	const stop = () => { if (timer) { clearTimeout(timer); timer = undefined; } };
@@ -225,4 +228,4 @@ onUserChange(() => {
   document.body.prepend(navbar);
 });
 
-bootstrap(); // lance
+bootstrap();

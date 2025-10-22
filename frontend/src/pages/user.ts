@@ -99,7 +99,7 @@ export function UserPage(): HTMLElement {
         banner.appendChild(overlay);
         wrap.appendChild(banner);
 
-        // card sous le banner
+        // card below banner
         const card = document.createElement("div");
         card.className = "-mt-16 sm:-mt-20 bg-white/10 backdrop-blur border border-white/10 rounded-2xl shadow-xl px-6 sm:px-8 py-5";
         wrap.appendChild(card);
@@ -116,7 +116,7 @@ export function UserPage(): HTMLElement {
 
         const s1a = document.createElement("p");
 	    s1a.className = "text-xs uppercase text-white/60";
-	    s1a.textContent = translations[getCurrentLang()].Total_game;
+	    s1a.textContent = t.Total_game;
 
         const s1b = document.createElement("p");
 	    s1b.className = "text-lg font-semibold";
@@ -129,7 +129,7 @@ export function UserPage(): HTMLElement {
 
         const s2a = document.createElement("p");
 	    s2a.className = "text-xs uppercase text-white/60";
-	    s2a.textContent = translations[getCurrentLang()].Win;
+	    s2a.textContent = t.Win;
 
         const s2b = document.createElement("p");
 	    s2b.className = "text-lg font-semibold";
@@ -142,7 +142,7 @@ export function UserPage(): HTMLElement {
 
         const s3a = document.createElement("p");
 	    s3a.className = "text-xs uppercase text-white/60";
-	    s3a.textContent = translations[getCurrentLang()].Lose;
+	    s3a.textContent = t.Lose;
 
         const s3b = document.createElement("p");
 	    s3b.className = "text-lg font-semibold";
@@ -185,38 +185,44 @@ export function UserPage(): HTMLElement {
         // Active Bar
         const barWrap = document.createElement("div");
         barWrap.className = "flex flex-col items-center sm:flex-row sm:items-center gap-1 sm:gap-2";
+
         const barLabel = document.createElement("span");
         barLabel.className = "text-xs uppercase text-white/60";
-        barLabel.textContent = "Bar";
+        barLabel.textContent = t.bar;
+
         const barImg = document.createElement("img");
         barImg.src = "/bar/default_bar.png"; //! BAR USER LOOK
         barImg.alt = "bar";
         barImg.className = "h-6 sm:h-8 object-contain drop-shadow";
 
-        barWrap.appendChild(barLabel); barWrap.appendChild(barImg);
+        barWrap.appendChild(barLabel);
+        barWrap.appendChild(barImg);
  
         // Active Ball
         const ballWrap = document.createElement("div");
         ballWrap.className = "flex flex-col items-center sm:flex-row sm:items-center gap-1 sm:gap-2";
+
         const ballLabel = document.createElement("span");
         ballLabel.className = "text-xs uppercase text-white/60";
-        ballLabel.textContent = "Ball";
+        ballLabel.textContent = t.ball;
+
         const ballImg = document.createElement("img");
         ballImg.src = "/ball/default_ball.png"; //! BALL USER LOOK
         ballImg.alt = "ball";
         ballImg.className = "w-6 h-6 sm:w-8 sm:h-8 object-contain drop-shadow";
 
-        ballWrap.appendChild(ballLabel); ballWrap.appendChild(ballImg);
+        ballWrap.appendChild(ballLabel);
+        ballWrap.appendChild(ballImg);
  
         itemsRow.appendChild(barWrap);
         itemsRow.appendChild(ballWrap);
         right.appendChild(itemsRow);
 
-        { // CHANGE BTN //! change it by the relation between user and user look
+        { // CHANGE BTN
             const addBtn = document.createElement("button");
             addBtn.type = "button";
             addBtn.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
-            addBtn.textContent = (translations[getCurrentLang()].add);
+            addBtn.textContent = t.add;
             addBtn.addEventListener(("click"), async () => {
 				const token = localStorage.getItem("jwt") || "";
  				addBtn.disabled = true;
@@ -237,7 +243,7 @@ export function UserPage(): HTMLElement {
 				        return;
 				    }
 				    if (resp.status === 401) {
-				        alert("Need reconnection");
+				        alert(t.Session_expired);
 				        addBtn.textContent = old;
 				        return;
 				    }
@@ -257,7 +263,7 @@ export function UserPage(): HTMLElement {
 
             const friendDiv = document.createElement("div");
             friendDiv.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
-            friendDiv.textContent = (translations[getCurrentLang()].friends);
+            friendDiv.textContent = t.friends;
 
             const friendIcon = document.createElement("img");
             friendIcon.src = "/icons/contact.svg";
@@ -265,7 +271,7 @@ export function UserPage(): HTMLElement {
 
             const WaitingDiv = document.createElement("div");
             WaitingDiv.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
-            WaitingDiv.textContent = (translations[getCurrentLang()].requests_send);
+            WaitingDiv.textContent = t.requests_send;
 
             const WaitingIcon = document.createElement("img");
             WaitingIcon.src = "/icons/timer.svg";
@@ -301,10 +307,12 @@ export function UserPage(): HTMLElement {
                 if (item.usable === true){
                     const tile = document.createElement("div");
                     tile.className = "rounded-xl bg-white/5 border border-white/10 flex items-center justify-center h-24";
+                    
                     const img = document.createElement("img");
                     img.src = item.id;
                     img.alt = item.name;
                     img.className = "max-w-full h-16 sm:h-20 object-contain drop-shadow";
+                    
                     tile.appendChild(img);
                     grid.appendChild(tile);
                 }
@@ -330,7 +338,7 @@ export function UserPage(): HTMLElement {
         let allBars = [{"id":"/playbar/default_bar.png","name":"default bar","type":"bar","price":0,"usable":true}]; // replace by user inventory bars
         invBody.appendChild(barsGrid);
 
-        const ballsGrid = document.createElement("div"); //! ALL BALLS USER LOOK
+        const ballsGrid = document.createElement("div"); //! ALL BALLS USER LOOK {
         ballsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6";
         let allBalls = [{"src":"/ball/default_ball.png","id":"ball/default_ball.png","name":"default ball","type":"ball","price":0,"usable":true}]; // replace by user inventory balls
         invBody.appendChild(ballsGrid);
@@ -352,46 +360,11 @@ export function UserPage(): HTMLElement {
         
         const histTitle = document.createElement("h2");
         histTitle.className = "text-center text-white font-semibold";
-        histTitle.textContent = translations[getCurrentLang()].history;
+        histTitle.textContent = t.history;
         histHeader.appendChild(histTitle);
         
         const histBody = document.createElement("div");
         histBody.className = "flex-1 p-4 sm:p-6 min-h-0";
-
-        //! Données démo – remplace par tes données (DB)
-        type TournamentRow = { name: string; place: string };
-        type ClassicRow = { opponent: string; score: string };
-        const tournament: TournamentRow[] = [
-            { name: "ilan tournament", place: "first" },
-            { name: "test tournament", place: "third" },
-            { name: "test tournament", place: "5" },
-            { name: "amaury tournament", place: "10" },
-            { name: "hello tournament", place: "15" },
-            { name: "asdf", place: "5" },
-            { name: "hi", place: "7" },
-            { name: "test tournament", place: "8" },
-            { name: "test tournament", place: "12" },
-            { name: "test tournament", place: "second" },
-            { name: "test tournament", place: "second" },
-            { name: "test tournament", place: "second" },
-
-        ];
-        const classics: ClassicRow[] = [
-            { opponent: "amaury", score: "4 - 5" },
-            { opponent: "amaury", score: "1 - 5" },
-            { opponent: "amaury", score: "5 - 3" },
-            { opponent: "amaury", score: "3 - 5" },
-            { opponent: "amaury", score: "4 - 5" },
-            { opponent: "amaury", score: "2 - 5" },
-            { opponent: "amaury", score: "4 - 3" },
-            { opponent: "amaury", score: "5 - 2" },
-            { opponent: "amaury", score: "5 - 3" },
-            { opponent: "amaury", score: "5 - 1" },
-            { opponent: "amaury", score: "5 - 1" },
-            { opponent: "amaury", score: "5 - 1" },
-            { opponent: "amaury", score: "5 - 1" },
-
-        ];
 
         const cols = document.createElement("div");
         cols.className = "grid grid-cols-1 md:grid-cols-2 gap-6 h-full min-h-0";
@@ -404,40 +377,30 @@ export function UserPage(): HTMLElement {
 
         const tournTitle = document.createElement("h3");
         tournTitle.className = "text-center text-white font-semibold";
-        tournTitle.textContent = translations[getCurrentLang()].tournament;
+        tournTitle.textContent = t.tournament;
         tournHead.appendChild(tournTitle);
 
         const tournList = document.createElement("ul");
         tournList.className = "flex-1 divide-y divide-white/10 overflow-y-auto overflow-x-hidden min-h-0 pr-1 scroll_bar";
-        let tournaments = []; // replace by user tournaments
-        function Tournaments(Tournaments: any[], List: HTMLElement, uuid: string) {
+        let tournaments = [];
+        function Tournaments(Tournaments: any[], List: HTMLElement) {
             Tournaments.forEach((tournament) => {
                 const li = document.createElement("li");
                 li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
+
                 const name = document.createElement("span");
                 name.className = "truncate min-w-0";
                 name.textContent = tournament.name;
+
                 const place = document.createElement("span");
                 place.className = "text-right text-white/70";
                 place.textContent = tournament.place;
+
                 li.appendChild(name);
                 li.appendChild(place);
                 List.appendChild(li);
             });
         }
-            // tournament.forEach((row) => {
-            //     const li = document.createElement("li");
-            //     li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
-            //     const name = document.createElement("span");
-            //     name.className = "truncate min-w-0";
-            //     name.textContent = row.name;
-            //     const place = document.createElement("span");
-            //     place.className = "text-right text-white/70";
-            //     place.textContent = row.place;
-            //     li.appendChild(name);
-            //     li.appendChild(place);
-            //     tournList.appendChild(li);
-            // });
         tournCol.appendChild(tournHead);
         tournCol.appendChild(tournList);
 
@@ -449,12 +412,12 @@ export function UserPage(): HTMLElement {
 
         const classTitle = document.createElement("h3");
         classTitle.className = "text-center text-white font-semibold";
-        classTitle.textContent = translations[getCurrentLang()].classic;
+        classTitle.textContent = t.classic;
         classHead.appendChild(classTitle);
 
         const classList = document.createElement("ul");
         classList.className = "flex-1 divide-y divide-white/10 overflow-y-auto overflow-x-hidden min-h-0 pr-1 scroll_bar";
-        let games = []; // replace by user classic games
+        let games = [];
         function Games(Games: any[], List: HTMLElement, uuid: string) {
             Games.forEach((game) => {
                 const li = document.createElement("li");
@@ -492,14 +455,17 @@ export function UserPage(): HTMLElement {
         bg.src = u.background_use?.[0]?.id;
         barImg.src = u.paddle_use?.[0]?.id;
         ballImg.src = u.ball_use?.[0]?.id;
+
         const games_info = JSON.parse(u.games);
         s1b.textContent = games_info ? games_info.length : "0";
         s2b.textContent = u.game_ratio + "%";
 	    s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
         u.is_online == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
+
         allBars = JSON.parse(u.paddle);
         allBalls = JSON.parse(u.ball);
         allBackgrounds = JSON.parse(u.background);
+
         inventory(allBars, barsGrid);
         inventory(allBalls, ballsGrid);
         inventory(allBackgrounds, backgroundGrid);
@@ -508,7 +474,7 @@ export function UserPage(): HTMLElement {
             Games(games, classList, u.uuid);
         tournaments = JSON.parse(u.tournament);
         if (tournaments)
-            Tournaments(tournaments, tournList, u.uuid);
+            Tournaments(tournaments, tournList);
     })()
 
      main.appendChild(profileContainer);

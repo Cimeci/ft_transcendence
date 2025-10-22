@@ -25,6 +25,7 @@ export const translations = {
 		empty_input: "Entrée vide",
 		not_same_input: "Entrées differentes",
 		insufficient_length: "Longueur insuffisante (8 min)",
+		password_must: "Le mot de passe doit comporter au moins 8 caractères, dont une majuscule, un chiffre et un caractère spécial.",
 		// Navbar link
 		home: "Accueil",
 		inventory: "Inventaire",
@@ -36,10 +37,11 @@ export const translations = {
 		local: "Local",
 		online: "En ligne",
 		invite: "Inviter",
+		Waiting_for_server: "En attente du serveur",
 		// Tournament
 		player: "Joueur",
 		name: "Nom",
-		nbplayer: "Nb Joueurs",
+		nbplayer: "Nombre Joueurs",
 		visibilty: "Visibilité",
 		private: "Privé",
 		public: "Public",
@@ -61,6 +63,7 @@ export const translations = {
 		ice_bar: "Barre en glace",
 		amethyst_bar: "Barre en améthyste",
 		matrix_bar: "Barre matrix",
+		buy: "Acheter",
 		// Cosmetics
 		avatar: "Avatar",
 		gamebackground: "Fond du jeux",
@@ -69,6 +72,8 @@ export const translations = {
 		// Pong Menu
 		username1: "Joueur 1",
 		username2: "Joueur 2",
+		insert_second_username: "Insérer un deuxième nom d'utilisateur",
+		Invitation_against: "Invitation à jouer contre",
 		// utils
 		apply: "Appliquer",
 		// Overlay
@@ -83,7 +88,6 @@ export const translations = {
 		add: "Ajouter",
 		profile: "Profil",
 		delete: "Supprimer",
-		block: "Bloquer",
 		requests_received: "Demandes reçue",
 		requests_send: "Demandes envoyées",
 		err_id: "Erreur Identifiant",
@@ -92,7 +96,13 @@ export const translations = {
 		classic: "Classique",
 		Total_game: "Total partie",
 		Win: "Gagnée",
+		winner: "Gagnant",
 		Lose: "Perdue",
+		// Notif
+		accept: "Accepter",
+		refuse: "Refuser",
+		// Global
+		Session_expired: "Session expirée. Reconnecte-toi !",
 	},
 	en: {
 		error: "Error",
@@ -120,6 +130,7 @@ export const translations = {
 		empty_input: "Empty input",
 		not_same_input: "Not the same input",
 		insufficient_length: "Insufficient length (8 min)",
+		password_must: "Password must be at least 8 characters, include one uppercase letter, one number, and one special character.",
 		// Navbar link
 		home: "Home",
 		settings: "Settings",
@@ -131,10 +142,11 @@ export const translations = {
 		local: "Local",
 		online: "Online",
 		invite: "Invite",
+		Waiting_for_server: "Waiting for server",
 		// Tournament
 		player: "Player",
 		name: "Name",
-		nbplayer: "Nb Players",
+		nbplayer: "Number Players",
 		visibilty: "Visibility",
 		private: "Private",
 		public: "Public",
@@ -143,7 +155,6 @@ export const translations = {
 		host: "Host",
 		join: "Join",
 		player_number: "Number of players?",
-		ia_number: "Number of AI?",
 		back: "Back",
 		cancel: "Cancel",
 		title_leave: "ARE YOU SURE TO LEAVE ?",
@@ -156,6 +167,7 @@ export const translations = {
 		ice_bar: "Ice bar",
 		amethyst_bar: "Amethyst bar",
 		matrix_bar: "Matrix bar",
+		buy: "Buy",
 		// Cosmetics
 		avatar: "Avatar",
 		gamebackground: "Game background",
@@ -164,6 +176,8 @@ export const translations = {
 		// Pong Menu
 		username1: "Player 1",
 		username2: "Player 2",
+		insert_second_username: "Insert Second Username",
+		Invitation_against: "Invitation to play against",
 		// utils
 		apply: "Apply",
 		// Overlay
@@ -187,7 +201,13 @@ export const translations = {
 		classic: "Classic",
 		Total_game: "Total game",
 		Win: "Win",
+		winner: "Winner",
 		Lose: "Lose",
+		// Notif
+		accept: "Accept",
+		refuse: "Refuse",
+		// Global
+		Session_expired: "Session expired. Please log in again !",
 	},
 	es: {
 		// Settings
@@ -215,6 +235,7 @@ export const translations = {
 		empty_input: "entrada vacía",
 		not_same_input: "No es la misma entrada",
 		insufficient_length: "Duración insuficiente (8 min)",
+		password_must: "La contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, un número y un carácter especial.",
 		// Navbar link
 		home: "Inicio",
 		inventory: "Inventario",
@@ -226,6 +247,7 @@ export const translations = {
 		local: "Local",
 		online: "En línea",
 		invite: "Invitar",
+		Waiting_for_server: "Esperando al servidor",
 		// Tournament
 		player: "Jugadore",
 		name: "Nombre",
@@ -251,6 +273,7 @@ export const translations = {
 		ice_bar: "Barra de hielo",
 		amethyst_bar: "Barra de amatista",
 		matrix_bar: "Barra Matrix",
+		buy: "Comprar",
 		// Cosmetics
 		avatar: "Avatar",
 		gamebackground: "Fondo del juego",
@@ -259,6 +282,8 @@ export const translations = {
 		// Pong Menu
 		username1: "Jugador 1",
 		username2: "Jugador 2",
+		insert_second_username: "Insertar segundo nombre de usuario",
+		Invitation_against: "Invitación para jugar contra",
 		// utils
 		apply: "Aplicar",
 		// Overlay
@@ -282,6 +307,12 @@ export const translations = {
 		classic: "Clásico",
 		Total_game: "Total juegos",
 		Win: "Victorias",
+		winner: "Ganador",
 		Lose: "Derrotas",
+		// Notif
+		accept: "Aceptar",
+		refuse: "Rechazar",
+		// Global
+		Session_expired: "La sesión ha caducado. ¡Vuelva a iniciar sesión!",
 	}
 };

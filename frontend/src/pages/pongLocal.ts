@@ -36,8 +36,8 @@ export function PongLocalMenuPage(): HTMLElement {
 		inventory.appendChild(barContainer);
 
 		const bar = document.createElement("img");
-		bar.src = "/bar/default_bar.png";
-		bar.className = "w-full h-full rounded-xl";
+		bar.src = "/playbar/default_bar.png";
+		bar.className = "m-auto h-full rounded-xl";
 		barContainer.appendChild(bar);
 
 	async function getSetupUser1() {
@@ -113,7 +113,7 @@ export function PongLocalMenuPage(): HTMLElement {
 
 	const username = document.createElement("input");
 	username.className = "w-9/10 glass-blur text-xl px-2 py-1";
-	username.placeholder = "Insert second username"; //!i18n
+	username.placeholder = t.insert_second_username;
 	username.addEventListener(("input"), () => {
 		user2.name = username.value;
 	})
@@ -128,9 +128,9 @@ export function PongLocalMenuPage(): HTMLElement {
 		inventory.appendChild(barContainer);
 		
 		const bar = document.createElement("img");
-		bar.src = "/bar/default_bar.png";
+		bar.src = "/playbar/default_bar.png";
 		user2.paddle = "/bar/default_bar.png";
-		bar.className = "w-full h-full rounded-xl";
+		bar.className = "m-auto h-full rounded-xl";
 		barContainer.appendChild(bar);
 	}
 	}
@@ -190,7 +190,7 @@ export function PongLocalOverlayPage(): HTMLElement {
 
 	const BackBtn = document.createElement("button");
 	BackBtn.className = "relative z-10 inline-flex items-center justify-center whitespace-nowrap leading-none w-fit h-fit cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
-	BackBtn.textContent = translations[getCurrentLang()].back_to_menu;
+	BackBtn.textContent = t.back_to_menu;
 	BackBtn.tabIndex = 0;
 
 	BackBtn.addEventListener('click', () => {
@@ -343,7 +343,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		ball.x += ball.speedX;
 		ball.y += ball.speedY;
 		if (ball.y < 0 || ball.y > canvas.height) ball.speedY *= -1;
-		// Collisions paddles
+
 		const hitLeft = ball.x - ball.radius < leftPaddle.x + paddleWidth && ball.y > leftPaddle.y && ball.y < leftPaddle.y + paddleHeight;
 		const hitRight = ball.x + ball.radius > rightPaddle.x && ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight;
 		if (hitLeft || hitRight) {
@@ -351,14 +351,13 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 			ballRotation += BALL_SPIN_STEP;
 		}
 
-		// Score (on passe la direction du prochain service)
 		if (ball.x < 0) {
 			user2.score++;
-			resetBall(1);   // relance vers le joueur 1 (à droite)
+			resetBall(1);
 		}
 		if (ball.x > canvas.width) {
 			user1.score++;
-			resetBall(-1);  // relance vers le joueur 2 (à gauche)
+			resetBall(-1);
 		}
 
 		if (user1.score === 5 || user2.score === 5) {
@@ -372,7 +371,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 							method: 'PATCH',
 							headers: { 
 								'Content-Type': 'application/json',
-								'Authorization': `Bearer ${token}`  // Assurez-vous que le token est stocké dans le localStorage
+								'Authorization': `Bearer ${token}`
 							},
 							body: JSON.stringify({
 								winner: (user1.score === 5) ? user1.name : user2.name,
@@ -381,19 +380,17 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 							})
 						});
 					} catch(e){
-						console.error("Erreur lors de la mise à jour du jeu :", e);
+						console.error("Error updating the game :", e);
 						return;
 					};
 				}
 			})();
-			// Annule un éventuel timer de relance
 			if (launchTimeout !== null) {
 				clearTimeout(launchTimeout);
 				launchTimeout = null;
 			}
 		}
 
-		// Accélération progressive uniquement si la balle est en mouvement
 		if (ball.speedX !== 0 || ball.speedY !== 0) {
 			ball.speedX *= 1.0005;
 			ball.speedY *= 1.0005;
@@ -401,7 +398,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	}
 
 	function draw() {
-		ctx.clearRect(0, 0, canvas.width, canvas.height); // Laisse le GIF CSS visible
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		ctx.fillStyle = "white";
 
@@ -467,7 +464,6 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		}
 	}
 
-	// Au lancement du jeu
 	resetBall();
 	loop();
 
@@ -537,7 +533,7 @@ export function PongLocalGamePage(): HTMLElement {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`  // Assurez-vous que le token est stocké dans le localStorage
+					'Authorization': `Bearer ${token}`
 				},
 				body: JSON.stringify({
 					player1: user1.name,

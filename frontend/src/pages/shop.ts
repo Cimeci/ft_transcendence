@@ -1,6 +1,4 @@
-import { getCurrentLang } from "./settings";
-import { translations } from '../i18n';
-// import { userInventory } from "./inventory";
+import { t } from "./settings";
 
 type ShopType = 'avatar' | 'background' | 'paddle' | 'ball';
 interface ShopItem { id: string; name: string; type: ShopType; price: number; }
@@ -27,8 +25,6 @@ async function getShop() {
 }
 
 export function ShopPage(): HTMLElement {
-    // @ts-ignore
-    const t = translations[getCurrentLang()];
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "w-full min-h-screen bg-linear-to-t from-green-500 via-black to-green-800 pt-30 flex flex-col items-center";
@@ -38,7 +34,6 @@ export function ShopPage(): HTMLElement {
     title.className = "tracking-widest fixed top-0 p-6 z-1000";
     mainContainer.appendChild(title);
 
-    // Barre outils (select + search + wallet)
     const wrapper = document.createElement("div");
     wrapper.className = "w-19/20 lg:w-9/10 xl:w-8/10 flex flex-col gap-4";
     mainContainer.appendChild(wrapper);
@@ -47,7 +42,6 @@ export function ShopPage(): HTMLElement {
     toolbar.className = "w-full flex items-center gap-3";
     wrapper.appendChild(toolbar);
 
-    // Dropdown "Filter" comme dans Friends (Search)
     const filterWrap = document.createElement("div");
     filterWrap.className = "relative";
     
@@ -214,6 +208,7 @@ export function ShopPage(): HTMLElement {
         // Cadre + image
         const frame = document.createElement("div");
         frame.className = "w-full rounded-lg p-4";
+
         const img = document.createElement("img");
         img.src = it.id;
         img.alt = it.name;
@@ -227,11 +222,10 @@ export function ShopPage(): HTMLElement {
         price.textContent = `${it.price} $`;
         card.appendChild(price);
 
-        // Interaction "Buy" maquette
         price.addEventListener("click", async (e) => {
             e.preventDefault();
             e.stopPropagation();
-            price.textContent = "B U Y ...";
+            price.textContent = `${t.buy.toUpperCase()} ...`;
             price.classList.add("text-white");
                 
             const success = await buyItem(it);
@@ -274,8 +268,8 @@ export function ShopPage(): HTMLElement {
 
         if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            console.error('Erreur achat:', response.status, err);
-            alert(err?.error || 'Erreur lors de l\'achat');
+            console.error('Error buy:', response.status, err);
+            alert(err?.error || 'Error buy');
             return false;
         }
 

@@ -124,7 +124,7 @@ function PopUpChangeInformation( title: string, maininfo: string, newinfo: strin
     const Info = document.createElement("input");
     Info.placeholder = maininfo;
     Info.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
-    Info.maxLength = 25;
+    Info.maxLength = 30;
 	if (maininfo)
 		InfoContainer.appendChild(Info);
 
@@ -161,7 +161,6 @@ function PopUpChangeInformation( title: string, maininfo: string, newinfo: strin
 
     BtnConfirm.addEventListener("click", () => {
         let hasErr = false;
-        // Only validate current value match if a value was provided
         if (maininfo && value && Info.value !== value) { hasErr = true; Info.classList.add("shake", "placeholder:text-red-500"); }
         if (confnewinfo && newinfo && NewInfo.value !== ConfirmNewInfo.value) { hasErr = true; NewInfo.classList.add("shake","placeholder:text-red-500"); ConfirmNewInfo.classList.add("shake","placeholder:text-red-500"); }
        	if (!hasErr) {
@@ -175,34 +174,33 @@ function PopUpChangeInformation( title: string, maininfo: string, newinfo: strin
     return overlay;
 }
 
-// Helpers to call backend
 async function updateProfileInfo(partial: { email?: string; username?: string; avatar?: string }) {
-  const token = localStorage.getItem('jwt');
-  if (!token) throw new Error('Not authenticated');
-  const resp = await fetch('/user/update-info', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(partial)
-  });
-  if (!resp.ok) {
-    const data = await resp.json().catch(() => ({}));
-    throw new Error(data?.error || 'Update failed');
-  }
-  await ensureUser(true);
+  	const token = localStorage.getItem('jwt');
+  	if (!token) throw new Error('Not authenticated');
+  	const resp = await fetch('/user/update-info', {
+  	  	method: 'PATCH',
+  	  	headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+  	  	body: JSON.stringify(partial)
+  	});
+  	if (!resp.ok) {
+  	  	const data = await resp.json().catch(() => ({}));
+  	  	throw new Error(data?.error || 'Update failed');
+  	}
+  	await ensureUser(true);
 }
 
 async function updatePassword(oldPassword: string, newPassword: string) {
-  const token = localStorage.getItem('jwt');
-  if (!token) throw new Error('Not authenticated');
-  const resp = await fetch('/auth/update-password', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ oldPassword, newPassword })
-  });
-  if (!resp.ok) {
-    const data = await resp.json().catch(() => ({}));
-    throw new Error(data?.error || 'Password update failed');
-  }
+  	const token = localStorage.getItem('jwt');
+  	if (!token) throw new Error('Not authenticated');
+  	const resp = await fetch('/auth/update-password', {
+  	  	method: 'PATCH',
+  	  	headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+  	  	body: JSON.stringify({ oldPassword, newPassword })
+  	});
+  	if (!resp.ok) {
+  	  	const data = await resp.json().catch(() => ({}));
+  	  	throw new Error(data?.error || 'Password update failed');
+  	}
 }
 
 function CreateFlagSection(lang: string, IconPath: string, code:string): HTMLButtonElement {
@@ -237,7 +235,7 @@ export function SettingsPage(): HTMLElement {
 	mainContainer.className = "flex flex-col justify-center items-center bg-linear-to-br from-green-500 via-black to-green-800 pt-20 h-screen gap-4";
 
 	const title = document.createElement("h2");
-	title.textContent = translations[getCurrentLang()].settings;
+	title.textContent = t.settings;
 	title.className = "fixed text-8xl top-0 p-6 z-1000";
 	mainContainer.appendChild(title);
 
@@ -304,7 +302,7 @@ export function SettingsPage(): HTMLElement {
 	changeMailSection.appendChild(Mailimg);
 
 	const MailContent = document.createElement("p");
-	MailContent.textContent = getUser()?.email || "err email";
+	MailContent.textContent = getUser()?.email || t.error;
 	MailContent.className = "truncate text-auto md:text-xl w-full p-1"
 	changeMailSection.appendChild(MailContent);
 
@@ -315,7 +313,7 @@ export function SettingsPage(): HTMLElement {
 		const overlay = PopUpChangeInformation(t.changeEmail, t.currentEmail, t.newEmail, t.confirmNewEmail, getUser()?.email || email, async (newVal) => {
 			try {
 				await updateProfileInfo({ email: newVal });
-				MailContent.textContent = getUser()?.email || newVal;
+				MailContent.textContent = getUser()?.email || t.error;
 			} catch (e: any) {
 				alert(e.message || 'Update failed');
 			}
@@ -352,7 +350,6 @@ export function SettingsPage(): HTMLElement {
 	ChangePasswordBtn.type = "button";
 	ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
 	ChangePasswordBtn.addEventListener(("click"), () => {
-		// Do not validate against stored value; ask user to input current password
 		const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, "", async (newVal, oldVal) => {
 			try {
 				await updatePassword(oldVal || '', newVal);

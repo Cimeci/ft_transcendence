@@ -1,6 +1,4 @@
 import '../style.css';
-// import { translations } from '../i18n';
-// import { getCurrentLang } from 'settings';
 import { navigateTo } from '../routes'
 
 export function HomePage(): HTMLElement {
@@ -36,7 +34,6 @@ export function HomePage(): HTMLElement {
 	LinkContainer.appendChild(PongLinkContainer);
 
 	const TournamentLinkContainer = document.createElement("div");
-	TournamentLinkContainer.className = "";
 
 	const TournatmentImg = document.createElement("img");
 	TournatmentImg.src = "/icons/tournament_icone.png"
