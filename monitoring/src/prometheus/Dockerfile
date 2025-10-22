@@ -1,8 +1,10 @@
 FROM alpine:3.20 AS builder
 ARG PROM_PASSWORD_HASH
+ARG PROM_PASSWORD
 RUN apk add --no-cache gettext
 COPY ./config /tmp/config
-RUN envsubst < /tmp/config/web.yml.template > /tmp/config/web.yml
+RUN envsubst < /tmp/config/web.yml.template > /tmp/config/web.yml && \
+    envsubst < /tmp/config/prometheus.yml.template > /tmp/config/prometheus.yml
 
 
 FROM prom/prometheus:v3.6.0

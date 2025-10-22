@@ -1,7 +1,5 @@
 services:
 
-  
-
   prometheus:
     container_name: monitor_prometheus
     networks:
@@ -11,12 +9,13 @@ services:
       context: ./src/prometheus
       args:
         PROM_PASSWORD_HASH: ${PROM_PASSWORD_HASH}
+        PROM_PASSWORD: ${PROM_PASSWORD}
     volumes:
       - prometheus-data:/prometheus
     environment:
       - PROM_PASSWORD_HASH=${PROM_PASSWORD_HASH}
     ports:
-      - "9090:9090" # <- Close it when grafana is set
+      - "127.0.0.1:9090:9090" # <- Add it into the proxy for extranal connexions
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.config.file=/etc/prometheus/web.yml'
@@ -32,15 +31,28 @@ services:
       context: ./src/alertmanager
       args:
        DISCORD_HOOK_URL: ${DISCORD_HOOK_URL}
-    ports:
-      - "127.0.0.1:9093:9093" # <- Close when debug is over (just PORTS: 9093 should be ok)
+    expose:
+      - "9093"
     restart: unless-stopped
 
-  #grafana:
-    #container_name: monitor_grafana
-    #network:
-      #- monitoring
-    #restart: unless-stopped
+  grafana:
+    container_name: monitor_grafana
+    networks:
+      - monitoring
+    depends_on:
+      prometheus:
+        condition: service_started
+    build:
+      context: ./src/grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - PROM_PASSWORD=${PROM_PASSWORD}
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
 
   cadvisor:
     container_name: monitor_cadvisor
@@ -54,7 +66,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     expose:
-      - 8080
+      - "8080"
     restart: unless-stopped
 
   es_exporter:
@@ -74,7 +86,7 @@ services:
       - '--es.uri=https://elastic:${ELASTIC_PASSWORD}@es01:9200'
       - '--es.ca=/certs/ca/ca.crt'
     expose:
-      - 9114
+      - "9114"
     restart: unless-stopped
 
   telegraf:

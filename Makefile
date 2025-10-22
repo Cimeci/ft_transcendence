@@ -6,7 +6,7 @@
 ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs kibana-dashboards
 BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket
 # FRONTEND_CONTAINERS	=
-MONITOR_CONTAINERS	= 	prometheus alertmanager cadvisor es_exporter telegraf
+MONITOR_CONTAINERS	= 	prometheus alertmanager cadvisor es_exporter telegraf grafana
 
 ################################################################################
 #	RECIPES																	   #
