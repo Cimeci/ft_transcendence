@@ -126,6 +126,7 @@ function creationInventory(user_uuid) {
 
     const avatar = JSON.stringify([
         { id: '/avatar/default_avatar.png', name: 'default avatar', type: 'avatar', price: 0, usable: true},
+        { id: '/avatar/rgramati.jpg', name: 'rgramati avatar', type: 'avatar', price: 1, usable: false},
         { id: '/avatar/inowak--.jpg', name: 'inowak-- avatar', type: 'avatar', price: 250, usable: false},
         { id: '/avatar/mdegache.jpg', name: 'mdegache avatar', type: 'avatar', price: 250, usable: false},
         { id: '/avatar/amblanch.jpg', name: 'amblanch avatar', type: 'avatar', price: 250, usable: false},
@@ -140,7 +141,7 @@ function creationInventory(user_uuid) {
 
     const ball_use = JSON.stringify([{ id: '/ball/default_ball.png', name: 'default ball'}]); 
     const background_use =  JSON.stringify([{ id: '/bg/default_bg.png', name: 'default bg'}]);
-    const paddle_use = JSON.stringify([{ id: '/bar/default_bar.png', name: 'default bar'}]);
+    const paddle_use = JSON.stringify([{ id: '/playbar/default_bar.png', name: 'default bar'}]);
     const avatar_use = JSON.stringify([{ id: '/avatar/default_avatar.png', name: 'default avatar'}]);
 
     console.log(ball);
