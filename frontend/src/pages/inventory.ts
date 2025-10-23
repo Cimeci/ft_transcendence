@@ -80,6 +80,7 @@ export function InventoryPage(): HTMLElement {
         header.title = label;
         box.appendChild(header);
 
+        const key = `${type}_use` as keyof InventoryResponse;
         if (type === "paddle")
         {
             const img_box = document.createElement("div");
@@ -87,7 +88,6 @@ export function InventoryPage(): HTMLElement {
             box.appendChild(img_box);
 
             const img = document.createElement("img");
-            const key = `${type}_use` as keyof InventoryResponse;
             img.src = inventory[key]?.[0]?.id;
             img.alt = type;
             img.className = "flex items-center m-auto h-40";
@@ -96,7 +96,6 @@ export function InventoryPage(): HTMLElement {
         else
         {
             const img = document.createElement("img");
-            const key = `${type}_use` as keyof InventoryResponse;
             img.src = inventory[key]?.[0]?.id;
             img.alt = type;
             img.className = "w-full aspect-square object-cover rounded-lg bg-black/40 mt-2 sm:mt-5 xl:mt-10";
@@ -105,7 +104,7 @@ export function InventoryPage(): HTMLElement {
 
         const cap = document.createElement("div");
         cap.className = "text-white/80 text-xs truncate w-full text-center";
-        cap.textContent = inventory[type]?.[0]?.name || '';
+        cap.textContent = inventory[key]?.[0]?.name || '';
 
         box.appendChild(cap);
         return box;

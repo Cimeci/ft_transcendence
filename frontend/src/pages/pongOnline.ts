@@ -1,10 +1,9 @@
-import { getCurrentLang } from "./settings";
-import { translations } from '../i18n';
 import { navigateTo } from '../routes';
 import { CreateWrappedButton } from "../components/utils";
 import { getUser } from "../linkUser";
 import { t } from "./settings";
 import type { Friend } from "./friends";
+import { getUserInventory } from './inventory';
 
 export const gameHistory: string[] = [];
 
@@ -70,11 +69,14 @@ export function PongOnlineMenuPage(): HTMLElement {
 	  	  	  	  	  	  	id: other,
 	  	  	  	  	  	  	username: user.username || other,
 	  	  	  	  	  	  	invitation: t.friends,
-	  	  	  	  	  	  	avatar: user.avatar || "/avatar/default_avatar.png"
+	  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png",
+							ball: user.ball_use[0].id || "/ball/default_ball.png",
+							bar: user.paddle_use[0].id || "/playbar/default_bar.png",
 	  	  	  	  	  	};
 	  	  	  	  	}
 	  	  	  	} catch {}
-	  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
+	  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png",
+					ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png" };
 	  	  	}));
 	  	  	friendData = list;
 	  	} catch (e) {
@@ -83,7 +85,9 @@ export function PongOnlineMenuPage(): HTMLElement {
 	  	}
 
 		console.log("FRIEND_DATA", friendData);
+
 		friendData.forEach(e => {
+			console.log("EACH USER: ", e);
 			const li: HTMLLIElement = document.createElement("li");
 			li.className = "flex justify-between items-center p-2 w-full min-h-12"
 		
@@ -106,12 +110,14 @@ export function PongOnlineMenuPage(): HTMLElement {
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
 			btn.addEventListener("click", () => {
-				window.showInvite({
-					username: e.username || "default",
-					id: e.id.split("-")[0] || t.err_id,
-					avatar: e.avatar || "/avatar/default_avatar.png",
-					message: `${t.Invitation_against} ${getUser()?.username || 'default'}`,
-				});
+				username2.textContent = e.username;
+				bar2.src = e.bar || "";
+				// window.showInvite({
+				// 	username: e.username || "default",
+				// 	id: e.id.split("-")[0] || t.err_id,
+				// 	avatar: e.avatar || "/avatar/default_avatar.png",
+				// 	message: `${t.Invitation_against} ${getUser()?.username || 'default'}`,
+				// });
 			});
 			li.appendChild(btn);
 			lstFriends.appendChild(li);
@@ -124,7 +130,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 	TitlePong.textContent = t.online;
 	mainContainer.appendChild(TitlePong);
 
-	const container1 = document.createElement("div");{
+	const container1 = document.createElement("div");
 	container1.className = "mt-30 xl:mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
 	mainContainer.appendChild(container1);
 
@@ -137,86 +143,97 @@ export function PongOnlineMenuPage(): HTMLElement {
 	inventory.className = "w-9/10 flex justify-around";
 	container1.appendChild(inventory);
 
-	const ballContainer = document.createElement("div");{
-		ballContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
-		inventory.appendChild(ballContainer);
-
-		const ball = document.createElement("img");
-		ball.src = "/ball/default_ball.png";
-		ball.className = "w-full h-full rounded-xl";
-		ballContainer.appendChild(ball);
-	}
-
-	const barContainer = document.createElement("div");{
+	const barContainer = document.createElement("div");
 		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
 		inventory.appendChild(barContainer);
 		
 		const bar = document.createElement("img");
-		bar.src = "/bar/default_bar.png";
-		bar.className = "w-full h-full rounded-xl";
+		bar.src = "/playbar/default_bar.png";
+		bar.className = "m-auto h-full rounded-xl";
 		barContainer.appendChild(bar);
-	}
-	}
 
-	const container2 = document.createElement("div");{
-	container2.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-6 glass-blur justify-around items-center text-center";
+
+	const container2 = document.createElement("div");
+	container2.className = "mt-15 p-5 w-9/10 xl:w-2/3 h-[60vh] flex flex-col gap-4 glass-blur justify-around items-center text-center";
 	mainContainer.appendChild(container2);
 
-	const playBtn = CreateWrappedButton(mainContainer, t.play, "/pong/online/game", 5);
+	const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
+	playBtn.onclick = () => {
+		if (user2.name) navigateTo("/pong/local/game");
+		else
+		{
+			username.classList.add("placeholder-red-700", "shake");
+			setTimeout(() => {username.classList.remove("placeholder-red-700", "shake")}, 700)
+		}
+	}
 	container2.appendChild(playBtn);
 
-	const bgContainer = document.createElement("div");{
-		bgContainer.className = "glass-blur h-[14rem] w-[14rem] flex flex-col gap-2 p-1";
-		container2.appendChild(bgContainer);
+	const GlobalValue = document.createElement("div");
+	GlobalValue.className = "w-full flex justify-around"
+	container2.appendChild(GlobalValue);
+
+	const bgContainer = document.createElement("div");
+		bgContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
+		GlobalValue.appendChild(bgContainer);
 		
 		const bgTxt = document.createElement("p");
 		bgTxt.textContent = t.gamebackground;
 		bgContainer.appendChild(bgTxt);
 
 		const bg = document.createElement("img");
-		bg.src = "/bg/matrix_bg.gif";
-		bg.className = "w-full rounded-xl h-full";
+		bg.src = "/bg/default_bg.gif";
+		bg.className = "m-auto w-full rounded-xl";
 		bgContainer.appendChild(bg);
-	}
 
+	const ballContainer = document.createElement("div");
+		ballContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
+		GlobalValue.appendChild(ballContainer);
+		
+		const ballTxt = document.createElement("p");
+		ballTxt.textContent = t.ball;
+		ballContainer.appendChild(ballTxt);
+
+		const ball = document.createElement("img");
+		ball.src = "/ball/default_ball.gif";
+		ball.className = "m-auto w-8/10 rounded-xl";
+		ballContainer.appendChild(ball);
+
+	
 	const backBtn = CreateWrappedButton(mainContainer, t.back, "/pong/menu", 0);
 	container2.appendChild(backBtn);
 
-	}
 
-	const container3 = document.createElement("div");{
+
+	const container3 = document.createElement("div");
 	container3.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
 	mainContainer.appendChild(container3);
 
-	const username = document.createElement("p");
-	username.className = "w-9/10 glass-blur text-xl py-1";
-	username.textContent = "USER NAME OPPONENT"; //! USER NAME OPPONENT
-	container3.appendChild(username);
+	const username2 = document.createElement("p");
+	username2.className = "w-9/10 glass-blur text-xl py-1";
+	username2.textContent = "USER NAME OPPONENT"; //! USER NAME OPPONENT
+	container3.appendChild(username2);
 
-	const inventory = document.createElement("div");
-	inventory.className = "w-9/10 flex justify-around";
-	container3.appendChild(inventory);
+	const inventory2 = document.createElement("div");
+	inventory2.className = "w-9/10 flex justify-around";
+	container3.appendChild(inventory2);
 
-	const ballContainer = document.createElement("div");{
-		ballContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
-		inventory.appendChild(ballContainer);
-
-		const ball = document.createElement("img");
-		ball.src = "/ball/default_ball.png";
-		ball.className = "w-full h-full rounded-xl";
-		ballContainer.appendChild(ball);
-	}
-
-	const barContainer = document.createElement("div");{
-		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
-		inventory.appendChild(barContainer);
+	const barContainer2 = document.createElement("div");
+		barContainer2.className = "glass-blur h-[11rem] w-[11rem] p-1";
+		inventory2.appendChild(barContainer2);
 		
-		const bar = document.createElement("img");
-		bar.src = "/bar/default_bar.png";
-		bar.className = "w-full h-full rounded-xl";
-		barContainer.appendChild(bar);
+		const bar2 = document.createElement("img");
+		bar2.src = "/playbar/default_bar.png";
+		bar2.className = "m-auto h-full rounded-xl";
+		barContainer2.appendChild(bar2);
+
+	async function setInventory() {
+		const userInventory = await getUserInventory();
+
+		ball.src = userInventory?.ball_use[0].id || "/ball/default_ball.png";
+		bar.src = userInventory?.paddle_use[0].id || "/playbar/default_bar.png";
+		bg.src = userInventory?.background_use[0].id || "/bg/default_bg.png";
 	}
-	}
+	setInventory();
 
 	return (mainContainer);
 }

@@ -12,6 +12,7 @@ export function getCurrentLang(): 'fr' | 'en' | 'es' {
 
 function setLanguage(lang: string) {
 	localStorage.setItem('lang', lang);
+	document.location.reload();
 	if (typeof window.renderPage === 'function') window.renderPage();
 }
 

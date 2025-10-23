@@ -32,7 +32,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	container1.appendChild(inventory);
 
 	const barContainer = document.createElement("div");
-		barContainer.className = "glass-blur h-[18rem] w-[18rem] p-1";
+		barContainer.className = "glass-blur h-[16rem] w-[16rem] p-1";
 		inventory.appendChild(barContainer);
 
 		const bar = document.createElement("img");
@@ -56,7 +56,15 @@ export function PongLocalMenuPage(): HTMLElement {
 	container2.className = "mt-15 p-5 w-9/10 xl:w-2/3 h-[60vh] flex flex-col gap-4 glass-blur justify-around items-center text-center";
 	mainContainer.appendChild(container2);
 
-	const playBtn = CreateWrappedButton(mainContainer, t.play, "/pong/local/game", 5);
+	const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
+	playBtn.onclick = () => {
+		if (user2.name) navigateTo("/pong/local/game");
+		else
+		{
+			username.classList.add("placeholder-red-700", "shake");
+			setTimeout(() => {username.classList.remove("placeholder-red-700", "shake")}, 700)
+		}
+	}
 	container2.appendChild(playBtn);
 
 	const GlobalValue = document.createElement("div");
@@ -64,7 +72,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	container2.appendChild(GlobalValue);
 
 	const bgContainer = document.createElement("div");
-		bgContainer.className = "glass-blur h-[20rem] w-[20rem] flex flex-col gap-2 p-1";
+		bgContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
 		GlobalValue.appendChild(bgContainer);
 		
 		const bgTxt = document.createElement("p");
@@ -77,7 +85,7 @@ export function PongLocalMenuPage(): HTMLElement {
 		bgContainer.appendChild(bg);
 
 	const ballContainer = document.createElement("div");
-		ballContainer.className = "glass-blur h-[20rem] w-[20rem] flex flex-col gap-2 p-1";
+		ballContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
 		GlobalValue.appendChild(ballContainer);
 		
 		const ballTxt = document.createElement("p");
@@ -107,12 +115,12 @@ export function PongLocalMenuPage(): HTMLElement {
 
 	}
 
-	const container3 = document.createElement("div");{
+	const container3 = document.createElement("div");
 	container3.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
 	mainContainer.appendChild(container3);
 
 	const username = document.createElement("input");
-	username.className = "w-9/10 glass-blur text-xl px-2 py-1";
+	username.className = "w-9/10 glass-blur text-xl px-2 py-1 duration-400 focus:scale-105 transition-all";
 	username.placeholder = t.insert_second_username;
 	username.addEventListener(("input"), () => {
 		user2.name = username.value;
@@ -124,7 +132,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	container3.appendChild(inventory);
 
 	const barContainer = document.createElement("div");{
-		barContainer.className = "glass-blur h-[18rem] w-[18rem] p-1";
+		barContainer.className = "glass-blur h-[16rem] w-[16rem] p-1";
 		inventory.appendChild(barContainer);
 		
 		const bar = document.createElement("img");
@@ -132,7 +140,6 @@ export function PongLocalMenuPage(): HTMLElement {
 		user2.paddle = "/bar/default_bar.png";
 		bar.className = "m-auto h-full rounded-xl";
 		barContainer.appendChild(bar);
-	}
 	}
 
 	return (mainContainer);
@@ -149,13 +156,13 @@ export interface User {
 }
 
 export const user1: User = {
-	name: "user1",
+	name: "",
 	paddle: "/playbar/default_bar.png",
 	score: 0,
 };
 
 export const user2: User = {
-	name: "user2",
+	name: "",
 	paddle: "/playbar/default_bar.png",
 	score: 0,
 };

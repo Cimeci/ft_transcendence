@@ -273,9 +273,13 @@ export function ShopPage(): HTMLElement {
             return false;
         }
 
-        document.location.reload();
+        await getWallet();
+
+        try { (window as any).refreshInventoryGrid?.(); } catch {}
+
         shopData = await getShop();
         render();
+        
         return true;
     }
 

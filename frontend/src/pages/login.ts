@@ -54,6 +54,67 @@ export function OAuthCallbackPage(): HTMLElement {
 	return root;
 }
 
+async function login(InputMail: HTMLInputElement, InputPassword: HTMLInputElement, EyePassword: HTMLImageElement, ) {
+	if (InputMail.value == '' || InputPassword.value == '' || InputPassword.value.length < 8) {
+				if (InputMail.value == '') {
+		InputMail.value = '';
+		InputMail.placeholder = t.empty_input;
+		InputMail.classList.add('placeholder:text-red-500');
+		InputMail.classList.add('shake');
+	}
+
+	if (InputPassword.value == '') {
+		InputPassword.value = '';
+		InputPassword.placeholder = t.empty_input;
+		InputPassword.classList.add('placeholder:text-red-500');
+		InputPassword.classList.add('shake');
+		EyePassword.classList.add('shake');
+	}
+
+	if (InputPassword.value.length < 8 && InputPassword.value.length > 0) {
+		InputPassword.value = '';
+		InputPassword.placeholder = t.insufficient_length;
+		InputPassword.classList.add('placeholder:text-red-500');
+		InputPassword.classList.add('shake');
+		EyePassword.classList.add('shake');
+	}
+
+	setTimeout(() => InputMail.value = InputMail.value, 800);
+	setTimeout(() => InputMail.placeholder = t.username, 800);
+	setTimeout(() => InputMail.classList.remove('placeholder:text-red-500'), 800);
+	setTimeout(() => InputMail.classList.remove('shake'), 800);
+		
+	setTimeout(() => InputPassword.value = InputPassword.value, 800);
+	setTimeout(() => InputPassword.placeholder = t.password, 800);
+	setTimeout(() => InputPassword.classList.remove('placeholder:text-red-500'), 800);
+	setTimeout(() => InputPassword.classList.remove('shake'), 800);
+	setTimeout(() => EyePassword.classList.remove('shake'), 800);
+
+	} else {
+		try {
+			const resp = await fetch('/auth/login', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email: InputMail.value.trim(), password: InputPassword.value })
+			});
+			const data = await resp.json();
+			if (!resp.ok) throw new Error(data?.error || 'Login failed');
+			console.log('jwt:', data.jwtToken);
+			localStorage.setItem('jwt', data.jwtToken);
+			await ensureUser(true);
+			navigateTo('/home');
+		} catch (e: any) {
+			InputPassword.value = '';
+			InputPassword.placeholder = e.message || 'Login failed';
+			InputPassword.classList.add('placeholder:text-red-500','shake');
+			setTimeout(() => {
+				InputPassword.placeholder = t.password;
+				InputPassword.classList.remove('placeholder:text-red-500','shake');
+			}, 800);
+		}
+	}
+}
+
 export function LoginPage(): HTMLElement {
 	const mainContainer = document.createElement('div');
 	mainContainer.className = 'z-2000 min-h-screen w-full flex items-center justify-center gap-4 bg-linear-to-bl from-green-800 via-black to-green-800';
@@ -81,15 +142,34 @@ export function LoginPage(): HTMLElement {
 	const SelfLogin = document.createElement('div');
 	SelfLogin.className = 'flex flex-col justify-center items-center w-1/2 gap-6';
 
+	document.addEventListener('keydown', (event: KeyboardEvent) => {
+		if (document.activeElement !== translation
+			&& document.activeElement !== InputMail
+			&& document.activeElement !== InputPassword
+			&& document.activeElement !== LoginBtn
+			&& document.activeElement !== linkRegister
+			&& document.activeElement !== GithubBtn
+			&& document.activeElement !== GoogleBtn
+			&& event.key !== 'Tab')
+			InputMail.focus();
+	})
+
 	const InputMail = document.createElement('input');
 	InputMail.className = 'text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103';
 	InputMail.placeholder = t.email;
+	InputMail.addEventListener('keydown', (event :KeyboardEvent) => {
+		if (event.key === 'Enter') { InputPassword.focus(); }
+	})
 
 	const InputPassword = document.createElement('input');
 	InputPassword.className = 'text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transition-all focus:scale-103 pr-12';
 	InputPassword.placeholder = t.password;
 	InputPassword.maxLength = 30;
 	InputPassword.type = 'password';
+	InputPassword.addEventListener('keydown', (event :KeyboardEvent) => {
+		if (event.key === 'Enter')
+			login(InputMail, InputPassword, EyePassword);
+	})
 
 	function togglePassword(input: HTMLInputElement, icon: HTMLImageElement) {
 		if (input.type === 'password') {
@@ -119,64 +199,8 @@ export function LoginPage(): HTMLElement {
 	LoginBtn.className = 'mt-4 px-8 py-3 rounded-xl bg-green-600 text-white text-2xl duration-300 focus:scale-105 hover:scale-105 hover:bg-green-700 transition-all w-full';
 	LoginBtn.textContent = t.login;
 	LoginBtn.addEventListener('click', async () => {
-				if (InputMail.value == '' || InputPassword.value == '' || InputPassword.value.length < 8) {
-						if (InputMail.value == '') {
-				InputMail.value = '';
-				InputMail.placeholder = t.empty_input;
-				InputMail.classList.add('placeholder:text-red-500');
-				InputMail.classList.add('shake');
-			}
-			if (InputPassword.value == '') {
-				InputPassword.value = '';
-				InputPassword.placeholder = t.empty_input;
-				InputPassword.classList.add('placeholder:text-red-500');
-				InputPassword.classList.add('shake');
-				EyePassword.classList.add('shake');
-			}
-
-			if (InputPassword.value.length < 8 && InputPassword.value.length > 0) {
-				InputPassword.value = '';
-				InputPassword.placeholder = t.insufficient_length;
-				InputPassword.classList.add('placeholder:text-red-500');
-				InputPassword.classList.add('shake');
-				EyePassword.classList.add('shake');
-			}
-
-			setTimeout(() => InputMail.value = InputMail.value, 800);
-			setTimeout(() => InputMail.placeholder = t.username, 800);
-			setTimeout(() => InputMail.classList.remove('placeholder:text-red-500'), 800);
-			setTimeout(() => InputMail.classList.remove('shake'), 800);
-				
-			setTimeout(() => InputPassword.value = InputPassword.value, 800);
-			setTimeout(() => InputPassword.placeholder = t.password, 800);
-			setTimeout(() => InputPassword.classList.remove('placeholder:text-red-500'), 800);
-			setTimeout(() => InputPassword.classList.remove('shake'), 800);
-			setTimeout(() => EyePassword.classList.remove('shake'), 800);
-		} else {
-			try {
-				const resp = await fetch('/auth/login', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ email: InputMail.value.trim(), password: InputPassword.value })
-				});
-				const data = await resp.json();
-				if (!resp.ok) throw new Error(data?.error || 'Login failed');
-
-				console.log('jwt:', data.jwtToken);
-				localStorage.setItem('jwt', data.jwtToken);
-				await ensureUser(true);
-				navigateTo('/home');
-			} catch (e: any) {
-				InputPassword.value = '';
-				InputPassword.placeholder = e.message || 'Login failed';
-				InputPassword.classList.add('placeholder:text-red-500','shake');
-				setTimeout(() => {
-					InputPassword.placeholder = t.password;
-					InputPassword.classList.remove('placeholder:text-red-500','shake');
-				}, 800);
-			}
-		}
-		});
+		login(InputMail, InputPassword, EyePassword);
+	});
 
 	const linkRegister = document.createElement('a');
 	linkRegister.className = 'text-green-800 hover:text-green-700 hover:scale-103 focus:scale-103 transition-all duration-400';

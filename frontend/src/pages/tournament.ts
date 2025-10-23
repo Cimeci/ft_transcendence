@@ -372,7 +372,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 							id: other,
 							username: user.username || other,
 							invitation: t.friends,
-							avatar: user.avatar || "/avatar/default_avatar.png"
+							avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
 						};
 					}
 				} catch {}
@@ -555,7 +555,7 @@ export function PongTournamentPageHost(): HTMLElement {
 	  	  	  	  	  	  	id: other,
 	  	  	  	  	  	  	username: user.username || other,
 	  	  	  	  	  	  	invitation: t.friends,
-	  	  	  	  	  	  	avatar: user.avatar || "/avatar/default_avatar.png"
+	  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
 	  	  	  	  	  	};
 	  	  	  	  	}
 	  	  	  	} catch {}

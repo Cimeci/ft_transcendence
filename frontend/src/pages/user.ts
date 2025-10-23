@@ -162,7 +162,7 @@ export function UserPage(): HTMLElement {
         const avatar = document.createElement("img");
         avatar.alt = "avatar";
         avatar.src = "/avatar/default_avatar.png"
-        avatar.className = "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-green-500/50";
+        avatar.className = "w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2";
         avatarWrap.appendChild(avatar)
 
         const status = document.createElement("span");
@@ -461,6 +461,7 @@ export function UserPage(): HTMLElement {
         s2b.textContent = u.game_ratio + "%";
 	    s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
         u.is_online == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
+        u.is_online == 1 ? avatar.classList.add("ring-green-500/50"): avatar.classList.add("ring-gray-500/50")
 
         allBars = JSON.parse(u.paddle);
         allBalls = JSON.parse(u.ball);

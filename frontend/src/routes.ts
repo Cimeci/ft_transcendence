@@ -18,13 +18,88 @@ import { UserPage } from './pages/user';
 import { addNotification, removeNotification } from './components/notifications_overlay'
 import { ensureUser, onUserChange} from './linkUser';
 
+const PUBLIC_ROUTES = new Set<string>(['/', '/login', '/register', '/oauth/callback']);
+
 document.getElementById("jschef")?.remove();
+
+function b64urlDecode(input: string): string {
+  	input = input.replace(/-/g, '+').replace(/_/g, '/');
+
+  	const pad = input.length % 4;
+  	if (pad)
+		input += '='.repeat(4 - pad);
+  	try {
+  	  	return decodeURIComponent(atob(input).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+  	} catch {
+  	  	return '';
+  	}
+}
+
+function isJwtValid(): boolean {
+  	const token = localStorage.getItem("jwt");
+  	if (!token)
+		return false;
+
+  	const parts = token.split('.');
+  	if (parts.length !== 3)
+		return false;
+
+  	try {
+  	  	const payload = JSON.parse(b64urlDecode(parts[1]) || '{}');
+  	  	if (typeof payload.exp !== 'number')
+			return false;
+
+  	  	const now = Math.floor(Date.now() / 1000);
+  	  	return payload.exp > now;
+  	} catch {
+  	  	return false;
+  	}
+}
+
+function render401(): HTMLElement {
+  	const el = document.createElement('div');
+  	el.className = 'bg-gradient-to-r from-black via-green-900 to-black text-white flex items-center justify-center flex-1 bg-opacity-90 p-0 z-2002';
+
+	const main = document.createElement("div");
+	main.className = "flex flex-col justify-center text-center p-8";
+	el.appendChild(main);
+
+	const div = document.createElement("div");{
+	div.className = "flex flex-col justify-center text-center";
+	main.appendChild(div);
+
+	const h1 = document.createElement("h1");
+	h1.className = "md:text-6xl sm:text-4xl text-3xl font-bold mb-4 duration-400 transition-all hover:scale-105";
+	h1.textContent = "401";
+	div.appendChild(h1);
+
+	const p = document.createElement("p");
+	p.className = "text-2xl duration-400 transition-all hover:scale-105";
+	p.textContent = "Unauthorized";
+	div.appendChild(p);
+	}
+
+	const a = document.createElement("a");
+	a.className = "absolute bottom-1/4 text-green-400 text-2xl hover:text-green-500 duration-400 transition-all hover:scale-105";
+	a.href = "/login";
+	a.textContent = "Return to login page";
+	el.appendChild(a);
+
+  	return el;
+}
+
+function render404(): HTMLElement {
+	const notFound = document.createElement('div');
+	notFound.innerHTML = '<h1 class="md:text-6xl sm:text-4xl text-2xl font-bold mb-4">404</h1><p class="text-2xl">Page not found.</p>';
+	notFound.className = "bg-gradient-to-r from-black via-green-900 to-black text-white flex items-center justify-center flex-1 bg-black bg-opacity-90 p-0 z-2002";
+	return (notFound);
+}
 
 const routes: { [key: string]: () => HTMLElement } = {
 	'/': LandingPage,
-	'/home': HomePage,
 	'/login': LoginPage,
 	'/register': RegisterPage,
+	'/home': HomePage,
 	'/shop': ShopPage,
 	'/friends': FriendsPage,
 	'/inventory': InventoryPage,
@@ -52,15 +127,19 @@ export const navigateTo = (url: string) => {
 
 const renderPage = () => {
 	const path = window.location.pathname;
+
+  	const isPublic = PUBLIC_ROUTES.has(path);
+  	const allowed = isPublic || isJwtValid();
+
 	const pageRenderer = routes[path];
 	let contentToRender: HTMLElement;
-	if (typeof pageRenderer === 'function') {
+	
+	if (!allowed) {
+    	contentToRender = render401();
+	} else if (typeof pageRenderer === 'function') {
 		contentToRender = pageRenderer();
 	} else {
-		const notFound = document.createElement('div');
-		notFound.innerHTML = '<h1 class="md:text-6xl sm:text-4xl text-2xl font-bold mb-4">404</h1><p class="text-2xl">Page not found.</p>';
-		notFound.className = "bg-gradient-to-r from-black via-green-900 to-black text-white flex items-center justify-center flex-1 bg-black bg-opacity-90 p-0 z-2002";
-		contentToRender = notFound;
+		contentToRender = render404();
 	}
  
 	const appElement = document.getElementById('app');
@@ -69,9 +148,10 @@ const renderPage = () => {
 		appElement.appendChild(contentToRender);
 	}
 
-	// Navbar links update
 	const oldNavbar = document.querySelector('nav.navbar-burger');
-	if (oldNavbar) oldNavbar.remove();
+	if (oldNavbar)
+		oldNavbar.remove();
+
 	const navbar = createNavbar(navRoutesForNavbar);
 	document.body.prepend(navbar);
 
@@ -92,7 +172,7 @@ document.addEventListener('click', event => {
 	if (linkElement) {
 		event.preventDefault();
 		navigateTo(linkElement.getAttribute('href')!);
-		//* close navbar *//
+
 		const navLinks = document.querySelector('.navbar-links-burger');
 		if (navLinks && navLinks.classList.contains('open')) {
 			navLinks.classList.remove('open');
@@ -206,11 +286,10 @@ window.addEventListener('invite:show', (e: Event) => {
   	ensureTopRightToastRoot().appendChild(makeInviteToast(detail));
 });
 
-// Helper pour déclencher depuis n’importe où
 window.showInvite = (payload: InvitePayload) => {
 	addNotification(payload);
    	window.dispatchEvent(new CustomEvent<InvitePayload>('invite:show', { detail: payload }));
- };
+};
 
 window.addEventListener('resize', positionToastRoot);
 

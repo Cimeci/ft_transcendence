@@ -28,6 +28,74 @@ export function createInputWithEye(input: HTMLInputElement, eye: HTMLImageElemen
 	return wrapper;
 }
 
+async function register(newuser: User, InputEmail: HTMLInputElement, InputPassword: HTMLInputElement, InputConfirmPassword: HTMLInputElement) {
+	try {
+		const resp = await fetch("/auth/register", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ username: newuser.name.trim() ,email: newuser.email.trim(), password: newuser.password.trim() })
+		});
+		const data = await resp.json();
+		if (!resp.ok) throw new Error(data?.error || "Register failed");
+		const jwt = data.token || data.jwtToken;
+		if (jwt) {
+			localStorage.setItem('jwt', jwt);
+			await ensureUser(true);
+		}
+		console.log("jwt:", jwt);
+		{ // Connect
+			// const overlay = document.createElement("div");
+        	// overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
+			// overlay.style.opacity = "0";
+        	// overlay.style.transition = "opacity 1s ease";
+			// // 
+        	// const msg = document.createElement("h1");
+        	// msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
+        	// msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
+        	// overlay.appendChild(msg);
+			// // 
+        	// document.body.appendChild(overlay);
+        	// requestAnimationFrame(() => {
+        	//     overlay.style.opacity = "1";
+        	// });
+			// // 
+        	// RegisterContainer.classList.add("fade-out");
+			// 
+        	// setTimeout(() => {
+			// 	overlay.style.opacity = "0";
+			// 	const onTransitionEnd = () => {
+			// 		overlay.removeEventListener("transitionend", onTransitionEnd);
+        	// 		if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        	// 		navigateTo("/home");
+			// 	}
+			// 	overlay.addEventListener("transitionend", onTransitionEnd);
+        	// }, 4000);
+			navigateTo("/home");
+		}
+	} catch (e: any) {
+		if (e.message.includes("email") || e.message.includes("Email"))
+			InputEmail.value = "";
+			InputEmail.placeholder = e.message || "Register failed";
+			InputEmail.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
+		if (e.message.includes("password") || e.message.includes("Password"))
+		{
+			InputPassword.value = "";
+			InputPassword.placeholder = e.message || "Register failed";
+			InputPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
+			InputConfirmPassword.value = "";
+			InputConfirmPassword.placeholder = e.message || "Register failed";
+			InputConfirmPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
+		}
+		setTimeout(() => {
+			InputEmail.placeholder = t.email;
+			InputEmail.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
+			InputPassword.placeholder = t.password;
+			InputPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
+			InputConfirmPassword.placeholder = t.confirm_password;
+			InputConfirmPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
+		}, 800);
+	}
+}
 
 export function RegisterPage(): HTMLElement {
 	const mainContainer = document.createElement('div');
@@ -55,23 +123,39 @@ export function RegisterPage(): HTMLElement {
 	const RegisterContainer = document.createElement("div");
 	RegisterContainer.className = "flex flex-col justify-center items-center border-2 w-[35rem] p-15 gap-4 bg-black/60 rounded-xl";
 
+	document.addEventListener('keydown', (event: KeyboardEvent) =>{
+    	if (document.activeElement !== translation
+			&& document.activeElement !== InputName
+			&& document.activeElement !== InputEmail
+			&& document.activeElement !== InputPassword
+			&& document.activeElement !== InputConfirmPassword
+			&& document.activeElement !== linkLogin
+			&& document.activeElement !== RegisterBtn
+			&& event.key !== 'Tab')
+        	InputName.focus();
+	})
+
 	const InputName = document.createElement("input");
-	InputName.className = "text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103";
+	InputName.className = "text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transition-all focus:scale-103";
 	InputName.placeholder = t.name;
 	InputName.maxLength = 20;
-	InputName.focus();
 	InputName.addEventListener("input", () => {
 		newuser.name = InputName.value;
 	});
+	InputName.addEventListener('keydown', (event: KeyboardEvent) => {
+  		if (event.key === 'Enter') { event.preventDefault(); InputEmail.focus(); }
+	})
 	RegisterContainer.appendChild(InputName);
 
 	const InputEmail = document.createElement("input");
 	InputEmail.className = "text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transtion-all focus:scale-103";
 	InputEmail.placeholder = t.email;
-	InputEmail.focus();
 	InputEmail.addEventListener("input", () => {
 		newuser.email = InputEmail.value;
 	});
+	InputEmail.addEventListener('keydown', (event: KeyboardEvent) => {
+  		if (event.key === 'Enter') { event.preventDefault(); InputPassword.focus(); }
+	})
 	RegisterContainer.appendChild(InputEmail);
 
 	const InputPassword = document.createElement("input");
@@ -79,10 +163,12 @@ export function RegisterPage(): HTMLElement {
 	InputPassword.placeholder = t.password;
 	InputPassword.type = "password";
 	InputPassword.maxLength = 30;
-	InputPassword.focus();
 	InputPassword.addEventListener("input", () => {
 		newuser.password = InputPassword.value;
 	});
+	InputPassword.addEventListener('keydown', (event: KeyboardEvent) => {
+  		if (event.key === 'Enter') { event.preventDefault(); InputConfirmPassword.focus(); }
+	})
 
 	const EyePassword = document.createElement("img");
 	EyePassword.className = "absolute right-2 top-1/5 cursor-pointer w-7 h-7 duration-500 transtion-all hover:scale-110";
@@ -96,10 +182,13 @@ export function RegisterPage(): HTMLElement {
 	InputConfirmPassword.placeholder = t.confirm_password;
 	InputConfirmPassword.type = "password";
 	InputConfirmPassword.maxLength = 30;
-	InputConfirmPassword.focus();
 	InputConfirmPassword.addEventListener("input", () => {
 		newuser.confirm_password = InputConfirmPassword.value;
 	});
+	InputConfirmPassword.addEventListener('keydown', async (event: KeyboardEvent) => {
+  		if (event.key === 'Enter') { event.preventDefault(); register(newuser, InputEmail, InputPassword, InputConfirmPassword); }
+	})
+
 	const EyeConfirm = document.createElement("img");
 	EyeConfirm.className = "absolute right-2 top-1/5 cursor-pointer w-7 h-7 duration-500 transtion-all hover:scale-110";
 	EyeConfirm.src = "/icons/eye-off.svg";
@@ -117,72 +206,7 @@ export function RegisterPage(): HTMLElement {
 	RegisterBtn.className = "mt-4 px-8 py-3 rounded-xl bg-green-600 text-white text-2xl duration-300 focus:scale-105 hover:scale-105 hover:bg-green-700 transition-all w-full";
 	RegisterBtn.textContent = t.register;
 	RegisterBtn.addEventListener("click", async () => {
-		try {
-			const resp = await fetch("/auth/register", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ username: newuser.name.trim() ,email: newuser.email.trim(), password: newuser.password.trim() })
-			});
-			const data = await resp.json();
-			if (!resp.ok) throw new Error(data?.error || "Register failed");
-			const jwt = data.token || data.jwtToken;
-			if (jwt) {
-				localStorage.setItem('jwt', jwt);
-				await ensureUser(true);
-			}
-			console.log("jwt:", jwt);
-			{ // Connect
-				// const overlay = document.createElement("div");
-        		// overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
-				// overlay.style.opacity = "0";
-        		// overlay.style.transition = "opacity 1s ease";
-				// // 
-        		// const msg = document.createElement("h1");
-        		// msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
-        		// msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
-        		// overlay.appendChild(msg);
-				// // 
-        		// document.body.appendChild(overlay);
-        		// requestAnimationFrame(() => {
-        		//     overlay.style.opacity = "1";
-        		// });
-				// // 
-        		// RegisterContainer.classList.add("fade-out");
-				// 
-        		// setTimeout(() => {
-				// 	overlay.style.opacity = "0";
-				// 	const onTransitionEnd = () => {
-				// 		overlay.removeEventListener("transitionend", onTransitionEnd);
-            	// 		if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-            	// 		navigateTo("/home");
-				// 	}
-				// 	overlay.addEventListener("transitionend", onTransitionEnd);
-        		// }, 4000);
-				navigateTo("/home");
-			}
-		} catch (e: any) {
-			if (e.message.includes("email") || e.message.includes("Email"))
-				InputEmail.value = "";
-				InputEmail.placeholder = e.message || "Register failed";
-				InputEmail.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
-			if (e.message.includes("password") || e.message.includes("Password"))
-			{
-				InputPassword.value = "";
-				InputPassword.placeholder = e.message || "Register failed";
-				InputPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
-				InputConfirmPassword.value = "";
-				InputConfirmPassword.placeholder = e.message || "Register failed";
-				InputConfirmPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
-			}
-			setTimeout(() => {
-				InputEmail.placeholder = t.email;
-				InputEmail.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
-				InputPassword.placeholder = t.password;
-				InputPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
-				InputConfirmPassword.placeholder = t.confirm_password;
-				InputConfirmPassword.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
-			}, 800);
-		}
+		register(newuser, InputEmail, InputPassword, InputConfirmPassword);
 	});
 	RegisterContainer.appendChild(RegisterBtn);
 
