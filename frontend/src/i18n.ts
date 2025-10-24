@@ -66,7 +66,7 @@ export const translations = {
 		buy: "Acheter",
 		// Cosmetics
 		avatar: "Avatar",
-		gamebackground: "Fond du jeux",
+		gamebackground: "Fond",
 		bar: "Barre",
 		ball: "Balle",
 		// Pong Menu
@@ -170,7 +170,7 @@ export const translations = {
 		buy: "Buy",
 		// Cosmetics
 		avatar: "Avatar",
-		gamebackground: "Game background",
+		gamebackground: "Background",
 		bar: "Bar",
 		ball: "Ball",
 		// Pong Menu
@@ -276,7 +276,7 @@ export const translations = {
 		buy: "Comprar",
 		// Cosmetics
 		avatar: "Avatar",
-		gamebackground: "Fondo del juego",
+		gamebackground: "Fondo",
 		bar: "Barra",
 		ball: "Bola",
 		// Pong Menu

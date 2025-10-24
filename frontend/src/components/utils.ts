@@ -86,3 +86,21 @@ export function CreateWrappedButton(mainContainer: HTMLElement, txt: string, pat
 
     return (PlayContainer);
 }
+
+export async function SetWallet(amount: Number)
+{
+    const jwt = localStorage.getItem("jwt") || "";
+
+    const response = await fetch('/user/wallet', {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        console.error('Erreur:', response.status);
+        return;
+    }
+}

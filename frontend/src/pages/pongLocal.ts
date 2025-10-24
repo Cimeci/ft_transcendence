@@ -122,6 +122,10 @@ export function PongLocalMenuPage(): HTMLElement {
 	const username = document.createElement("input");
 	username.className = "w-9/10 glass-blur text-xl px-2 py-1 duration-400 focus:scale-105 transition-all";
 	username.placeholder = t.insert_second_username;
+	document.addEventListener(('keydown'), (event: KeyboardEvent) =>{
+		if (event.key !== 'Tab' && event.key !== 'Enter')
+			username.focus();
+	})
 	username.addEventListener(("input"), () => {
 		user2.name = username.value;
 	})
@@ -168,9 +172,15 @@ export const user2: User = {
 };
 
 export function PongLocalOverlayPage(): HTMLElement {
+	document.addEventListener(("keydown"), () => {
+		BackBtn.focus();
+	})
+	document.addEventListener(("click"), () => {
+		BackBtn.focus();
+	})
+
 	const overlay = document.createElement("div");
 	overlay.className = "gap-30 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800";
-	overlay.focus();
 	
 	const winner = (user1.score === 5) ? user1.name : user2.name;
 	const loser = (user1.score === 5) ? user2.name : user1.name;
@@ -279,8 +289,8 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	container.appendChild(canvas);
 
 	const ctx = canvas.getContext("2d")!;
-	const paddleWidth = 10;
-	const paddleHeight = 120;
+	const paddleWidth = 18;
+	const paddleHeight = 150;
 	const speed = 6;
 
 	const leftPaddle = { x: 10, y: canvas.height / 2 - paddleHeight / 2 };
@@ -288,7 +298,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 
 	const ball = { x: canvas.width / 2, y: canvas.height / 2, radius: 20, speedX: 5, speedY: 5 };
 	let ballRotation = 0;
-	const BALL_SPIN_STEP = Math.PI / 6;
+	const BALL_SPIN_STEP = Math.PI / 10;
 
 	let launchTimeout: number | null = null; // <-- ajouté
 
@@ -355,7 +365,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		const hitRight = ball.x + ball.radius > rightPaddle.x && ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight;
 		if (hitLeft || hitRight) {
 			ball.speedX *= -1;
-			ballRotation += BALL_SPIN_STEP;
+			// ballRotation += BALL_SPIN_STEP;
 		}
 
 		if (ball.x < 0) {
@@ -401,6 +411,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		if (ball.speedX !== 0 || ball.speedY !== 0) {
 			ball.speedX *= 1.0005;
 			ball.speedY *= 1.0005;
+			ballRotation += BALL_SPIN_STEP;
 		}
 	}
 
@@ -468,6 +479,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 			overlayTriggered = true;
 			cleanup();
 			navigateTo("/pong/local/game/overlay");
+
 		}
 	}
 
