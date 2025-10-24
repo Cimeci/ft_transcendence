@@ -16,8 +16,8 @@ all: up
 up: prom-crypt
 	docker compose up
 
-elk: pre-start
-	docker compose up $(ELK_CONTAINERS)
+elk:
+	docker compose up --build $(ELK_CONTAINERS)
 
 back: pre-start
 	docker compose up $(BACKEND_CONTAINERS)

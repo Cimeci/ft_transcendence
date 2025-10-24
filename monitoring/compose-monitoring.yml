@@ -41,7 +41,7 @@ services:
       - monitoring
     depends_on:
       prometheus:
-        condition: service_started
+        condition: service_started ## ajouter healthcheck sur prom
     build:
       context: ./src/grafana
     volumes:
