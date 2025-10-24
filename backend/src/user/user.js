@@ -104,23 +104,35 @@ function creationInventory(user_uuid) {
     
     const ball = JSON.stringify([
         { id: '/ball/default_ball.png', name: 'default ball', type: 'ball', price: 0, usable: true},
-        { id: '/ball/tennis_ball.png', name: 'tennis ball', type: 'ball', price: 250, usable: false},
-        { id: '/ball/swenn_ball.gif', name: 'swenn ball', type: 'ball', price: 250, usable: false},
+        { id: '/ball/tennis_ball.png', name: 'tennis ball', type: 'ball', price: 200, usable: false},
+        { id: '/ball/swenn_ball.gif', name: 'swenn ball', type: 'ball', price: 500, usable: false},
+        { id: '/ball/42_ball.png', name: '42 ball', type: 'ball', price: 42, usable: false},
+        { id: '/ball/c_ball.png', name: 'c ball', type: 'ball', price: 150, usable: false},
+        { id: '/ball/kitty_ball.png', name: 'kitty ball', type: 'ball', price: 250, usable: false},
+
     ]);
 
     const background = JSON.stringify([
-        { id: '/bg/default_bg.png', name: 'default bg', type: 'background', price: 250, usable: true},
-        { id: '/bg/transcendence_bg.png', name: 'transcendence bg', type: 'background', price: 250, usable: false},
-        { id: '/bg/matrix_bg.gif', name: 'matrix bg', type: 'background', price: 250, usable: false},
+        { id: '/bg/default_bg.png', name: 'default background', type: 'background', price: 250, usable: true},
+        { id: '/bg/transcendence_bg.png', name: 'transcendence background', type: 'background', price: 250, usable: false},
+        { id: '/bg/matrix_bg.gif', name: 'matrix background', type: 'background', price: 250, usable: false},
 
     ]);
 
     const paddle = JSON.stringify([
         { id: '/playbar/default_bar.png' , name: 'default bar', type: 'bar', price: 0, usable: true},
-        { id: '/playbar/ice_bar.png', name: 'ice bar', type: 'bar', price: 250, usable: false},
-        { id: '/playbar/fire_bar.png', name: 'fire bar', type: 'bar', price: 250, usable: false},
-        { id: '/playbar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 250, usable: false},
-        { id: '/playbar/matrix_bar.png', name: 'matrix bar', type: 'bar', price: 250, usable: false},
+        { id: '/playbar/ice_bar.png', name: 'ice bar', type: 'bar', price: 100, usable: false},
+        { id: '/playbar/fire_bar.png', name: 'fire bar', type: 'bar', price: 100, usable: false},
+        { id: '/playbar/amethyst_bar.png', name: 'amethyst bar', type: 'bar', price: 125, usable: false},
+        { id: '/playbar/matrix_bar.gif', name: 'matrix bar', type: 'bar', price: 125, usable: false},
+        { id: '/playbar/42_bar.png', name: '42 bar', type: 'bar', price: 42, usable: false},
+        { id: '/playbar/helloKitty_bar.png', name: 'hello kitty bar', type: 'bar', price: 300, usable: false},
+        { id: '/playbar/sequenced_bar.png', name: 'sequenced bar', type: 'bar', price: 100, usable: false},
+        { id: '/playbar/mega_sequenced_bar.png', name: 'mega sequenced bar', type: 'bar', price: 125, usable: false},
+        { id: '/playbar/segfault_bar.png', name: 'segfault bar', type: 'bar', price: 400, usable: false},
+        { id: '/playbar/hand_bar.png', name: 'hand bar', type: 'bar', price: 300, usable: false},
+
+
 
     ]);
 
