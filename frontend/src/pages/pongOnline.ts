@@ -159,7 +159,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 
 	const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
 	playBtn.onclick = () => {
-		if (user2.name) navigateTo("/pong/local/game");
+		if (user2.name) navigateTo("/pong/online/game");
 		else
 		{
 			username.classList.add("placeholder-red-700", "shake");
@@ -304,6 +304,7 @@ export function PongOnlineOverlayPage(): HTMLElement {
 
 function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
 	const socket = new WebSocket(`wss://localhost:4443/websocket`);
+	let myPosition: 'left' | 'right' | null = null;
 	
 	socket.onopen = () => {
 		console.log('[WS] open', socket.url);
@@ -336,59 +337,107 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
 	function startSendLoop() {
 		if (sendTimer != null) return;
 		sendTimer = window.setInterval(() => {
-			if (input.left  !== 'idle') send({ event: 'move', paddle: 'left',  direction: input.left });
-			if (input.right !== 'idle') send({ event: 'move', paddle: 'right', direction: input.right });
+			if (myPosition === 'left' && input.left !== 'idle') {
+				send({ event: 'move', paddle: 'left', direction: input.left });
+			}
+			if (myPosition === 'right' && input.right !== 'idle') {
+				send({ event: 'move', paddle: 'right', direction: input.right });
+			}
 		}, TICK_MS);
 	}
+
 	function stopSendLoopIfIdle() {
 		if (input.left === 'idle' && input.right === 'idle' && sendTimer != null) {
 			window.clearInterval(sendTimer);
 			sendTimer = null;
 		}
 	}
+
 	function recomputeFromPressed() {
+		if (!myPosition) return;
+
 		const prevLeft = input.left, prevRight = input.right;
-		input.left  = pressedKeys.has('w') ? 'up' : (pressedKeys.has('s') ? 'down' : 'idle');
-		input.right = pressedKeys.has('ArrowUp') ? 'up' : (pressedKeys.has('ArrowDown') ? 'down' : 'idle');
+		
+		// Chaque joueur ne contrôle que sa propre paddle
+		if (myPosition === 'left') {
+			input.left = pressedKeys.has('w') ? 'up' : (pressedKeys.has('s') ? 'down' : 'idle');
+			input.right = 'idle'; // Le joueur gauche ne contrôle pas la droite
+		} else if (myPosition === 'right') {
+			input.left = 'idle'; // Le joueur droite ne contrôle pas la gauche
+			input.right = pressedKeys.has('ArrowUp') ? 'up' : (pressedKeys.has('ArrowDown') ? 'down' : 'idle');
+		}
 
-		if (prevLeft !== input.left && input.left === 'idle')  send({ event: 'stop', paddle: 'left' });
-		if (prevRight !== input.right && input.right === 'idle') send({ event: 'stop', paddle: 'right' });
+		// Envoyer les commandes stop seulement pour sa propre paddle
+		if (myPosition === 'left' && prevLeft !== input.left && input.left === 'idle') {
+			send({ event: 'stop', paddle: 'left' });
+		}
+		if (myPosition === 'right' && prevRight !== input.right && input.right === 'idle') {
+			send({ event: 'stop', paddle: 'right' });
+		}
 
-		if (input.left !== 'idle' || input.right !== 'idle') startSendLoop();
-		else stopSendLoopIfIdle();
+		if ((myPosition === 'left' && input.left !== 'idle') || 
+			(myPosition === 'right' && input.right !== 'idle')) {
+			startSendLoop();
+		} else {
+			stopSendLoopIfIdle();
+		}
 	}
 
 	const onKeyDown = (e: KeyboardEvent) => {
-		if (e.key === 'w' || e.key === 's' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-		  	pressedKeys.add(e.key);
-		  	recomputeFromPressed();
-		  	e.preventDefault();
-		} else if (e.key === 'e') {
-		  	send({ event: 'boost' });
+		if (!myPosition) return;
+
+		// Joueur gauche : seulement W/S
+		if (myPosition === 'left' && (e.key === 'w' || e.key === 's')) {
+			pressedKeys.add(e.key);
+			recomputeFromPressed();
+			e.preventDefault();
+		} 
+		// Joueur droite : seulement flèches
+		else if (myPosition === 'right' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+			pressedKeys.add(e.key);
+			recomputeFromPressed();
+			e.preventDefault();
+		} 
+		// Boost disponible pour les deux joueurs
+		else if (e.key === 'e') {
+			send({ event: 'boost' });
 		}
 	};
+
 	const onKeyUp = (e: KeyboardEvent) => {
-		if (e.key === 'w' || e.key === 's' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-		  	pressedKeys.delete(e.key);
-		  	recomputeFromPressed();
-		  	e.preventDefault();
+		if (!myPosition) return;
+
+		if ((myPosition === 'left' && (e.key === 'w' || e.key === 's')) ||
+			(myPosition === 'right' && (e.key === 'ArrowUp' || e.key === 'ArrowDown'))) {
+			pressedKeys.delete(e.key);
+			recomputeFromPressed();
+			e.preventDefault();
 		}
 	};
+
 	window.addEventListener('keydown', onKeyDown);
 	window.addEventListener('keyup', onKeyUp);
 	window.addEventListener('blur', () => {
 		pressedKeys.clear();
 		input.left = input.right = 'idle';
 		stopSendLoopIfIdle();
-		send({ event: 'stop', paddle: 'left' });
-		send({ event: 'stop', paddle: 'right' });
+		if (myPosition === 'left') {
+			send({ event: 'stop', paddle: 'left' });
+		} else if (myPosition === 'right') {
+			send({ event: 'stop', paddle: 'right' });
+		}
 	});
 
 	function cleanup() {
 		window.removeEventListener('keydown', onKeyDown);
 		window.removeEventListener('keyup', onKeyUp);
-		if (sendTimer != null) { window.clearInterval(sendTimer); sendTimer = null; }
-		try { socket.close(); } catch {}
+		if (sendTimer != null) { 
+			window.clearInterval(sendTimer); 
+			sendTimer = null; 
+		}
+		try { 
+			socket.close(); 
+		} catch {}
 	}
 
 	const resolveBallPath = () => {
@@ -445,42 +494,80 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
 
   	let state: ServerState | null = null;
 
-  	socket.onopen = () => {
-		send({ action: 'join', username: getUser()?.username, avatar: getUser()?.avatar });
-  	};
-
   	socket.onmessage = (ev) => {
 		try {
 			const msg = JSON.parse(ev.data);
-			if (msg?.type === 'state') state = msg.payload as ServerState;
-			else state = msg as ServerState;
-			console.log(msg);
-
-			state = {
-	  			ball: msg.ball,
-	  			paddles: { leftY: msg.leftPaddle?.y ?? 340, rightY: msg.rightPaddle?.y ?? 340 },
-	  			scores: { left: msg.score?.left ?? 0, right: msg.score?.right ?? 0 },
-	  			state: msg.event === 'finish' ? 'game_over' : 'playing',
-	  			winner: msg.winner
-	  		};
-
-			if (state?.scores) {
-				user1.score = state.scores.left ?? 0;
-				user2.score = state.scores.right ?? 0;
+			
+			// Recevoir la position assignée
+			if (msg.event === 'assigned') {
+				myPosition = msg.position;
+				console.log(`Position assignée: ${myPosition}`);
+				
+				// Mettre à jour les noms des joueurs selon la position
+				if (myPosition === 'left') {
+					user1.name = getUser()?.username || "Joueur 1";
+					user2.name = "En attente...";
+				} else if (myPosition === 'right') {
+					user2.name = getUser()?.username || "Joueur 2";
+				}
+				
 				score1Elem.textContent = `${user1.name}: ${user1.score}`;
 				score2Elem.textContent = `${user2.name}: ${user2.score}`;
+			}
+			
+			// Recevoir l'état du jeu
+			if (msg.ball && msg.leftPaddle && msg.rightPaddle) {
+				state = {
+		  			ball: msg.ball,
+		  			paddles: { 
+						leftY: msg.leftPaddle.y ?? 340, 
+						rightY: msg.rightPaddle.y ?? 340 
+					},
+		  			scores: { 
+						left: msg.score?.left ?? 0, 
+						right: msg.score?.right ?? 0 
+					},
+		  			state: msg.event === 'finish' ? 'game_over' : 'playing',
+		  			winner: msg.winner
+		  		};
+
+				if (state?.scores) {
+					user1.score = state.scores.left ?? 0;
+					user2.score = state.scores.right ?? 0;
+					score1Elem.textContent = `${user1.name}: ${user1.score}`;
+					score2Elem.textContent = `${user2.name}: ${user2.score}`;
+				}
+
+				// Mettre à jour le nom de l'adversaire si on le connaît
+				if (msg.opponentUsername && myPosition) {
+					if (myPosition === 'left') {
+						user2.name = msg.opponentUsername;
+					} else if (myPosition === 'right') {
+						user1.name = msg.opponentUsername;
+					}
+					score1Elem.textContent = `${user1.name}: ${user1.score}`;
+					score2Elem.textContent = `${user2.name}: ${user2.score}`;
+				}
 			}
 
 			if (state?.state === 'game_over') {
 				cleanup();
-				navigateTo("/pong/online/menu");
+				setTimeout(() => {
+					navigateTo("/pong/online/game/overlay");
+				}, 2000);
 			}
-		} catch {}
+		} catch (e) {
+			console.error('Error parsing WebSocket message:', e);
+		}
 	};
 
 	socket.onclose = () => {
 		if (state?.state !== 'game_over') {
 			cleanup();
+			// Rediriger vers le menu si la connexion est perdue
+			setTimeout(() => {
+				navigateTo("/pong/online/menu");
+			}, 1000);
 		}
 	};
 
@@ -509,26 +596,38 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
 		if (!state) {
 			ctx.fillStyle = "white";
 			ctx.font = "24px system-ui";
-			ctx.fillText(`${t.Waiting_for_server}...`, canvas.width/2 - 140, canvas.height/2);
+			ctx.textAlign = "center";
+			
+			if (!myPosition) {
+				ctx.fillText("En attente d'un adversaire...", canvas.width/2, canvas.height/2);
+				ctx.fillText("Position: " + (myPosition || "Non assignée"), canvas.width/2, canvas.height/2 + 40);
+			} else {
+				ctx.fillText(`Vous êtes le joueur ${myPosition === 'left' ? 'gauche' : 'droit'}`, canvas.width/2, canvas.height/2);
+				ctx.fillText("En attente du début de la partie...", canvas.width/2, canvas.height/2 + 40);
+			}
 			return;
 		}
 
 		const leftY = state.paddles?.leftY ?? canvas.height/2 - paddleHeight/2;
 		const rightY = state.paddles?.rightY ?? canvas.height/2 - paddleHeight/2;
 
-		if (leftBarImgLoaded) ctx.drawImage(leftBarImg, 10, leftY, paddleWidth, paddleHeight);
-		else {
-			ctx.fillStyle = "white";
+		// Dessiner la paddle gauche
+		if (leftBarImgLoaded) {
+			ctx.drawImage(leftBarImg, 10, leftY, paddleWidth, paddleHeight);
+		} else {
+			ctx.fillStyle = myPosition === 'left' ? "#00ff00" : "white";
 			ctx.fillRect(10, leftY, paddleWidth, paddleHeight);
 		}
 
-		if (rightBarImgLoaded) ctx.drawImage(rightBarImg, canvas.width - 20, rightY, paddleWidth, paddleHeight);
-		else {
-			ctx.fillStyle = "white";
+		// Dessiner la paddle droite
+		if (rightBarImgLoaded) {
+			ctx.drawImage(rightBarImg, canvas.width - 20, rightY, paddleWidth, paddleHeight);
+		} else {
+			ctx.fillStyle = myPosition === 'right' ? "#00ff00" : "white";
 			ctx.fillRect(canvas.width - 20, rightY, paddleWidth, paddleHeight);
 		}
 
-		// Balle
+		// Dessiner la balle
 		const bx = state.ball?.x ?? canvas.width/2;
 		const by = state.ball?.y ?? canvas.height/2;
 		const br = state.ball?.radius ?? 20;
@@ -540,6 +639,17 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
 			ctx.beginPath();
 			ctx.arc(bx, by, br, 0, Math.PI * 2);
 			ctx.fill();
+		}
+
+		// Afficher les contrôles selon la position
+		ctx.fillStyle = "white";
+		ctx.font = "16px system-ui";
+		ctx.textAlign = "left";
+		
+		if (myPosition === 'left') {
+			ctx.fillText("Contrôles: W (haut) / S (bas)", 20, 30);
+		} else if (myPosition === 'right') {
+			ctx.fillText("Contrôles: ↑ (haut) / ↓ (bas)", canvas.width - 200, 30);
 		}
 	}
 
