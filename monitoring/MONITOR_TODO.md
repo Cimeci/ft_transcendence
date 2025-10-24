@@ -4,28 +4,50 @@
 - [x] tournament
 - [x] user
 - [x] websocket
-- [] Add hook on gateway to prevent `http://localhost:4443/<service>/metrics` exposition
+- [ ] Add hook on gateway to prevent `http://localhost:4443/<service>/metrics` exposition
 
 ### Completing setup
 - [x] Prometheus configuration
-- [] Grafana configuration
-- [] Creating dashboards .json
+- [x] Grafana configuration
+- [x] Creating dashboards .json
 - [x] Altermanager
 - [x] data retention ans storage
-- [] secure connection between component
-- [] control mecansim for sensible datas (grafana)
+- [x] secure connection between component
+- [ ] control mecansim for sensible datas (grafana)
 - [x] rule files into prometheus.yml ??
+- [ ] Add Grafana security
+```
+  environment:
+    # --- Sécurité de base ---
+    - GF_SECURITY_ADMIN_USER=admin
+    - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+
+    # --- Désactivation de l’accès anonyme ---
+    - GF_AUTH_ANONYMOUS_ENABLED=false
+    - GF_USERS_ALLOW_SIGN_UP=false
+
+    # --- Gestion des rôles par défaut ---
+    - GF_USERS_AUTO_ASSIGN_ORG=true
+    - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
+
+    # --- Sécurisation des cookies de session ---
+    - GF_SECURITY_COOKIE_SECURE=true
+    - GF_SECURITY_COOKIE_SAMESITE=lax
+
+    # --- (Optionnel) Durée de vie des sessions ---
+    - GF_AUTH_LOGIN_MAXIMUM_LIFETIME_DAYS=7
+    - GF_AUTH_LOGIN_MAXIMUM_INACTIVE_LIFETIME_DAYS=1
+```
+
 
 ### Adds
 - [x] cAdvisor (docker metrics)
-- [] nginx-exporter if reverseproxy
-- [] databases metrics
-- [] Remove ports from prometheus container
-- [] check if auto-monitoring prometheus is not a secured issue (`localhost:9000`)
+- [ ] nginx-exporter if reverseproxy
 - [x] Monitor ELK as well
-- [] monitor front as well
-- [] Check https conenction (prom, alert, grafana)
-- [] Check if telegraf is scrapping the good metrics (test in production)
+- [ ] monitor front as well
+- [ ] Check https conenction (prom, alert, grafana)
+- [ ] Check if telegraf is scrapping the good metrics (test in production)
+- [ ] Check All the ports from monitoring containers (no metrics exposed to the outside world)
 
 
 ---
