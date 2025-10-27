@@ -1,10 +1,11 @@
 import fastify from "fastify";
 import fastifyMetrics from 'fastify-metrics'; 
 import Database from 'better-sqlite3/lib/database.js';
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
 import crypto from 'crypto';
+import jwt from '@fastify/jwt';
 
-
+dotenv.config();
 
 // Configuration du logger fastify
 // const loggerConfig = {
@@ -25,6 +26,11 @@ const app = fastify({ logger: true });
 
 await app.register(fastifyMetrics, { endpoint: '/metrics' });
 
+await app.register(jwt, {
+  secret: process.env.JWT_SECRET,
+  sign: { expiresIn: '2h' }
+});
+
 const db = new Database('./data/tournament.sqlite');
 
 const tournament = `
@@ -33,18 +39,39 @@ const tournament = `
         host TEXT NOT NULL,
         name TEXT NOT NULL,
         size INTEGER,
-        players JSON NOT NULL,
+        players JSON,
         game JSON NOT NULL,
         winner TEXT
     );
 `
+
 db.exec(tournament);
 app.addHook('onClose', async (instance) => {
   db.close();
 });
 
+app.get('/tournament', async (request, reply) => {
+    try {
+        const tournaments = db.prepare('SELECT * FROM tournament').all();
+        request.log.info({
+            event: 'get-all-tournament_attempt'
+        }, ' Get All Tournament success');
+        reply.send(tournaments);
+    } catch(err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'get-all-tournament_attempt'
+        }, 'Get All Tournament failed: Impossible to get tournaments');
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
+
 app.get('/tournament/:uuid', async (request, reply) => {
     const { uuid } = request.params;
+    const { player_uuid } = request.body;
 
     try {
         const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
@@ -57,7 +84,21 @@ app.get('/tournament/:uuid', async (request, reply) => {
         request.log.info({
             event: 'get-tournament_attempt'
         }, ' Get Tournament sucess');
-        reply.send(tournament);
+        const resp = await fetch(`http://user:4000/user/invit/${player_uuid}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET
+            },
+            //clarifier nom du body
+            body: JSON.stringify({ uuid: uuid })
+        });
+
+        if (!resp.ok)
+            throw new Error(`HTTP error! status: ${resp.status}`
+        )
+
+        reply.send({ success: true });
     } catch(err) {
         request.log.error({
             error: {
@@ -71,10 +112,19 @@ app.get('/tournament/:uuid', async (request, reply) => {
 });
 
 app.post('/tournament', async (request, reply) => {
-    const { host_uuid, name, players_uuid } = request.body;
+    try {
+        await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'get-user-infos_attempt'
+        }, 'Get User Infos Unauthorized: invalid jwt token');
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const { host_uuid, name, length } = request.body;
     const uuid = crypto.randomUUID();
 
-    if (!host_uuid || !name || !Array.isArray(players_uuid) || players_uuid.length < 2) {
+    if (!host_uuid || !name || length < 2) {
         request.log.warn({
             event: 'new-tournament_attempt'
         }, 'New Tournament Failed: Invalid input');
@@ -82,34 +132,23 @@ app.post('/tournament', async (request, reply) => {
     }
 
     try {
-        const round1Game = Math.floor(players_uuid.length / 2);
         const matches = [];
-
-        for (let i = 0; i < round1Game; i++) {
-            const players1_uuid = players_uuid[i * 2];
-            const players2_uuid = players_uuid[i * 2 + 1];
-
-            let uuidGame = await createGame(players1_uuid, players2_uuid, name);
-            matches.push({uuid: uuidGame, round: 1});
-        }
-
-        let nextRound = 2;
-        let restGame = Math.floor(round1Game / 2);
+        let nextRound = 1;
+        let restGame = Math.floor(length / 2);
 
         while (restGame > 0){
             const matchRound = restGame;
             for (let i = 0; i < matchRound; i++) {
-                let uuidGame = await createGame(null, null, name);
+                let uuidGame = await createGame(null, null, name, request.headers.authorization.slice(7));
                 matches.push({uuid: uuidGame, round: nextRound});
             }
             restGame = Math.floor(matchRound / 2);
             nextRound++
         }
 
-        const playerJSON = JSON.stringify(players_uuid);
         const matchJSON = JSON.stringify(matches);
 
-        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, players_uuid.length, playerJSON, matchJSON, null);
+        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, length, null, matchJSON, null);
         request.log.info({
             event: 'new-tournament_attempt'
         }, 'New Tournament Created Success');
@@ -124,7 +163,7 @@ app.post('/tournament', async (request, reply) => {
         }, 'New Tournament failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
-    });
+});
 
 app.patch('/tournament/:uuid', async (request, reply) => {
     const { uuid } = request.params;
@@ -185,17 +224,19 @@ app.patch('/tournament/:uuid', async (request, reply) => {
     }
 });
 
-async function createGame (player1_uuid = null, player2_uuid = null, tournament = null ){
+async function createGame (player1_uuid = null, player2_uuid = null, tournament = null, token ){
     const infoplay = {
         player1_uuid,
         player2_uuid,
         tournament
     };
 
+    console.log('Token dans createGame:', token);
     const res = await fetch('http://game:4000/game', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(infoplay)
     });
@@ -239,9 +280,17 @@ app.delete('/delete-tournament', async(request, reply) => {
     }
 })
 
-app.get('/tournament', async (request, reply) => {
-    return("page tournament");
-})
+// Middleware pour vérifier le JWT et récupérer le uuid
+async function checkToken(request) {
+    const authHeader = request.headers.authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
+    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    return payload.uuid;
+}
 
 app.listen({ port: 4000, host: '0.0.0.0' })
 

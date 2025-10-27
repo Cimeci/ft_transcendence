@@ -93,10 +93,20 @@ const inventory = `
         FOREIGN KEY (user_uuid) REFERENCES user(uuid)
     );
 `
+
+const notif = `
+    CREATE TABLE IF NOT EXISTS notification (
+        uuid TEXT PRIMARY KEY,
+        player_uuid TEXT NOT NULL,
+        response INTEGER default 0
+    );
+`
+
 db.exec(user);
 db.exec(friends);
 db.exec(historic);
 db.exec(inventory);
+db.exec(notif);
 
 app.addHook('onClose', async (instance) => {
   db.close();
@@ -873,6 +883,67 @@ app.get('/me', async(request, reply) => {
     }, 'User Found Sucess');
     return reply.send({ user })
 })
+
+app.get('/invit/:uuid', async(request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'delete-user_attempt'
+        }, 'Delete User Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+    
+    const player_uuid  = request.params.uuid;
+    const { uuid } = request.body;
+
+    const user = db.prepare(`SELECT * WHERE uuid = ?`).get(player_uuid);
+
+    if (!user) {
+        request.log.warn({
+            event: 'get-invit-uuid_attempt'
+        }, 'Get invit uuid Failed: User not found');
+        return reply.code(404).send({ error: 'User not found' });
+    }
+
+    db.prepare('INSERT notification (uuid, player_uuid) VALUES (?, ?)').run(uuid, player_uuid);
+
+    request.log.info({
+        event: 'get-invit-uuid-infos_attempt'
+    }, 'User invit uuid Sucess');
+    return reply.send({ success: true })
+});
+
+app.post('/invit/:uuid', async(request, reply) => {
+    let player_uuid;
+    try {
+        player_uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'post-invit-uuid_attempt'
+        }, 'Post invit uuid Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+    
+    const uuid  = request.params.uuid;
+    const { response } = request.body;
+    try {
+
+        const notif = db.prepare(`UPDATE notification SET response = ? WHERE uuid = ? AND player_uuid = ?`).run(response, uuid, player_uuid);
+        request.log.info({
+            event: 'post-invit-uuid_attempt'
+        }, 'Post invit uuid Sucess');
+        return reply.send({ success: true })
+    } catch (err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'post-invit-uuid_attempt'
+        }, 'Post invit uuid Failed');
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
 
 //! a voir pour delete /me
 app.get('/:uuid', async(request, reply) => {
