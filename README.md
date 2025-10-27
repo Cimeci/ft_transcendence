@@ -43,13 +43,14 @@ naments
 ```
 
 ## Getting Started
+The entire project is designed as services, which are isolated, metered, and orchestrated by a docker-compose.yml file, itself managed by a Makefile (this allows for greater flexibility during the development and debugging phase). For readability, we have divided the compose into several files according to their use.
 
 ### Prerequisites
 To run the project, we need to ensure we have:
 - VirtualBox or similar (for 42 campus environment)
 - 8GB RAM minimum, 10GB recommended
 - 20GB free disk space
-> **⚠️ NOTE** When running in a 42 campus environment, execute the make fullstack command only after commenting out the grafana, prometheus, and kibana server blocks in reverse-proxy/config/nginx.conf.
+> **⚠️ NOTE** When running in a 42 campus environment, execute the `make fullstack` command only after commenting out the `grafana`, `prometheus`, and `kibana` server blocks in `reverse-proxy/config/nginx.conf`.
 - Installed [Docker](https://docs.docker.com/get-started/get-docker/)
 - Installed [Docker Compose](https://docs.docker.com/compose/install/)
 - Make sure our user has root privileges and be in the docker groupe:
@@ -73,9 +74,19 @@ cd ft_transcendence
 make
 ```
 
+The *Makefile* manages the full Docker Compose lifecycle and provides convenient shortcuts for common operations:
+| Command          | Description                                                                   |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `make help`      | Displays all available commands.                                              |
+| `make all`       | Builds and starts all services (`make build` + `make up`).                    |
+| `make fullstack` | Launches the full web stack only (without ELK and monitoring services).       |
+| `make down`      | Stops and removes all containers.                                             |
+| `make down-v`    | Stops and removes all containers, networks, and volumes.                      |
+| `make clean`     | Stops and removes all containers, networks, volumes, and the SQLite database. |
+
+
 
 ## Components
-The entire project is designed as services, which are isolated, metered, and orchestrated by a docker-compose.yml file, itself managed by a Makefile (this allows for greater flexibility during the development and debugging phase). For readability, we have divided the compose into several files according to their use.
 To get closer to a production-like environment, we placed all services behind a reverse proxy, allowing access to every component via HTTPS.
 This setup also enables connections from other machines if we want to offload resources from the main server or VM — for example, running Kibana or Grafana on a different host.
 
@@ -96,6 +107,12 @@ A core pillar of observability, monitoring allows us to visualize metrics from t
 
 ![MONITORING](.readme_assets/monitor.png)
 *Monitoting architecture*
+
+#### Security Concerns
+Grafana and Prometheus, which are accessible from outside the system, require a secure connection with a username and password defined in the .env file.
+Since Prometheus only supports hashed passwords, we created a small Python script that reads the .env file, hashes the plain-text password, and writes it back as a new environment variable.
+This hashed value is then used in Prometheus’ configuration files.
+That’s why the Makefile includes the `prom-crypt` rule — it generates the hashed password before starting the monitoring stack.
 
 #### Grafana
 Grafana manages its own security policies, and in our setup, we only have one admin user who can modify dashboards and data sources. Anonymous access is disabled, and connections are restricted to HTTPS over localhost through a reverse proxy. We don’t expose any sensitive data through metrics, so visualization security is not a major concern. (Logs are handled by Filebeat and filtered in the backend.)
