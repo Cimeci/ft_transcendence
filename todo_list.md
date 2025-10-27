@@ -16,3 +16,13 @@
 [ ] Details about the .env
 [ ] Add all sources
 
+### https
+[ ] Generer des certificats SSL/TLS
+[ ] Configuration pour chaque service 
+[ ] Mettre a jour les reverse proxy
+[ ] Mettre a jour les URLs dans le frontend et les configs
+
+### Tests en production
+[ ] Vérifier que pas d'erreur 504 dans le reverse-proxy avec Kibana (ajouter un buffer ou timeout dans nginx)
+[ ] Vérifier les metrics des applications en condition de production
+

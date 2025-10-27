@@ -14,15 +14,17 @@ services:
       - prometheus-data:/prometheus
     environment:
       - PROM_PASSWORD_HASH=${PROM_PASSWORD_HASH}
-    ports:
-      - "127.0.0.1:9090:9090" # <- Add it into the proxy for extranal connexions
+    expose:
+      - "9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.config.file=/etc/prometheus/web.yml'
       - '--storage.tsdb.retention.time=7d'
       - '--storage.tsdb.retention.size=1GB'
+      - '--web.external-url=https://localhost:4443/prometheus/'
+      - '--web.route-prefix=/'
     healthcheck:
-      test: ["CMD", "wget", "http://admin:${PROM_PASSWORD}@localhost:9090"] ## <- modify with reverse proxy
+      test: ["CMD", "wget", "--spider" , "http://admin:${PROM_PASSWORD}@localhost:9090/-/healthy"]
       interval: 10s
       timeout: 15s
       retries: 10
@@ -56,8 +58,10 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - PROM_PASSWORD=${PROM_PASSWORD}
-    ports:
-      - "127.0.0.1:3000:3000" ## <- add it into the reverse proxy
+      - GF_SERVER_ROOT_URL=https://localhost:4443/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    expose:
+      - "3000"
     restart: unless-stopped
 
   cadvisor:

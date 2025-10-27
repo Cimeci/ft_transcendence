@@ -75,3 +75,4 @@ Grafana gère seul les politques de sécurité. Nous avons ici un seul user admi
 - [Official Elasticsearch-exporter Documentation](https://github.com/prometheus-community/elasticsearch_exporter)
 - [Official CadvisorDocumentation](https://github.com/google/cadvisor)
 - [Official Grafana Documentation](https://grafana.com/docs/grafana/latest/)
+- [Default Grafana.ini](https://fossies.org/linux/grafana/conf/defaults.ini)

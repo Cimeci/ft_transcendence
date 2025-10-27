@@ -2,6 +2,10 @@ server:
   host: "0.0.0.0"
   name: "kibana"
   shutdownTimeout: "5s"
+  basePath: "/kibana"
+  rewriteBasePath: true
+  publicBaseUrl: "https://localhost:4443/kibana"
+
 
 ## Handle Elastic Connection
 elasticsearch:
