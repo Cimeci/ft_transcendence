@@ -1,4 +1,5 @@
 import fastify from "fastify";
+import fastifyMetrics from 'fastify-metrics'; 
 import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt'
@@ -22,6 +23,8 @@ dotenv.config();
 
 // const app = fastify({ logger: loggerConfig });
 const app = fastify({ logger: true });
+
+await app.register(fastifyMetrics, { endpoint: '/metrics' });
 
 await app.register(jwt, {
   secret: process.env.JWT_SECRET,

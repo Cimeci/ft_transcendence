@@ -1,4 +1,5 @@
 import fastify from 'fastify';
+import fastifyMetrics from 'fastify-metrics';
 import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt';
@@ -27,6 +28,8 @@ await app.register(jwt, {
   secret: process.env.JWT_SECRET,
   sign: { expiresIn: '2h' }
 });
+
+await app.register(fastifyMetrics, { endpoint: '/metrics' });
 
 const db = new Database('./data/game.sqlite');
 

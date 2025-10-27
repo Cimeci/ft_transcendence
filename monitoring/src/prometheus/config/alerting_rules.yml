@@ -1,0 +1,24 @@
+groups:
+  - name: basic_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} down"
+          description: "{{ $labels.instance }} no repond since 2m"
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_request_duration_seconds_count{status_code=~"5.."}[5m])) by (job)
+          / 
+          sum(rate(http_request_duration_seconds_count[5m])) by (job)
+          > 0.05
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Hight error level on {{ $labels.job }}"
+          description: "{{ $value | humanizePercentage }} errors"

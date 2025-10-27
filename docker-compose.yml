@@ -3,6 +3,7 @@ name: ft_transcendence
 include:
   - ./backend/compose-backend.yml
   - ./elk/compose-elk.yml
+  - ./monitoring/compose-monitoring.yml
 
 services:
   frontend:
@@ -46,9 +47,13 @@ volumes:
     driver: local
   app_logs:
     driver: local
+  prometheus-data:
+  grafana-data:
 
 networks:
   backend:
     driver: bridge
   elk:
+    driver: bridge
+  monitoring:
     driver: bridge

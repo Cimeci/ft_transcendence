@@ -1,4 +1,5 @@
 import fastify from "fastify";
+import fastifyMetrics from 'fastify-metrics'; 
 import websocket from "@fastify/websocket";
 import jwt from "@fastify/jwt";
 import dotenv from 'dotenv'
@@ -20,6 +21,9 @@ dotenv.config();
 // }
 // const app = fastify({ logger: loggerConfig });
 const app = fastify({ logger: true });
+
+await app.register(fastifyMetrics, { endpoint: '/metrics' });
+
 app.register(jwt, { secret: process.env.JWT_SECRET });
 app.register(websocket);
 

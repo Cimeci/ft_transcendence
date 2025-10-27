@@ -1,0 +1,112 @@
+services:
+
+  prometheus:
+    container_name: monitor_prometheus
+    networks:
+      - monitoring
+      - backend
+    build:
+      context: ./src/prometheus
+      args:
+        PROM_PASSWORD_HASH: ${PROM_PASSWORD_HASH}
+        PROM_PASSWORD: ${PROM_PASSWORD}
+    volumes:
+      - prometheus-data:/prometheus
+    environment:
+      - PROM_PASSWORD_HASH=${PROM_PASSWORD_HASH}
+    ports:
+      - "127.0.0.1:9090:9090" # <- Add it into the proxy for extranal connexions
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.config.file=/etc/prometheus/web.yml'
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.retention.size=1GB'
+    healthcheck:
+      test: ["CMD", "wget", "http://admin:${PROM_PASSWORD}@localhost:9090"] ## <- modify with reverse proxy
+      interval: 10s
+      timeout: 15s
+      retries: 10
+      start_period: 40s 
+    restart: unless-stopped
+
+  alertmanager:
+    container_name: monitor_alertmanager
+    networks:
+      - monitoring
+    build:
+      context: ./src/alertmanager
+      args:
+       DISCORD_HOOK_URL: ${DISCORD_HOOK_URL}
+    expose:
+      - "9093"
+    restart: unless-stopped
+
+  grafana:
+    container_name: monitor_grafana
+    networks:
+      - monitoring
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    build:
+      context: ./src/grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - PROM_PASSWORD=${PROM_PASSWORD}
+    ports:
+      - "127.0.0.1:3000:3000" ## <- add it into the reverse proxy
+    restart: unless-stopped
+
+  cadvisor:
+    container_name: monitor_cadvisor
+    networks:
+      - monitoring
+    image: gcr.io/cadvisor/cadvisor:v0.52.0
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  es_exporter:
+    container_name: monitor_es_exporter
+    networks:
+      - monitoring
+      - elk
+    depends_on:
+      es01:
+        condition: service_healthy
+    image: prometheuscommunity/elasticsearch-exporter:v1.9.0
+    volumes:
+      - certs:/certs:ro
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    command:
+      - '--es.uri=https://elastic:${ELASTIC_PASSWORD}@es01:9200'
+      - '--es.ca=/certs/ca/ca.crt'
+    expose:
+      - "9114"
+    restart: unless-stopped
+
+  telegraf:
+    container_name: monitor_telegraf
+    networks:
+      - monitoring
+      - elk
+    depends_on:
+      logstash:
+        condition: service_healthy
+      filebeat:
+        condition: service_started
+    image: telegraf:1.36.2
+    volumes:
+      - ./src/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    restart: unless-stopped
+

@@ -1,0 +1,3 @@
+basic_auth_users:
+  admin: ${PROM_PASSWORD_HASH}
+

@@ -6,6 +6,7 @@
 ELK_CONTAINERS		=	filebeat logstash ilm-manager es01 kibana certs kibana-dashboards
 BACKEND_CONTAINERS	=	gateway auth tournament	user game websocket reverse-proxy
 FRONTEND_CONTAINERS	=	frontend
+MONITOR_CONTAINERS	= 	prometheus alertmanager cadvisor es_exporter telegraf grafana
 
 ################################################################################
 #	RECIPES																	   #
@@ -13,7 +14,7 @@ FRONTEND_CONTAINERS	=	frontend
 
 all: build up
 
-up:
+up: prom-crypt
 	docker compose up
 
 build:
@@ -31,6 +32,9 @@ front:
 fullstack:
 	 docker compose up --build $(BACKEND_CONTAINERS) $(FRONTEND_CONTAINERS)
 
+monitor: prom-crypt
+	docker compose up --build $(MONITOR_CONTAINERS)
+
 down:
 	docker compose down
 
@@ -43,9 +47,16 @@ clean: down-v
 	rm -f backend/src/tournament/data/tournament.sqlite
 	rm -f backend/src/user/data/user.sqlite
 
+prom-crypt:
+	python3 ./monitoring/generate_hash.py
+
 look-logs:
 	sudo ls -l /var/lib/docker/volumes/ft_transcendence_app_logs/_data
 
 cat-logs:
 	sudo find /var/lib/docker/volumes/ft_transcendence_app_logs/_data -name "*.log" -exec cat {} \;
+
+help:
+	@echo "Availables commands are"
+	@cat Makefile | head -1 | sed -n 's/^\.PHONY:[[:space:]]*//p'
 
