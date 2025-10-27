@@ -884,7 +884,7 @@ app.get('/me', async(request, reply) => {
     return reply.send({ user })
 })
 
-app.get('/invit/:uuid', async(request, reply) => {
+app.post('/invit/:uuid', async(request, reply) => {
     const key = request.headers['x-internal-key'];
     if (key !== process.env.JWT_SECRET) {
         request.log.warn({
@@ -913,7 +913,7 @@ app.get('/invit/:uuid', async(request, reply) => {
     return reply.send({ success: true })
 });
 
-app.post('/invit/:uuid', async(request, reply) => {
+app.patch('/invit/:uuid', async(request, reply) => {
     let player_uuid;
     try {
         player_uuid = await checkToken(request);
@@ -928,7 +928,18 @@ app.post('/invit/:uuid', async(request, reply) => {
     const { response } = request.body;
     try {
 
-        const notif = db.prepare(`UPDATE notification SET response = ? WHERE uuid = ? AND player_uuid = ?`).run(response, uuid, player_uuid);
+        db.prepare(`UPDATE notification SET response = ? WHERE uuid = ? AND player_uuid = ?`).run(response, uuid, player_uuid);
+        const username = db.prepare('SELECT username FROM user WHERE uuid = ?').get(player_uuid);
+        if (response === 1) {
+            await fetch ('http://localhost:game/set-up-game', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-key': process.env.JWT_SECRET
+                },
+                body: JSON.stringify({ player_uuid, username, uuid })
+            });
+        }
         request.log.info({
             event: 'post-invit-uuid_attempt'
         }, 'Post invit uuid Sucess');
@@ -1026,6 +1037,22 @@ app.delete('/delete-user', async(request, reply) => {
 app.get('/env', async(request, reply) => {
     console.log('JWT_SECRET:', process.env.JWT_SECRET);
     return reply.send({ JWT_SECRET: process.env.JWT_SECRET });
+});
+
+app.post('/jwt-test', async(request, reply) => {
+    try {
+        const authHeader = request.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return reply.status(401).send({ error: 'Missing or invalid token' });
+        }
+
+        const token = request.headers.authorization.slice(7);
+        const payload = await request.jwtVerify();
+        return reply.send({ message: 'Token is valid', payload });
+    } catch (err) {
+        console.error('JWT Verification Error:', err);
+        return reply.status(401).send({ error: 'Invalid or expired token' });
+    }
 });
 
 // Middleware pour vérifier le JWT et récupérer le uuid

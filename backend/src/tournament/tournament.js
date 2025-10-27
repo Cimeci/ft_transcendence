@@ -85,7 +85,7 @@ app.get('/tournament/:uuid', async (request, reply) => {
             event: 'get-tournament_attempt'
         }, ' Get Tournament sucess');
         const resp = await fetch(`http://user:4000/user/invit/${player_uuid}`, {
-            method: 'GET',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-internal-key': process.env.JWT_SECRET
