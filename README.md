@@ -49,7 +49,7 @@ To run the project, we need to ensure we have:
 - VirtualBox or similar (for 42 campus environment)
 - 8GB RAM minimum, 10GB recommended
 - 20GB free disk space
-> ⚠️ You cas still run it into a 42 campus env whith `make fullstack` command
+> **⚠️ NOTE** When running in a 42 campus environment, execute the make fullstack command only after commenting out the grafana, prometheus, and kibana server blocks in reverse-proxy/config/nginx.conf.
 - Installed [Docker](https://docs.docker.com/get-started/get-docker/)
 - Installed [Docker Compose](https://docs.docker.com/compose/install/)
 - Make sure our user has root privileges and be in the docker groupe:
@@ -64,7 +64,7 @@ git clone https://github.com/Cimeci/ft_transcendence.git
 cd ft_transcendence
 ```
 - 2️⃣ **Configure env variables**
-*[ad details about it]*
+*[add details about it]*
 - 3️⃣ **Update your `/etc/hosts`**
 ```bash
 ```
@@ -76,11 +76,74 @@ make
 
 ## Components
 The entire project is designed as services, which are isolated, metered, and orchestrated by a docker-compose.yml file, itself managed by a Makefile (this allows for greater flexibility during the development and debugging phase). For readability, we have divided the compose into several files according to their use.
+To get closer to a production-like environment, we placed all services behind a reverse proxy, allowing access to every component via HTTPS.
+This setup also enables connections from other machines if we want to offload resources from the main server or VM — for example, running Kibana or Grafana on a different host.
 
+---
 ### Frontend
 
+---
 ### Backend
 
+---
+### Monitoring
+A core pillar of observability, monitoring allows us to visualize metrics from the different components of our architecture, troubleshoot bottlenecks, manage resource allocation, and be notified of component health issues.
+
+- **Prometheus**: Scrapes metrics and stores them in its time-series database (TSDB) for querying.
+- **Alertmanager**: Handles alerting, records issues, and sends notifications when critical problems occur.
+- **Grafana**: A powerful monitoring and visualization tool, used here primarily as a UI to build dashboards from our metrics.
+- **Various Exporters**: Expose component metrics through APIs for Prometheus to scrape.
+
+![MONITORING](.readme_assets/monitor.png)
+*Monitoting architecture*
+
+#### Grafana
+Grafana manages its own security policies, and in our setup, we only have one admin user who can modify dashboards and data sources. Anonymous access is disabled, and connections are restricted to HTTPS over localhost through a reverse proxy. We don’t expose any sensitive data through metrics, so visualization security is not a major concern. (Logs are handled by Filebeat and filtered in the backend.)
+
+#### Exporters
+##### Fastify Metrics
+Only exporters communicate with the sub-networks of the services they monitor.
+By placing them on the monitoring subnet, Prometheus, Alertmanager, and Grafana can access only the exported metrics—not the services themselves. This isolation limits entry points and strengthens overall security.
+
+However, since each service uses fastify-metrics, it is safer to allow Prometheus to access the backend rather than letting every service access the monitoring network (we want to keep services isolated from monitoring components).
+
+We chose fastify-metrics, which uses the official prom-client under the hood, as it provides a framework-specific abstraction with automatic /metrics routes and built-in HTTP metrics.
+
+```javascript
+await app.register(fastifyMetrics, {
+  endpoint: '/metrics'
+});
+
+```
+
+> **Note:** To avoid additional latency that could distort metrics, we do not route metrics through the API Gateway but metrics are accessible at http://localhost:4443/<service>/metrics and to secure this, Nginx blocks all external access to these endpoints.
+
+##### ELK Monitoring
+In production, the ELK stack would typically be monitored using the native Elastic ecosystem (Metricbeat + SElastic Agent).
+However, since this project required us to monitor components using Prometheus, we combined the community-maintained `elasticsearch-exporter` with `telegraf`, which collects and formats JSON metrics from the pipeline components (Filebeat and Logstash) into PromQL-compatible data.
+
+We also monitor Telegraf itself, since this is a small-scale architecture. In larger setups, the container should be monitored separately, and if resource usage grows too high, resilience and buffering mechanisms could be added to prevent data loss in case of crashes.
+
+#### Data Retention and Storage
+A simple configuration is sufficient since the stack runs temporarily and has limited disk space (6 GB for all services):
+- Prometheus automatically deletes the oldest blocks in its TSDB to keep storage under 1 GB or to remove metrics older than 7 days.
+- Local Docker volume persistence ensures data durability if services are restarted.
+- Because this is a short-lived academic project, we did not implement snapshots.
+- Write-Ahead Log (WAL) compression is enabled by default in Prometheus versions later than 2.20.0, reducing storage usage and protecting the write journal in case of a crash.
+
+#### Possible Improvments
+Comme nous utilisons Sqlite comme database pour simplifier le stockage, il n'y a pas de serveur à surveiller ou interroger. Monitorer notre DB avec des exporters customs risqueait de: alourdir le code du backend, mais surtout de bloquer le fichier de DB à chaque inspection du monitoring. Ainsi nous aurions obtenu peu de metrics (car espacées dans le temps) tout en augmentant le nombre de requetes sur la DB.
+
+- **Avoid Prometheus and Alertmanager ${VAR} substitution issues**
+	- **Current**: We created a custom Dockerfile based on Alpine to replace environment variables at runtime, keeping encrypted passwords and webhooks in a .env file.
+	- **Recommendation / Production**: In large-scale production, tools like Kubernetes Secrets would handle this.
+
+- **Monitor our DB**
+	- **Current**: We use SQLite for simplicity, there’s no dedicated database server to monitor
+	- **Why skipped**: Using a custom exporter for SQLite would increase backend complexity and could lock the database file during inspections, resulting in fewer and delayed metrics.
+	- **Production**: Use a postgreSQL our any server could be a solution in a larger scale.
+
+---
 ### Elastic Stack
 ELK stands for **E**lasticsearch, **L**ogstash, and **K**ibana - a powerful stack for centralized log management:
 
@@ -119,7 +182,7 @@ Our stack consists of seven different containers, each with its own role, which 
 - 1️⃣ **certs** - Temporary container that generates all SSL/TLS certificates for secure communication between components. Stops after certificate generation.
 - 2️⃣ **es01** (Elasticsearch) - Exposes ports `9200` (HTTPS API) and `9300` (cluster communication) on the `elk` network only. Not exposed to the host for security.
 - 3️⃣ **ilm-manager** - Temporary container that configures Index Lifecycle Management (ILM) policies in Elasticsearch. Stops after configuration.
-- 4️⃣ **kibana** - Exposes port `5601` (HTTPS) on `127.0.0.1:5601` of the host, accessible only locally via browser.
+- 4️⃣ **kibana** - Exposes port `5601` (HTTPS API) on the network.
 - 5️⃣ **kibana-dashboards** - Temporary container that imports pre-configured dashboards into Kibana. Stops after import.
 - 6️⃣ **logstash** - Exposes port `5044` (Beats input) and `9600` (HTTP monitoring API) on the `elk` network only.
 - 7️⃣ **filebeat** - Reads application logs from `/var/log/app` and forwards them to Logstash on port `5044`.
@@ -134,7 +197,7 @@ Our stack consists of seven different containers, each with its own role, which 
 The `elk_certs` container is built from an Elasticsearch image, which contained command [elastic-certutil](https://www.elastic.co/docs/reference/elasticsearch/command-line-tools/certutil) and allow us to create different certificate.
 Each service can communicate with a mutually certification (mTLS). Each service as its own certificate, signed by the intern CA `ca.crt` (wich is a way to trust all the differents certificates).
 
-The stack is running on a isolated network: Elasticsearch (9200) is NOT exposed to the host, only Kibana (5601) is accessible via `127.0.0.1` (localhost only) and all other communications happen within the private Docker `elk` network.
+The stack is running on a isolated network: Elasticsearch (9200) is NOT exposed to the host, and Kibana (5601) is accessible via the `/kibana` endpoint with our reverse-proxy. All other communications happen within the private Docker `elk` network.
 
 #### Template and ILM Policies
 The `ilm-manager` container waits for Elasticsearch to be ready and uses the REST API to configure [Index Lifecycle Management](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-lifecycle-management.html):
@@ -183,6 +246,11 @@ As this stack is dedicated to a school project and cannot be maintained on a ser
 #### Possible Improvments
 As this project is built in a limited school environment with educational constraints rather than production requirements, we chose to keep a **KISS (Keep It Simple, Stupid)** workflow. However, in a production environment, we would consider:
 
+- **Keep TLS outside the ELK only**
+	- **Current**: TLS is enabled both on the reverse proxy and between each ELK component.
+	- **Why this happened**: Initially, as this was our first web project, we overcomplicated the architecture by securing each component individually.
+	- **Recommendation / Production**: In production, it’s generally simpler and sufficient to terminate TLS at the reverse proxy.
+	
 - **Persistent Queue (Logstash)**
 	- **Current**: In-memory queue only
 	- **Why skipped**: No critical audit data, easy service restart, memory constraints (1GB limit)
@@ -198,9 +266,6 @@ As this project is built in a limited school environment with educational constr
 	- **Why skipped**: Resource constraints, added complexity
 	- **Production**: Separate master and data nodes for better scalability and reliability
 
-
-### Monitoring
-
 ---
 ### 📚 Sources
 
@@ -215,10 +280,20 @@ As this project is built in a limited school environment with educational constr
 - [Offcial Tailwind Documentation](https://tailwindcss.com/)
 - [Langage Extension](https://developer.mozilla.org/fr/docs/Mozilla/Add-ons/WebExtensions/API/i18n)
 
+#### Monitoring
+- [Fastify-metrics plugin](https://www.npmjs.com/package/fastify-metrics?activeTab=readme)
+- [Official Prometheus Documentation](https://prometheus.io/docs/prometheus/latest/getting_started/)
+- [Alterting philosophy by Bob Ewaschuk from observations at Google](https://docs.google.com/document/d/199PqyG3UsyXlwieHaqbGiWVa8eMWi8zzAn0YfcApr8Q/edit?pli=1&tab=t.0#heading=h.fs3knmjt7fjy)
+- [Github issue for variable substitution](https://github.com/prometheus/prometheus/issues/2357)
+- [Official Telemetry Documentation](https://github.com/influxdata/telegraf/tree/master)
+- [Official Elasticsearch-exporter Documentation](https://github.com/prometheus-community/elasticsearch_exporter)
+- [Official cAdvisor Documentation](https://github.com/google/cadvisor)
+- [Official Grafana Documentation](https://grafana.com/docs/grafana/latest/)
+
 #### Elastic Stack
-- [Offcial ELK Doc](https://www.elastic.co/docs/solutions/search)
-- [Official Docker Doc](https://docs.docker.com/reference/)
-- [Official Pino Doc](https://getpino.io/#/docs/redaction)
+- [Offcial ELK Documentation](https://www.elastic.co/docs/solutions/search)
+- [Official Docker Documentation](https://docs.docker.com/reference/)
+- [Official Pino Documentation](https://getpino.io/#/docs/redaction)
 - [Guides ELK ](https://www.elastic.co/fr/blog/author/eddie-mitchell) *[slightly outdated but still a good starting point]*
 - [Repo inspiration](https://github.com/deviantony/docker-elk)
 
