@@ -21,6 +21,12 @@ services:
       - '--web.config.file=/etc/prometheus/web.yml'
       - '--storage.tsdb.retention.time=7d'
       - '--storage.tsdb.retention.size=1GB'
+    healthcheck:
+      test: ["CMD", "wget", "http://admin:${PROM_PASSWORD}@localhost:9090"] ## <- modify with reverse proxy
+      interval: 10s
+      timeout: 15s
+      retries: 10
+      start_period: 40s 
     restart: unless-stopped
 
   alertmanager:
@@ -41,7 +47,7 @@ services:
       - monitoring
     depends_on:
       prometheus:
-        condition: service_started ## ajouter healthcheck sur prom
+        condition: service_healthy
     build:
       context: ./src/grafana
     volumes:
@@ -51,7 +57,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - PROM_PASSWORD=${PROM_PASSWORD}
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3000:3000" ## <- add it into the reverse proxy
     restart: unless-stopped
 
   cadvisor:

@@ -13,39 +13,15 @@
 - [x] Altermanager
 - [x] data retention ans storage
 - [x] secure connection between component
-- [ ] control mecansim for sensible datas (grafana)
+- [x] control mecansim for sensible datas (grafana)
 - [x] rule files into prometheus.yml ??
-- [ ] Add Grafana security
-```
-  environment:
-    # --- Sécurité de base ---
-    - GF_SECURITY_ADMIN_USER=admin
-    - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-
-    # --- Désactivation de l’accès anonyme ---
-    - GF_AUTH_ANONYMOUS_ENABLED=false
-    - GF_USERS_ALLOW_SIGN_UP=false
-
-    # --- Gestion des rôles par défaut ---
-    - GF_USERS_AUTO_ASSIGN_ORG=true
-    - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
-
-    # --- Sécurisation des cookies de session ---
-    - GF_SECURITY_COOKIE_SECURE=true
-    - GF_SECURITY_COOKIE_SAMESITE=lax
-
-    # --- (Optionnel) Durée de vie des sessions ---
-    - GF_AUTH_LOGIN_MAXIMUM_LIFETIME_DAYS=7
-    - GF_AUTH_LOGIN_MAXIMUM_INACTIVE_LIFETIME_DAYS=1
-```
+- [ ] Set setup Grafana pour Reverse Proxy `GF_SERVER_ROOT_URL=`
 
 
 ### Adds
 - [x] cAdvisor (docker metrics)
-- [ ] nginx-exporter if reverseproxy
 - [x] Monitor ELK as well
-- [ ] monitor front as well
-- [ ] Check https conenction (prom, alert, grafana)
+- [ ] Check https connection (prom, alert, grafana)
 - [ ] Check if telegraf is scrapping the good metrics (test in production)
 - [ ] Check All the ports from monitoring containers (no metrics exposed to the outside world)
 
@@ -87,6 +63,7 @@ Sur des grosses prods, des outils comme kubernetees secrets sont utilisés.
 
 #### Grafana
 
+Grafana gère seul les politques de sécurité. Nous avons ici un seul user admin qui peut modifier les dashboards et datasources, les connexions anonmymes sont interdites. Et on ne peut se connecter que via le local host en https via le reverse proxy. Nous n'avons pas de données sensibles dans nos metrics à protéger de la visualisation. (les logs sont gérés par Filebeat et filtrés dans le backend.
 
 
 ### Doc
