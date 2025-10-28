@@ -5,11 +5,13 @@ import { createInputWithEye, togglePassword } from "./register";
 import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
 import { getUser } from "../linkUser";
+import { GetData } from "./user";
 import type { Friend } from "./friends";
 
 let nb_players = {value: 16};
 
-export type TournamentVisibility = 'public' | 'private';
+export type TournamentVisibility = 0 | 1;
+//? 0 = public | 1 = private
 
 interface Game {
 	round: number,
@@ -17,7 +19,7 @@ interface Game {
 }
 
 interface Players {
-	uuid: string;
+	uuid: string,
 }
 
 export interface Tournament {
@@ -25,10 +27,10 @@ export interface Tournament {
 	host: string,
 	name: string,
 	size: number,
-	players: string,
+	players: Players[],
 	game: Game[],
 	winner: string,
-	visibility?: string,
+	visibility: number,
 	password?: string,
 }
 
@@ -67,20 +69,22 @@ async function GetTournamentList() {
     }
 }
 
-async function CreateTournament(btn: HTMLButtonElement, uuid_host:string, name: string, lenght: number) {
+async function CreateTournament(btn: HTMLButtonElement, uuid_host:string, name: string, length: number, visibility: number, password?: string) {
     const token = localStorage.getItem("jwt") || "";
     btn.disabled = true;
     const old = btn.textContent;
     btn.textContent = "…";
     try {
+		console.log("VALUE CREATE TOURNAMENT :", uuid_host, "| ", name, " |", length)	
         const resp = await fetch(`/tournament/tournament`, {
           	method: "POST",
           	headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ host_uuid: uuid_host, name: name, length: lenght })
+            body: JSON.stringify({ host_uuid: uuid_host, name: name, visibility: visibility, password: password, length: length })
         });
+		console.log("RESP", resp);
         if (resp.ok) {
 			const data = await resp.json();
 			console.log("DATA: ", data)
@@ -104,12 +108,86 @@ function getUuid(): string {
     return (uuid);
 }
 
-function getCurrentTournament(): Tournament | undefined {
-	const uuid = getUuid();
-	console.log("UUID :", uuid);
-	console.log("TOURNAMENTLIST :", tournamentList);
-	const tournament = tournamentList.find(tournament => tournament.uuid === uuid);
-	return tournament;
+async function getCurrentTournament(): Promise<Tournament | undefined> {
+    try {
+        await GetTournamentList();
+        const uuid = getUuid();
+        console.log("UUID :", uuid);
+        console.log("TOURNAMENTLIST :", tournamentList);
+        
+        if (!uuid) {
+            console.error("Aucun UUID trouvé dans l'URL");
+            return undefined;
+        }
+        
+        const tournament = tournamentList.find(tournament => tournament.uuid === uuid);
+        console.log("TOURNAMENT FIND: ", tournament);
+        return tournament;
+    } catch (error) {
+        console.error("Erreur dans getCurrentTournament:", error);
+        return undefined;
+    }
+}
+
+async function getPlayerNames(uuids: string[]): Promise<string[]> {
+    try {
+        const names = await Promise.all(
+            uuids.map(async (uuid) => {
+                try {
+                    const userData = await GetData(uuid);
+                    return userData?.username || `Player ${uuid.slice(0, 8)}`;
+                } catch (error) {
+                    console.error(`Erreur lors de la récupération de l'utilisateur ${uuid}:`, error);
+                    return `Player ${uuid.slice(0, 8)}`;
+                }
+            })
+        );
+        return names;
+    } catch (error) {
+        console.error("Erreur dans getPlayerNames:", error);
+        // Fallback: retourner les UUID si erreur
+        return uuids.map(uuid => `Player ${uuid.slice(0, 8)}`);
+    }
+}
+
+function parsePlayer(tournament: Tournament) {
+
+	const playersData = tournament?.players;
+    let playerArray: Players[] = [];
+    if (typeof playersData === 'string') {
+        playerArray = JSON.parse(playersData);
+    } else if (Array.isArray(playersData)) {
+        playerArray = playersData;
+    }
+
+    if (Array.isArray(playerArray) && playerArray.length > 0) {
+        return playerArray;
+    }
+}
+
+async function JoinTournament(tournament: Tournament) {
+	const jwt = localStorage.getItem("jwt");
+	if (!jwt)
+		return;
+	try {
+		const resp = await fetch('/join', {
+    		method: 'PATCH',
+    		headers: {
+				"Authorization": `Bearer ${jwt}`,
+    	  		'Content-Type': 'application/json',
+    		},
+    		body: JSON.stringify({ uuid_tournament: tournament.uuid })
+  		});
+
+  		if (resp.ok) {
+    		return (true);
+  		} else {
+    		console.log('Error Patch join', resp.status);
+  		}
+	} catch (e) {
+		console.error("ERROR PATCH join", e);
+	}
+	return (false);
 } 
 
 export function PongTournamentMenuPage(): HTMLElement {
@@ -229,11 +307,11 @@ export function PongTournamentMenuPage(): HTMLElement {
 		}
 		if (GameName.value)
 		{
-			const visibility: TournamentVisibility = toggleInput.checked ? "private" : "public";
-			if (visibility === "public" || visibility === "private" && GamePassword.value)
+			const visibility: TournamentVisibility = toggleInput.checked ? 1 : 0;
+			if (visibility === 0 || visibility === 1 && GamePassword.value)
 			{
 				const uuid = getUser()?.uuid || 'err';
-                const tournament_data = await CreateTournament(HostBtn, uuid, GameName.value, nb_players.value);
+                const tournament_data = await CreateTournament(HostBtn, uuid, GameName.value, nb_players.value, visibility, GamePassword.value);
 				if (tournament_data && tournament_data.uuid){
     				const tournament_uid = tournament_data.uuid;
                 	renderJoinList();
@@ -323,7 +401,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 	JoinList.className = "gap-10 p-2 text-center w-full flex-1 min-h-0 overflow-y-auto border-2 rounded-xl overflow-x-hidden";
 	JoinContainer.appendChild(JoinList);
 
-	GetTournamentList().then(() => renderJoinList());
+	GetTournamentList().then(() => {console.log("TOURNAMENTLIST LIST: ", tournamentList); renderJoinList()});
 	const renderJoinList = () => {
 		JoinList.innerHTML = "";
 		tournamentList.forEach(tournament => {
@@ -339,9 +417,10 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 				const tnb = document.createElement("p");
 				tnb.className = "w-1/3";
-				const player_parse = JSON.parse(tournament.players);
-				console.log("TOURNAMENT PLAYER: ", player_parse);
-				tnb.textContent = `${player_parse ? player_parse.lenght: "0"}/${tournament.size}`;
+				
+				const playerCount = parsePlayer(tournament)
+				console.log("TOURNAMENT PLAYER: ", playerCount);
+				tnb.textContent = `${playerCount?.length}/${tournament.size}`;
 				li.appendChild(tnb);
 
 				const tvis = document.createElement("p");
@@ -352,20 +431,19 @@ export function PongTournamentMenuPage(): HTMLElement {
     		renderLabel();
 
     		li.addEventListener("click", () => {
-				//! CALL JOIN INFO TOURNAMENT
       			JoinContainer.querySelectorAll(".join-form").forEach(el => el.remove());
 				if (currentJoinForm) {
 					currentJoinForm.remove();
 					currentJoinForm = null;
 				}
-                if (tournament.visibility === "private") {
+                if (tournament.visibility === 1) {
 					const form = createFormJoin(tournament);
 					currentJoinForm = form;
 					JoinList.insertAdjacentElement("afterend", form);
 					form.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 } else {
                     mainContainer.classList.add("fade-out");
-					//! CALL JOIN TOURNAMENT
+					JoinTournament(tournament);
                     setTimeout(() => navigateTo(`/Tournament/join?uid=${tournament.uuid}`), 1000);
                 }
       			setTimeout(renderLabel, 1000);
@@ -384,495 +462,577 @@ export function PongTournamentMenuPage(): HTMLElement {
 }
 
 export function PongTournamentPageJoin(): HTMLElement {
-
-	const currentTournament = getCurrentTournament();
-	console.log("CURRENT : ", currentTournament);
-
+    let currentTournament: Tournament | undefined;
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
-    const Title = document.createElement("h1");
-    Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
-    Title.textContent = currentTournament?.name + " " + t.tournament;
-    mainContainer.appendChild(Title);
+    const loadingContainer = document.createElement("div");
+    loadingContainer.className = "flex items-center justify-center";
+    loadingContainer.innerHTML = "<p>Chargement du tournoi...</p>";
+    mainContainer.appendChild(loadingContainer);
 
-	const player_parse = currentTournament ? JSON.parse(currentTournament.players) : null;
-    const size = currentTournament?.size ?? nb_players.value;
-    const players = (player_parse?.length
-        ? player_parse.slice()
-        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
-	
-    const bracket = createTournamentBracket(players);
-    bracket.classList.add("mt-15", "pl-5");
-    mainContainer.appendChild(bracket);
+    async function initializeTournament() {
+        try {
+            currentTournament = await getCurrentTournament();
+            console.log("CURRENT : ", currentTournament);
+            await renderTournament();
+        } catch (error) {
+            console.error("Erreur lors du chargement du tournoi:", error);
+            loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
+        }
+    }
 
-	const rightContainer = document.createElement("div");
-	rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
-	rightContainer.classList.add("hidden");
-	mainContainer.appendChild(rightContainer);
+    async function renderTournament() {
+        loadingContainer.remove();
 
-	const btnRightBar = document.createElement("button");
-	btnRightBar.className = "top-5 right-5 w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
-	btnRightBar.onclick = () => {
-		if (rightContainer.classList.contains("hidden")) {
-			btnRightBar.classList.remove("right-5");
-    		btnRightBar.classList.add("right-[calc(15%+1.25rem)]");
-			rightContainer.classList.remove("hidden");
-		} else {
-			btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
-   			btnRightBar.classList.add("right-5");
-			btnRightBar.classList.remove("right-3/10");
-			rightContainer.classList.add("hidden");
+        const Title = document.createElement("h1");
+        Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
+        Title.textContent = currentTournament?.name + " " + t.tournament;
+        mainContainer.appendChild(Title);
+
+        const size = currentTournament?.size ?? nb_players.value;
+        
+        let players: string[];
+        try {
+            const playersData = currentTournament?.players;
+            let playerArray: Players[] = [];
+
+            if (typeof playersData === 'string') {
+                playerArray = JSON.parse(playersData);
+            } else if (Array.isArray(playersData)) {
+                playerArray = playersData;
+            }
+            
+            if (Array.isArray(playerArray) && playerArray.length > 0) {
+                const playerUuids = playerArray.map(p => p.uuid);
+                players = await getPlayerNames(playerUuids);
+            } else {
+                players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
+            }
+        } catch (error) {
+            console.error("Erreur lors du traitement des joueurs:", error);
+            players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
+        }
+
+        const bracket = createTournamentBracket(players);
+        bracket.classList.add("mt-15", "pl-5");
+        mainContainer.appendChild(bracket);
+
+		const rightContainer = document.createElement("div");
+		rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
+		rightContainer.classList.add("hidden");
+		mainContainer.appendChild(rightContainer);
+
+		const btnRightBar = document.createElement("button");
+		btnRightBar.className = "top-5 right-5 w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
+		btnRightBar.onclick = () => {
+			if (rightContainer.classList.contains("hidden")) {
+				btnRightBar.classList.remove("right-5");
+    			btnRightBar.classList.add("right-[calc(15%+1.25rem)]");
+				rightContainer.classList.remove("hidden");
+			} else {
+				btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
+   				btnRightBar.classList.add("right-5");
+				btnRightBar.classList.remove("right-3/10");
+				rightContainer.classList.add("hidden");
+			}
 		}
-	}
-	mainContainer.appendChild(btnRightBar);
+		mainContainer.appendChild(btnRightBar);
 
-	const iconRightBar = document.createElement("img");
-	iconRightBar.className = "w-full h-full"
-	iconRightBar.src = "/icons/list.svg"
-	btnRightBar.appendChild(iconRightBar);
+		const iconRightBar = document.createElement("img");
+		iconRightBar.className = "w-full h-full"
+		iconRightBar.src = "/icons/list.svg"
+		btnRightBar.appendChild(iconRightBar);
 
-	const lstFriends = document.createElement("ul");
-	lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
-	rightContainer.appendChild(lstFriends);
+		const lstFriends = document.createElement("ul");
+		lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
+		rightContainer.appendChild(lstFriends);
 
-	let friendData: Friend[] = [];
+		let friendData: Friend[] = [];
 
-	const token = localStorage.getItem("jwt") || "";
-	(async () => {
-		try {
-			const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
-			if (!resp.ok) throw new Error(String(resp.status));
+		const token = localStorage.getItem("jwt") || "";
+		(async () => {
+			try {
+				const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+				if (!resp.ok) throw new Error(String(resp.status));
 
-			const data = await resp.json();
-			const me = getUser()?.uuid;
-			const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
+				const data = await resp.json();
+				const me = getUser()?.uuid;
+				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
 
-			const list = await Promise.all(rows.map(async (r) => {
-				const other = r.user_id === me ? r.friend_id : r.user_id;
-				try {
-					const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
-						headers: { Authorization: `Bearer ${token}` }
-					});
-					if (r2.ok) {
-						const { user } = await r2.json();
-						return {
-							id: other,
-							username: user.username || other,
-							invitation: t.friends,
-							avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
-						};
-					}
-				} catch {}
-				return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
-			}));
-			friendData = list;
-		} catch (e) {
-			console.error("load friendship failed", e);
-			friendData = [];
-		}
-	})();
+				const list = await Promise.all(rows.map(async (r) => {
+					const other = r.user_id === me ? r.friend_id : r.user_id;
+					try {
+						const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+							headers: { Authorization: `Bearer ${token}` }
+						});
+						if (r2.ok) {
+							const { user } = await r2.json();
+							return {
+								id: other,
+								username: user.username || other,
+								invitation: t.friends,
+								avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
+							};
+						}
+					} catch {}
+					return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
+				}));
+				friendData = list;
+			} catch (e) {
+				console.error("load friendship failed", e);
+				friendData = [];
+			}
+		})();
 
-	friendData.forEach(e => {
-		const li: HTMLLIElement = document.createElement("li");
-		li.className = "flex justify-between items-center p-2 w-full min-h-12"
+		friendData.forEach(e => {
+			const li: HTMLLIElement = document.createElement("li");
+			li.className = "flex justify-between items-center p-2 w-full min-h-12"
 
-		const profil = document.createElement("div");{
-		profil.className = "flex gap-2 justify-center items-center";
-		li.appendChild(profil);
+			const profil = document.createElement("div");{
+			profil.className = "flex gap-2 justify-center items-center";
+			li.appendChild(profil);
 
-		const icon = document.createElement("img");
-		icon.src = e.avatar;
-		icon.className = "w-8 h-8 rounded-full object-cover";
-		profil.appendChild(icon);
+			const icon = document.createElement("img");
+			icon.src = e.avatar;
+			icon.className = "w-8 h-8 rounded-full object-cover";
+			profil.appendChild(icon);
 
-		const name = document.createElement("p");
-		name.className = "text-base";
-		name.textContent = e.username;
-		profil.appendChild(name);
-		}
+			const name = document.createElement("p");
+			name.className = "text-base";
+			name.textContent = e.username;
+			profil.appendChild(name);
+			}
 
-		const btn = document.createElement("button");
-		btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
-		btn.textContent = t.invite;
-		btn.addEventListener("click", () => {
-			window.showInvite({
-                username: e.username,
-                id: e.id,
-                avatar: e.avatar,
-                message: e.invitation,
-            });
+			const btn = document.createElement("button");
+			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
+			btn.textContent = t.invite;
+			btn.addEventListener("click", () => {
+				window.showInvite({
+    	            username: e.username,
+    	            id: e.id,
+    	            avatar: e.avatar,
+    	            message: e.invitation,
+    	        });
+			});
+			li.appendChild(btn);
+			lstFriends.appendChild(li);
 		});
-		li.appendChild(btn);
-		lstFriends.appendChild(li);
-	});
 
 
-	const BackToMenuOverlay = document.createElement("div");
-	BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+		const BackToMenuOverlay = document.createElement("div");
+		BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
 
-	const BackToMenuSure = document.createElement("div");
-	BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+		const BackToMenuSure = document.createElement("div");
+		BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
 
-	const BackToMenuTitle = document.createElement("h1");
-	BackToMenuTitle.className = "text-5xl neon-matrix";
-	BackToMenuTitle.textContent = t.title_leave;
-	BackToMenuSure.appendChild(BackToMenuTitle);
+		const BackToMenuTitle = document.createElement("h1");
+		BackToMenuTitle.className = "text-5xl neon-matrix";
+		BackToMenuTitle.textContent = t.title_leave;
+		BackToMenuSure.appendChild(BackToMenuTitle);
 
-	const BackToMenuTxt = document.createElement("p");
-	BackToMenuTxt.className = "";
-	BackToMenuTxt.textContent = t.txt_leave;
-	BackToMenuSure.appendChild(BackToMenuTxt);
+		const BackToMenuTxt = document.createElement("p");
+		BackToMenuTxt.className = "";
+		BackToMenuTxt.textContent = t.txt_leave;
+		BackToMenuSure.appendChild(BackToMenuTxt);
 
-	const actions = document.createElement("div");
-	actions.className = "flex gap-4 justify-center";
+		const actions = document.createElement("div");
+		actions.className = "flex gap-4 justify-center";
 
-	const CancelBtn = document.createElement("button");
-	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-	CancelBtn.textContent = t.cancel;
-	CancelBtn.onclick = () => {
-		BackToMenuOverlay.classList.add("hidden")
-	};
-	actions.appendChild(CancelBtn);
+		const CancelBtn = document.createElement("button");
+		CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
+		CancelBtn.textContent = t.cancel;
+		CancelBtn.onclick = () => {
+			BackToMenuOverlay.classList.add("hidden")
+		};
+		actions.appendChild(CancelBtn);
 
-	const ConfirmBtn = document.createElement("button");
-	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
-	ConfirmBtn.textContent = t.back;
-	ConfirmBtn.onclick = () => {
-		mainContainer.classList.add("fade-out");
-		setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
-		//! QUIT TOURNAMENT
-	};
-	actions.appendChild(ConfirmBtn);
+		const ConfirmBtn = document.createElement("button");
+		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
+		ConfirmBtn.textContent = t.back;
+		ConfirmBtn.onclick = () => {
+			mainContainer.classList.add("fade-out");
+			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
+			//! QUIT TOURNAMENT
+		};
+		actions.appendChild(ConfirmBtn);
 
-	BackToMenuSure.appendChild(actions);
-	BackToMenuOverlay.appendChild(BackToMenuSure);
-	mainContainer.appendChild(BackToMenuOverlay);
+		BackToMenuSure.appendChild(actions);
+		BackToMenuOverlay.appendChild(BackToMenuSure);
+		mainContainer.appendChild(BackToMenuOverlay);
 
-	const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
-	BackToMenuBtn.addEventListener("click", (e) => {
-		e.preventDefault();
-		BackToMenuOverlay.classList.remove("hidden");
-	})
-    rightContainer.appendChild(BackToMenuBtn);
+		const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
+		BackToMenuBtn.addEventListener("click", (e) => {
+			e.preventDefault();
+			BackToMenuOverlay.classList.remove("hidden");
+		})
+    	rightContainer.appendChild(BackToMenuBtn);
 
-	BackToMenuOverlay.addEventListener("click", (e) => {
-  		if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
-	});
+		BackToMenuOverlay.addEventListener("click", (e) => {
+  			if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
+		});
 
-	const onEsc = (e: KeyboardEvent) => {
-  		if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
-	};
-	document.addEventListener("keydown", onEsc);
+		const onEsc = (e: KeyboardEvent) => {
+  			if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
+		};
+		document.addEventListener("keydown", onEsc);
+	}
+	initializeTournament();
 
     return (mainContainer);
 }
 
 export function PongTournamentPageHost(): HTMLElement {
 
-	const currentTournament = getCurrentTournament();
+	let currentTournament: Tournament | undefined;
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
-    const Title = document.createElement("h1");
-    Title.className = "mt-15 md:mt-10 tracking-widest lg:text-6xl md:text-4xl text-2xl neon-matrix";
-    Title.textContent = currentTournament?.name + " " + t.tournament;
-    mainContainer.appendChild(Title);
+	const loadingContainer = document.createElement("div");
+    loadingContainer.className = "flex items-center justify-center";
+    loadingContainer.innerHTML = "<p>Chargement du tournoi...</p>";
+    mainContainer.appendChild(loadingContainer);
 
-	const player_parse = currentTournament ? JSON.parse(currentTournament.players) : null;
-    const size = currentTournament?.size ?? nb_players.value;
-    const players = (player_parse?.length
-        ? player_parse.slice()
-        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
-	
-    const bracketContainer = createTournamentBracket(players);
-    bracketContainer.className = "mt-15 pl-5 w-full";
-    const renderBracket = () => {
-        bracketContainer.innerHTML = "";
-        // const b = createTournamentBracket(players);
-        const b = document.createElement("div");
-        b.classList.add("mt-0", "pl-0");
-        bracketContainer.appendChild(b);
-    };
+	async function initializeTournament() {
+        try {
+            currentTournament = await getCurrentTournament();
+            console.log("CURRENT TOURNAMENT HOST: ", currentTournament);
+            
+            renderTournament();
+        } catch (error) {
+            console.error("Erreur lors du chargement du tournoi:", error);
+            loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
+        }
+    }
 
-	const rightContainer = document.createElement("div");
-	rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
-	mainContainer.appendChild(rightContainer);
+	async function renderTournament() {
+    	loadingContainer.remove();
 
-	const btnRightBar = document.createElement("button");
-	btnRightBar.className = "top-5 right-[calc(15%+1.25rem)] w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
-	btnRightBar.onclick = () => {
-		if (rightContainer.classList.contains("hidden")) {
-			btnRightBar.classList.remove("right-5");
-    		btnRightBar.classList.add("right-[calc(15%+1.25rem)]");
-			rightContainer.classList.remove("hidden");
-		} else {
-			btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
-   			btnRightBar.classList.add("right-5");
-			btnRightBar.classList.remove("right-3/10");
-			rightContainer.classList.add("hidden");
+    	const Title = document.createElement("h1");
+    	Title.className = "mt-15 md:mt-10 tracking-widest lg:text-6xl md:text-4xl text-2xl neon-matrix";
+    	Title.textContent = currentTournament?.name + " " + t.tournament;
+    	mainContainer.appendChild(Title);
+
+    	const size = currentTournament?.size ?? nb_players.value;
+    	console.log("VERIF :", currentTournament?.players, " |", Array.isArray(currentTournament?.players), " |", currentTournament?.players?.length);
+		
+    	let playerUuids: string[] = [];
+    	try {
+    	    const playersData = currentTournament?.players;
+    	    let playerArray: Players[] = [];
+
+    	    if (typeof playersData === 'string') {
+    	        playerArray = JSON.parse(playersData);
+    	    } else if (Array.isArray(playersData)) {
+    	        playerArray = playersData;
+    	    }
+		
+    	    if (Array.isArray(playerArray) && playerArray.length > 0) {
+    	        playerUuids = playerArray.map(p => p.uuid);
+    	    }
+    	} catch (error) {
+    	    console.error("Erreur lors du traitement des joueurs:", error);
+    	}
+
+    	// Transformer les UUID en noms
+    	let players: string[];
+    	if (playerUuids.length > 0) {
+    	    players = await getPlayerNames(playerUuids);
+    	} else {
+    	    players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
+    	}
+
+    	console.log("PLAYERS WITH NAMES:", players);
+		
+		const bracketContainer = createTournamentBracket(players);
+    	bracketContainer.className = "mt-15 pl-5 w-full";
+    	const renderBracket = () => {
+    	    bracketContainer.innerHTML = "";
+    	    const b = createTournamentBracket(players);
+    	    b.classList.add("mt-0", "pl-0");
+    	    bracketContainer.appendChild(b);
+    	};
+
+		const rightContainer = document.createElement("div");
+		rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
+		mainContainer.appendChild(rightContainer);
+
+		const btnRightBar = document.createElement("button");
+		btnRightBar.className = "top-5 right-[calc(15%+1.25rem)] w-10 h-10 fixed z-[2000] cursor-pointer hover:scale-105 duration-200 transition-all";
+		btnRightBar.onclick = () => {
+			if (rightContainer.classList.contains("hidden")) {
+				btnRightBar.classList.remove("right-5");
+    			btnRightBar.classList.add("right-[calc(15%+1.25rem)]");
+				rightContainer.classList.remove("hidden");
+			} else {
+				btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
+   				btnRightBar.classList.add("right-5");
+				btnRightBar.classList.remove("right-3/10");
+				rightContainer.classList.add("hidden");
+			}
 		}
-	}
-	mainContainer.appendChild(btnRightBar);
+		mainContainer.appendChild(btnRightBar);
 
-	const iconRightBar = document.createElement("img");
-	iconRightBar.className = "w-full h-full"
-	iconRightBar.src = "/icons/list.svg"
-	btnRightBar.appendChild(iconRightBar);
+		const iconRightBar = document.createElement("img");
+		iconRightBar.className = "w-full h-full"
+		iconRightBar.src = "/icons/list.svg"
+		btnRightBar.appendChild(iconRightBar);
 
-	const lstFriends = document.createElement("ul");
-	lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
-	rightContainer.appendChild(lstFriends);
+		const lstFriends = document.createElement("ul");
+		lstFriends.className = "glass-blur w-9/10 h-full overflow-y-auto divide-y";
+		rightContainer.appendChild(lstFriends);
 
-	let friendData: Friend[] = [];
+		let friendData: Friend[] = [];
 
-	const token = localStorage.getItem("jwt") || "";
-	(async () => {
-	  	try {
-	  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
-	  	  	if (!resp.ok) throw new Error(String(resp.status));
+		const token = localStorage.getItem("jwt") || "";
+		(async () => {
+		  	try {
+		  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+		  	  	if (!resp.ok) throw new Error(String(resp.status));
 
-	  	  	const data = await resp.json();
-	  	  	const me = getUser()?.uuid;
-			const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
+		  	  	const data = await resp.json();
+		  	  	const me = getUser()?.uuid;
+				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
 
-			const list = await Promise.all(rows.map(async (r) => {
-	  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
-	  	  	  	try {
-	  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
-	  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
-	  	  	  	  	});
-	  	  	  	  	if (r2.ok) {
-	  	  	  	  	  	const { user } = await r2.json();
-	  	  	  	  	  	return {
-	  	  	  	  	  	  	id: other,
-	  	  	  	  	  	  	username: user.username || other,
-	  	  	  	  	  	  	invitation: t.friends,
-	  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
-	  	  	  	  	  	};
-	  	  	  	  	}
-	  	  	  	} catch {}
-	  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
-	  	  	}));
-	  	  	friendData = list;
-	  	} catch (e) {
-	  	  	console.error("load friendship failed", e);
-	  	  	friendData = [];
-	  	}
-	})();
+				const list = await Promise.all(rows.map(async (r) => {
+		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
+		  	  	  	try {
+		  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+		  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
+		  	  	  	  	});
+		  	  	  	  	if (r2.ok) {
+		  	  	  	  	  	const { user } = await r2.json();
+		  	  	  	  	  	return {
+		  	  	  	  	  	  	id: other,
+		  	  	  	  	  	  	username: user.username || other,
+		  	  	  	  	  	  	invitation: t.friends,
+		  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
+		  	  	  	  	  	};
+		  	  	  	  	}
+		  	  	  	} catch {}
+		  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
+		  	  	}));
+		  	  	friendData = list;
+		  	} catch (e) {
+		  	  	console.error("load friendship failed", e);
+		  	  	friendData = [];
+		  	}
+		})();
 
 
-	friendData.forEach(e => {
-		const li: HTMLLIElement = document.createElement("li");
-		li.className = "flex justify-between items-center p-2 w-full min-h-12"
+		friendData.forEach(e => {
+			const li: HTMLLIElement = document.createElement("li");
+			li.className = "flex justify-between items-center p-2 w-full min-h-12"
 
-		const profil = document.createElement("div");{
-		profil.className = "flex gap-2 justify-center items-center";
-		li.appendChild(profil);
+			const profil = document.createElement("div");{
+			profil.className = "flex gap-2 justify-center items-center";
+			li.appendChild(profil);
 
-		const icon = document.createElement("img");
-		icon.src = e.avatar;
-		icon.className = "w-8 h-8 rounded-full object-cover";
-		profil.appendChild(icon);
+			const icon = document.createElement("img");
+			icon.src = e.avatar;
+			icon.className = "w-8 h-8 rounded-full object-cover";
+			profil.appendChild(icon);
 
-		const name = document.createElement("p");
-		name.className = "text-base";
-		name.textContent = e.username;
-		profil.appendChild(name);
-		}
+			const name = document.createElement("p");
+			name.className = "text-base";
+			name.textContent = e.username;
+			profil.appendChild(name);
+			}
 
-		const btn = document.createElement("button");
-		btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
-		btn.textContent = t.invite;
-		btn.addEventListener("click", () => {
-			window.showInvite({
-                username: e.username,
-                id: e.id,
-                avatar: e.avatar,
-                message: e.invitation,
-            });
+			const btn = document.createElement("button");
+			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
+			btn.textContent = t.invite;
+			btn.addEventListener("click", () => {
+				window.showInvite({
+    	            username: e.username,
+    	            id: e.id,
+    	            avatar: e.avatar,
+    	            message: e.invitation,
+    	        });
+			});
+			li.appendChild(btn);
+			lstFriends.appendChild(li);
 		});
-		li.appendChild(btn);
-		lstFriends.appendChild(li);
-	});
 
-    const actionsCol = document.createElement("div");
-    actionsCol.className = "w-9/10 p-3 flex flex-col items-center justify-center gap-3 glass-blur";
+    	const actionsCol = document.createElement("div");
+    	actionsCol.className = "w-9/10 p-3 flex flex-col items-center justify-center gap-3 glass-blur";
 
-    const startBtn = document.createElement("button");
-	startBtn.textContent = t.host;
-    startBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
-	startBtn.onclick = () => navigateTo(`/Tournament/game?uid=${currentTournament ? currentTournament.uuid: ""}`);
+    	const startBtn = document.createElement("button");
+		startBtn.textContent = t.host;
+    	startBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
+		startBtn.onclick = () => navigateTo(`/Tournament/game?uid=${currentTournament ? currentTournament.uuid: ""}`);
 
-    const shuffleBtn = document.createElement("button");
-	shuffleBtn.textContent = t.shuffle;
-    shuffleBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
-    shuffleBtn.onclick = () => {
-		//! CALL SHUFFLE BACK
-        // for (let i = players.length - 1; i > 0; i--) {
-        //     const j = Math.floor(Math.random() * (i + 1));
-        //     [players[i], players[j]] = [players[j], players[i]];
-        // }
-        // if (currentTournament) currentTournament.players = players.slice();
-        // renderBracket();
-    };
+    	actionsCol.appendChild(startBtn);
+    	rightContainer.appendChild(actionsCol);
 
-    actionsCol.appendChild(startBtn);
-    actionsCol.appendChild(shuffleBtn);
-    rightContainer.appendChild(actionsCol);
+		mainContainer.appendChild(rightContainer);
+    	mainContainer.appendChild(bracketContainer);
+    	renderBracket();
 
-	mainContainer.appendChild(rightContainer);
-    mainContainer.appendChild(bracketContainer);
-    renderBracket();
+    	const BackToMenuOverlay = document.createElement("div");
+    	BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
 
-    const BackToMenuOverlay = document.createElement("div");
-    BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+		const BackToMenuSure = document.createElement("div");
+		BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
 
-	const BackToMenuSure = document.createElement("div");
-	BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+		const BackToMenuTitle = document.createElement("h1");
+		BackToMenuTitle.className = "text-5xl neon-matrix";
+		BackToMenuTitle.textContent = t.title_leave;
+		BackToMenuSure.appendChild(BackToMenuTitle);
 
-	const BackToMenuTitle = document.createElement("h1");
-	BackToMenuTitle.className = "text-5xl neon-matrix";
-	BackToMenuTitle.textContent = t.title_leave;
-	BackToMenuSure.appendChild(BackToMenuTitle);
+		const BackToMenuTxt = document.createElement("p");
+		BackToMenuTxt.className = "";
+		BackToMenuTxt.textContent = t.txt_leave;
+		BackToMenuSure.appendChild(BackToMenuTxt);
 
-	const BackToMenuTxt = document.createElement("p");
-	BackToMenuTxt.className = "";
-	BackToMenuTxt.textContent = t.txt_leave;
-	BackToMenuSure.appendChild(BackToMenuTxt);
+		const actions = document.createElement("div");
+		actions.className = "flex gap-4 justify-center";
 
-	const actions = document.createElement("div");
-	actions.className = "flex gap-4 justify-center";
+		const CancelBtn = document.createElement("button");
+		CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
+		CancelBtn.textContent = t.cancel;
+		CancelBtn.onclick = () => {
+			BackToMenuOverlay.classList.add("hidden")
+		};
+		actions.appendChild(CancelBtn);
 
-	const CancelBtn = document.createElement("button");
-	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-	CancelBtn.textContent = t.cancel;
-	CancelBtn.onclick = () => {
-		BackToMenuOverlay.classList.add("hidden")
-	};
-	actions.appendChild(CancelBtn);
+		const ConfirmBtn = document.createElement("button");
+		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
+		ConfirmBtn.textContent = t.back;
+		ConfirmBtn.onclick = () => {
+			//! QUIT TOURNAMENT AND DELETE TOURNAMENT
+			mainContainer.classList.add("fade-out");
+			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
+		};
+		actions.appendChild(ConfirmBtn);
 
-	const ConfirmBtn = document.createElement("button");
-	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
-	ConfirmBtn.textContent = t.back;
-	ConfirmBtn.onclick = () => {
-		//! QUIT TOURNAMENT AND DELETE TOURNAMENT
-		mainContainer.classList.add("fade-out");
-		setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
-	};
-	actions.appendChild(ConfirmBtn);
+		BackToMenuSure.appendChild(actions);
+		BackToMenuOverlay.appendChild(BackToMenuSure);
+		// L’overlay doit être au niveau du container principal
+		mainContainer.appendChild(BackToMenuOverlay);
 
-	BackToMenuSure.appendChild(actions);
-	BackToMenuOverlay.appendChild(BackToMenuSure);
-	// L’overlay doit être au niveau du container principal
-	mainContainer.appendChild(BackToMenuOverlay);
+    	const BackToMenuBtn = document.createElement("button");
+		BackToMenuBtn.textContent = t.back;
+    	BackToMenuBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
+    	BackToMenuBtn.addEventListener("click", (e) => {
+    	     e.preventDefault();
+    	     BackToMenuOverlay.classList.remove("hidden");
+    	 });
+    	actionsCol.appendChild(BackToMenuBtn);
 
-    const BackToMenuBtn = document.createElement("button");
-	BackToMenuBtn.textContent = t.back;
-    BackToMenuBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
-    BackToMenuBtn.addEventListener("click", (e) => {
-         e.preventDefault();
-         BackToMenuOverlay.classList.remove("hidden");
-     });
-    actionsCol.appendChild(BackToMenuBtn);
+		BackToMenuOverlay.addEventListener("click", (e) => {
+  			if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
+		});
 
-	BackToMenuOverlay.addEventListener("click", (e) => {
-  		if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
-	});
-
-	const onEsc = (e: KeyboardEvent) => {
-  		if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
-	};
-	document.addEventListener("keydown", onEsc);
+		const onEsc = (e: KeyboardEvent) => {
+  			if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
+		};
+		document.addEventListener("keydown", onEsc);
+	}
+	initializeTournament();
 
     return (mainContainer);
 }
 
 export function PongTournamentPageCurrentGame(): HTMLElement {
 
-	const currentTournament = getCurrentTournament();
+	let currentTournament: Tournament | undefined;
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
-	const game = document.createElement("h1");
-	game.textContent = "current game";
-	game.className = "absolute left-0 top-0"
-	mainContainer.appendChild(game);
+	const loadingContainer = document.createElement("div");
+    loadingContainer.className = "flex items-center justify-center";
+    loadingContainer.innerHTML = "<p>Chargement du tournoi...</p>";
+    mainContainer.appendChild(loadingContainer);
 
-    const Title = document.createElement("h1");
-    Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
-    Title.textContent = currentTournament?.name + " " + t.tournament;
-    mainContainer.appendChild(Title);
+	async function initializeTournament() {
+        try {
+            currentTournament = await getCurrentTournament();
+            console.log("CURRENT TOURNAMENT GAME: ", currentTournament);
+            
+            renderTournament();
+        } catch (error) {
+            console.error("Erreur lors du chargement du tournoi:", error);
+            loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
+        }
+    }
 
-	const player_parse = currentTournament ? JSON.parse(currentTournament.players) : null;
-    const size = currentTournament?.size ?? nb_players.value;
-    const players = (player_parse?.length
-        ? player_parse.slice()
-        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
-	
-    const bracket = createTournamentBracket(players);
-    bracket.classList.add("mt-15", "pl-5");
-    mainContainer.appendChild(bracket);
+	function renderTournament(){
+        loadingContainer.remove();
 
-	const BackToMenuOverlay = document.createElement("div");
-	BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+    	const Title = document.createElement("h1");
+    	Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
+    	Title.textContent = currentTournament?.name + " " + t.tournament;
+    	mainContainer.appendChild(Title);
 
-	const BackToMenuSure = document.createElement("div");
-	BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+		const size = currentTournament?.size ?? nb_players.value;
+		const players = (currentTournament?.players && Array.isArray(currentTournament.players) && currentTournament.players.length ? currentTournament.players.map(p => p.uuid) : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
+		
+    	const bracket = createTournamentBracket(players);
+    	bracket.classList.add("mt-15", "pl-5");
+    	mainContainer.appendChild(bracket);
 
-	const BackToMenuTitle = document.createElement("h1");
-	BackToMenuTitle.className = "text-5xl neon-matrix";
-	BackToMenuTitle.textContent = t.title_leave;
-	BackToMenuSure.appendChild(BackToMenuTitle);
+		const BackToMenuOverlay = document.createElement("div");
+		BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
 
-	const BackToMenuTxt = document.createElement("p");
-	BackToMenuTxt.className = "";
-	BackToMenuTxt.textContent = t.txt_leave;
-	BackToMenuSure.appendChild(BackToMenuTxt);
+		const BackToMenuSure = document.createElement("div");
+		BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
 
-	const actions = document.createElement("div");
-	actions.className = "flex gap-4 justify-center";
+		const BackToMenuTitle = document.createElement("h1");
+		BackToMenuTitle.className = "text-5xl neon-matrix";
+		BackToMenuTitle.textContent = t.title_leave;
+		BackToMenuSure.appendChild(BackToMenuTitle);
 
-	const CancelBtn = document.createElement("button");
-	CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-	CancelBtn.textContent = t.cancel;
-	CancelBtn.onclick = () => {
-		BackToMenuOverlay.classList.add("hidden")
-	};
-	actions.appendChild(CancelBtn);
+		const BackToMenuTxt = document.createElement("p");
+		BackToMenuTxt.className = "";
+		BackToMenuTxt.textContent = t.txt_leave;
+		BackToMenuSure.appendChild(BackToMenuTxt);
 
-	const ConfirmBtn = document.createElement("button");
-	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
-	ConfirmBtn.textContent = t.back;
-	ConfirmBtn.onclick = () => {
-		//! QUIT TOURNAMENT
-		mainContainer.classList.add("fade-out");
-		setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
-	};
-	actions.appendChild(ConfirmBtn);
+		const actions = document.createElement("div");
+		actions.className = "flex gap-4 justify-center";
 
-	BackToMenuSure.appendChild(actions);
-	BackToMenuOverlay.appendChild(BackToMenuSure);
-	mainContainer.appendChild(BackToMenuOverlay);
+		const CancelBtn = document.createElement("button");
+		CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
+		CancelBtn.textContent = t.cancel;
+		CancelBtn.onclick = () => {
+			BackToMenuOverlay.classList.add("hidden")
+		};
+		actions.appendChild(CancelBtn);
 
-	const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
-	BackToMenuBtn.className = "absolute bottom-2 right-2";
-	BackToMenuBtn.addEventListener("click", (e) => {
-		e.preventDefault();
-		BackToMenuOverlay.classList.remove("hidden");
-	})
-    mainContainer.appendChild(BackToMenuBtn);
+		const ConfirmBtn = document.createElement("button");
+		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
+		ConfirmBtn.textContent = t.back;
+		ConfirmBtn.onclick = () => {
+			//! QUIT TOURNAMENT
+			mainContainer.classList.add("fade-out");
+			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
+		};
+		actions.appendChild(ConfirmBtn);
 
-	BackToMenuOverlay.addEventListener("click", (e) => {
-  		if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
-	});
+		BackToMenuSure.appendChild(actions);
+		BackToMenuOverlay.appendChild(BackToMenuSure);
+		mainContainer.appendChild(BackToMenuOverlay);
 
-	const onEsc = (e: KeyboardEvent) => {
-  		if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
-	};
-	document.addEventListener("keydown", onEsc);
+		const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
+		BackToMenuBtn.className = "absolute bottom-2 right-2";
+		BackToMenuBtn.addEventListener("click", (e) => {
+			e.preventDefault();
+			BackToMenuOverlay.classList.remove("hidden");
+		})
+    	mainContainer.appendChild(BackToMenuBtn);
+
+		BackToMenuOverlay.addEventListener("click", (e) => {
+  			if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
+		});
+
+		const onEsc = (e: KeyboardEvent) => {
+  			if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
+		};
+		document.addEventListener("keydown", onEsc);
+	}
+	initializeTournament();
 
     return (mainContainer);
 }

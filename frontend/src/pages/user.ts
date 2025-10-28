@@ -8,23 +8,24 @@ function getUuid(): string {
     return (uuid);
 }
 
-async function GetData() {
-    const uuid = getUuid();
-    const token = localStorage.getItem("jwt")   
+export async function GetData(uuid: string) {
+    const token = localStorage.getItem("jwt")
     try
     {
-        const resp = await fetch(`user/${encodeURIComponent(uuid)}`, {
+        const resp = await fetch(`/user/${encodeURIComponent(uuid)}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": token ? `Bearer ${token}` : "",
             },
         });
+        console.log("GET DATA RESP:", resp);
         if (!resp.ok) {
           console.error(`Erreur serveur (${resp.status})`);
           return;
         }
         const data = await resp.json();
+        console.log("GET DATA DATA:", data);
         return (data.user);
     } catch(e) {console.error(e)};
 }
@@ -448,7 +449,8 @@ export function UserPage(): HTMLElement {
         histCard.appendChild(histBody);
         bottom.appendChild(histCard);
  
-    (async () => { const u = await GetData(); if (!u) return;
+    (async () => {
+        const u = await GetData(getUuid()); if (!u) return;
         console.log('USER: ', u);
         name.textContent = u.username || u.uuid || "unknown";
         avatar.src = u.avatar_use?.[0]?.id;
