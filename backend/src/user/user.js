@@ -98,7 +98,8 @@ const notif = `
     CREATE TABLE IF NOT EXISTS notification (
         uuid TEXT PRIMARY KEY,
         player_uuid TEXT NOT NULL,
-        response INTEGER default 0
+        response INTEGER default 0,
+        mode TEXT
     );
 `
 
@@ -586,7 +587,6 @@ app.get('/shop', async(request, reply) => {
         return reply.code(404).send({ error: 'Inventory not found' });
     }
 
-    console.log(inventory);
     const filteredInventory = {
         ball: JSON.parse(inventory.ball).filter(item => !item.usable),
         background: JSON.parse(inventory.background).filter(item => !item.usable),
@@ -610,16 +610,18 @@ app.patch('/shop', async(request, reply) => {
         }, 'Get Inventory Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
+
+    const { ball, background, paddle, avatar, amount } = request.body;
     
+    console.log("AMOUNT :", amount);
+    console.log("BODY :", request.body);
     const wallet = db.prepare('SELECT wallet FROM user WHERE uuid = ?').get(uuid);
-    if (!wallet || wallet.wallet < 250) {
+    if (!wallet || wallet.wallet < amount) {
         request.log.warn({
             event: 'update-inventory_attempt'
         }, 'Update Inventory Failed: Not enough money');
         return reply.code(400).send({ error: 'Not enough money' });
     }
-
-    const { ball, background, paddle, avatar } = request.body;
 
     if (!ball && !background && !paddle && !avatar){
         request.log.warn({
@@ -685,7 +687,7 @@ app.patch('/shop', async(request, reply) => {
         saveArray('avatar', currentAvatar);
     }
     
-    const walletAmount = wallet.wallet - 250;
+    const walletAmount = wallet.wallet - amount;
     db.prepare('UPDATE user set wallet = ? WHERE uuid = ?').run(walletAmount, uuid);
     
     request.log.info({
@@ -894,7 +896,7 @@ app.post('/invit/:uuid', async(request, reply) => {
     }
     
     const player_uuid  = request.params.uuid;
-    const { uuid } = request.body;
+    const { uuid, mode } = request.body;
 
     const user = db.prepare(`SELECT * WHERE uuid = ?`).get(player_uuid);
 
@@ -929,6 +931,7 @@ app.patch('/invit/:uuid', async(request, reply) => {
     try {
 
         db.prepare(`UPDATE notification SET response = ? WHERE uuid = ? AND player_uuid = ?`).run(response, uuid, player_uuid);
+        const mode = db.prepare('SELECT mode FROM notification WHERE uuid = ?').get(uuid);
         const username = db.prepare('SELECT username FROM user WHERE uuid = ?').get(player_uuid);
         if (response === 1) {
             await fetch ('http://localhost:game/set-up-game', {
@@ -940,9 +943,19 @@ app.patch('/invit/:uuid', async(request, reply) => {
                 body: JSON.stringify({ player_uuid, username, uuid })
             });
         }
+        if (mode && mode.mode === 'tournament' && response === 1) {
+            await fetch ('http://localhost:tournament/join', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `${request.headers.authorization}`,
+                },
+                body: JSON.stringify({ uuid })
+            });
+        }
         request.log.info({
             event: 'post-invit-uuid_attempt'
-        }, 'Post invit uuid Sucess');
+        }, 'User invit uuid Sucess');
         return reply.send({ success: true })
     } catch (err) {
         request.log.error({

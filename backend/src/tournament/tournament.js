@@ -91,7 +91,7 @@ app.get('/tournament/:uuid', async (request, reply) => {
                 'x-internal-key': process.env.JWT_SECRET
             },
             //clarifier nom du body
-            body: JSON.stringify({ uuid: uuid })
+            body: JSON.stringify({ uuid: uuid, mode: 'tournament' })
         });
 
         if (!resp.ok)
@@ -162,6 +162,59 @@ app.post('/tournament', async (request, reply) => {
             event: 'new-tournament_attempt'
         }, 'New Tournament failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
+
+app.patch('/join', async (request, reply) => {
+    let uuidPlayer;
+    try {
+        uuidPlayer = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'tournament-join_attempt'
+        }, 'Tournament Join Unauthorized: invalid jwt token');
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const { uuid_tournament } = request.body;
+
+    if (!uuid_tournament){
+        request.log.warn({
+            event: 'tournament-join_attempt'
+        }, 'Tournament Join Failed: Missing uuid tournament');
+        return reply.code(400).send({ error: 'Invalid input' });
+    }
+
+    try {
+        const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid_tournament);
+        if (!tournament) {
+            request.log.warn({
+                event: 'tournament-join_attempt'
+            }, 'Tournament Join Failed: Tournament not found');
+            return reply.code(404).send({ error: 'Tournament not found' });
+        }
+        const players = tournament.players ? JSON.parse(tournament.players) : [];
+        if (players.includes(uuidPlayer)) {
+            request.log.warn({
+                event: 'tournament-join_attempt'
+            }, 'Tournament Join Failed: Player already in tournament');
+            return reply.code(400).send({ error: 'Player already in this tournament' });
+        }
+        players.push(uuidPlayer);
+        db.prepare('UPDATE tournament SET players = ? WHERE uuid = ?').run(JSON.stringify(players), uuid_tournament);
+        request.log.info({
+            event: 'tournament-join_attempt'
+        }, 'Tournament Join Success: Player added to tournament');
+        reply.send('Player added to tournament');
+    } catch(err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'tournament-join_attempt'
+        }, 'Tournament Join Failed');
+        reply.code(500).send({ error: 'Internal Server Error' });   
     }
 });
 

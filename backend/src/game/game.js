@@ -75,7 +75,7 @@ app.post('/game', async (request, reply) => {
                     'Content-Type': 'application/json',
                     'x-internal-key': process.env.JWT_SECRET
                 },
-                body: JSON.stringify({ uuid: uuid })
+                body: JSON.stringify({ uuid: uuid, mode: 'game' })
             });
             if (!resp.ok) {
                 request.log.warn({
