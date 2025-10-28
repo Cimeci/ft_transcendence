@@ -41,7 +41,9 @@ const tournament = `
         size INTEGER,
         players JSON,
         game JSON NOT NULL,
-        winner TEXT
+        winner TEXT,
+        visibility INTEGER,
+        password TEXT
     );
 `
 
@@ -130,7 +132,7 @@ app.post('/tournament', async (request, reply) => {
         return reply.code(401).send({ error: 'Unauthorized'});
     }
 
-    const { host_uuid, name, length } = request.body;
+    const { host_uuid, name, visibility, password, length } = request.body;
     const uuid = crypto.randomUUID();
 
     if (!host_uuid || !name || length < 2) {
@@ -141,6 +143,7 @@ app.post('/tournament', async (request, reply) => {
     }
 
     try {
+        const players = [];
         const matches = [];
         let nextRound = 1;
         let restGame = Math.floor(length / 2);
@@ -155,15 +158,18 @@ app.post('/tournament', async (request, reply) => {
             nextRound++
         }
 
+        players.push({uuid: host_uuid});
+        console.log("PLAYERS: ", players);
+        console.log("GAMES: ", matches);
+        const playersJSON = JSON.stringify(players);
         const matchJSON = JSON.stringify(matches);
 
-        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, length, null, matchJSON, null);
+        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner, visibility, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, length, playersJSON, matchJSON, null, visibility, password);
         request.log.info({
             event: 'new-tournament_attempt'
         }, 'New Tournament Created Success');
         return { message: 'Tournament created successfully', matches, uuid: uuid };
     } catch(err){
-        console.log("ERROR : ", err);
         request.log.error({
             error: {
                 message: err.message,
@@ -323,7 +329,7 @@ app.delete('/delete-tournament', async(request, reply) => {
         return reply.code(403).send({ error: 'Forbidden' })
     }
 
-    const uuid = request.body;
+    const { uuid } = request.body;
 
     try {
         await db.prepare('DELETE FROM tournament WHERE host = ?').run(uuid);
