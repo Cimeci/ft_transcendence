@@ -113,8 +113,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
         }, 'Update Game Failed: Game not found');
         return reply.code(404).send({ error: 'Game not found' });
     }
-    console.log("DATA:", data);
-    let winner_uuid = score1 === 5 ? data.player2_uuid : data.player1_uuid || null;;
+    let winner_uuid = score1 == 5 ? data.player1_uuid : data.player2_uuid || null;
     try {
         db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
 
