@@ -2,7 +2,9 @@ import { translations } from "../i18n";
 import { getCurrentLang } from "../pages/settings";
 
 export function createTournamentBracket(players: string[]): HTMLElement {
+	console.log("PLAYERS BRACKET: ", players);
   	const filled = fillToPowerOfTwo(players);
+	console.log("PLAYERS FILLED BRACKET: ", filled);
   	const rounds = Math.log2(filled.length);
 
   	const COL_W = 180;           // largeur d'un "module" match
@@ -20,6 +22,7 @@ export function createTournamentBracket(players: string[]): HTMLElement {
   	for (let r = 0; r < rounds; r++) {
 		const matches = filled.length >> (r + 1);
 		const groupH = (MATCH_H + V_GAP_R0) * (1 << r); // l'espacement double à chaque round
+		
 		const arr: number[] = [];
 		for (let j = 0; j < matches; j++) {
 		  const yCenter = MARGIN.top + groupH * (j + 0.5);
@@ -71,17 +74,41 @@ export function createTournamentBracket(players: string[]): HTMLElement {
 		  	// Texte du match (noms des joueurs en round 0)
 		  	if (r === 0) {
 				const [p1, p2] = seedPair(filled, j);
-		 		const t1 = svgText(x + 8, (p1 ? yCenter - 6 : yCenter + 5), p1 ?? '');
-				const t2 = svgText(x + 8, (p2 ? yCenter + 14: yCenter + 5), p2 ?? '');
+
+		 		const t1 = svgEl('text', {
+        			x: String(x + COL_W / 2),
+        			y: String(yCenter - 10),
+        			fill: '#004d1a',
+        			'font-size': '11',
+        			'font-family': 'system-ui, sans-serif',
+        			'text-anchor': 'middle'
+    			}) as SVGTextElement;
+    			t1.textContent = p1 ? (p1.length > 18 ? p1.substring(0, 15) + '...' : p1) : '';
+
+				const t2 = svgEl('text', {
+    			    x: String(x + COL_W / 2),
+    			    y: String(yCenter + 10),
+    			    fill: '#004d1a',
+    			    'font-size': '11',
+    			    'font-family': 'system-ui, sans-serif',
+    			    'text-anchor': 'middle'
+    			}) as SVGTextElement;
+    			t2.textContent = p2 ? (p2.length > 18 ? p2.substring(0, 15) + '...' : p2) : '';
+
 				svg.appendChild(t1);
 				svg.appendChild(t2);
 		  	} else {
 				const label = isFinalRound ? `${translations[getCurrentLang()].final} R${r + 1} - M${j + 1}` : `R${r + 1} - M${j + 1}`;
-				const t = svgText(x + 8, yCenter + 5, label);
-		  	 	if (isFinalRound) {
-		  	 	  	t.setAttribute('font-weight', '700');
-		  	 	  	t.setAttribute('fill', '#ca8a04');
-		  	 	}
+				const t = svgEl('text', {
+				    x: String(x + COL_W / 2),
+				    y: String(yCenter),
+				    fill: isFinalRound ? '#ca8a04' : '#004d1a',
+				    'font-size': '12',
+				    'font-family': 'system-ui, sans-serif',
+				    'text-anchor': 'middle',
+				    'font-weight': isFinalRound ? '700' : 'normal'
+				}) as SVGTextElement;
+				t.textContent = label;
 				svg.appendChild(t);
 		  	}
 
