@@ -4,7 +4,7 @@ services:
     container_name: elk_certs
     networks:
       - elk
-    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.3
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - ./certs/generate-certs.sh:/usr/local/bin/generate-certs.sh:ro
@@ -29,8 +29,6 @@ services:
         condition: service_healthy
     build:
       context: src/elasticsearch/
-      args:
-        STACK_VERSION: ${STACK_VERSION}
     labels:
       co.elastic.logs/module: elasticsearch
     volumes:
@@ -84,8 +82,6 @@ services:
         condition: service_healthy
     build:
       context: src/kibana/
-      args:
-        STACK_VERSION: ${STACK_VERSION}
     labels:
       co.elastic.logs/module: kibana
     volumes:
@@ -139,8 +135,6 @@ services:
         condition: service_completed_successfully
     build:
       context: src/logstash/
-      args:
-        STACK_VERSION: ${STACK_VERSION}
     labels:
       co.elastic.logs/module: logstash
     volumes:
@@ -172,8 +166,6 @@ services:
         condition: service_healthy
     build:
       context: src/filebeat/
-      args:
-        STACK_VERSION: ${STACK_VERSION}
     labels:
       co.elastic.logs/module: filebeat
     volumes:
