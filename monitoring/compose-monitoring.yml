@@ -4,7 +4,7 @@ services:
     container_name: monitor_prometheus
     networks:
       - monitoring
-      - backend
+      - app
     build:
       context: ./src/prometheus
       args:

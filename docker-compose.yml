@@ -11,7 +11,7 @@ services:
   frontend:
     container_name: frontend
     networks:
-      - backend
+      - app
     depends_on:
       - gateway
     build:
@@ -23,7 +23,7 @@ services:
   reverse-proxy:
     container_name: reverse_proxy
     networks:
-      - backend
+      - app
       - monitoring
       - elk
     depends_on:
@@ -55,7 +55,7 @@ volumes:
   grafana-data:
 
 networks:
-  backend:
+  app:
     driver: bridge
   elk:
     driver: bridge

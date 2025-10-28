@@ -4,7 +4,7 @@ services:
     container_name: backend_gateway
     build: ./src/gateway
     networks:
-      - backend
+      - app
     volumes:
       - app_logs:/var/log/app
     depends_on:
@@ -21,7 +21,7 @@ services:
     container_name: backend_auth
     build: ./src/auth
     networks:
-      - backend
+      - app
     volumes:
       - ./src/auth/data:/app/data
       - app_logs:/var/log/app
@@ -33,7 +33,7 @@ services:
     container_name: backend_game
     build: ./src/game
     networks:
-      - backend
+      - app
     volumes:
       - ./src/game/data:/app/data
       - app_logs:/var/log/app
@@ -45,7 +45,7 @@ services:
     container_name: backend_tournament
     build: ./src/tournament
     networks:
-      - backend
+      - app
     volumes:
       - ./src/tournament/data:/app/data
       - app_logs:/var/log/app
@@ -57,7 +57,7 @@ services:
     container_name: backend_user
     build: ./src/user
     networks:
-      - backend
+      - app
     volumes:
       - ./src/user/data:/app/data
       - app_logs:/var/log/app
@@ -69,7 +69,7 @@ services:
     container_name: backend_websocket
     build: ./src/websocket  
     networks:
-      - backend
+      - app
     volumes:
       - ./src/websocket/data:/app/data
       - app_logs:/var/log/app
