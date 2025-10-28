@@ -303,7 +303,7 @@ export function PongOnlineOverlayPage(): HTMLElement {
 }
 
 function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
-	const socket = new WebSocket(`wss://localhost:4443/websocket`);
+	let socket = new WebSocket(`wss://${window.location.host}/websocket`);
 	let myPosition: 'left' | 'right' | null = null;
 	
 	socket.onopen = () => {

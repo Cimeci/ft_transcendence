@@ -1,4 +1,4 @@
-.PHONY: all up build elk back front fullstack down down-v clean look-logs cat-logs
+.PHONY: all up build elk back front fullstack monitor down down-v clean prom-crypt look-logs cat-logs help
 
 ################################################################################
 #	USED CONTAINERS															   #

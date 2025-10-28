@@ -68,8 +68,24 @@ app.post('/game', async (request, reply) => {
         if (mode === "local"){
             db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null);
             console.log("local game created");}
-        else
-            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
+        else{
+            const resp = await fetch(`http://user:4000/user/invite/${player_uuid2}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-key': process.env.JWT_SECRET
+                },
+                body: JSON.stringify({ uuid: uuid })
+            });
+            if (!resp.ok) {
+                request.log.warn({
+                    event: 'new-game_attempt'
+                }, 'New Game Failed: Impossible to invite player2');
+                return reply.code(400).send({ error: 'Impossible to invite player2' });
+            }
+            //db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, null, null, mode, tournament || null, null);
+        }
         request.log.info({
             event: 'new-game_attempt'
         }, 'New Game Sucess: Game created');
@@ -97,8 +113,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
         }, 'Update Game Failed: Game not found');
         return reply.code(404).send({ error: 'Game not found' });
     }
-    console.log("DATA:", data);
-    let winner_uuid = score1 === 5 ? data.player2_uuid : data.player1_uuid || null;;
+    let winner_uuid = score1 == 5 ? data.player1_uuid : data.player2_uuid || null;
     try {
         db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
 
@@ -134,6 +149,34 @@ app.patch('/update-game/:gameId', async (request, reply) => {
             },
             event: 'update-game_attempt'
         }, 'Update Game Failed');
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
+
+app.patch('/set-up-game', async(request, reply) => {
+    const key = request.headers['x-internal-key'];
+    if (key !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'patch-invit_attempt',
+        }, 'Patch Invit Unauthorized: invalid jwt token');
+        return reply.code(403).send({ error: 'Forbidden' })
+    }
+
+    const { player_uuid, username, uuid } = request.body;
+    try {
+        db.prepare('UPDATE game SET player2 = ?, player2_uuid = ? WHERE uuid = ?').run(username, player_uuid, uuid);
+        request.log.info({
+            event: 'patch-invit_attempt'
+        }, 'Patch Invit Sucess: player2 added to game');
+        reply.send({ success: true });
+    } catch(err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'patch-invit_attempt'
+        }, 'Patch Invit Failed');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
