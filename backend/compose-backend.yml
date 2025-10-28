@@ -15,7 +15,7 @@ services:
       - websocket
     restart: on-failure
     env_file:
-      - .env
+      - ../.env
   
   auth:
     container_name: backend_auth
@@ -27,7 +27,7 @@ services:
       - app_logs:/var/log/app
     restart: on-failure
     env_file:
-      - .env
+      - ../.env
   
   game:
     container_name: backend_game
@@ -39,7 +39,7 @@ services:
       - app_logs:/var/log/app
     restart: on-failure
     env_file:
-      - .env
+      - ../.env
   
   tournament:
     container_name: backend_tournament
@@ -51,7 +51,7 @@ services:
       - app_logs:/var/log/app
     restart: on-failure
     env_file:
-      - .env
+      - ../.env
 
   user:
     container_name: backend_user
@@ -63,7 +63,7 @@ services:
       - app_logs:/var/log/app
     restart: on-failure
     env_file:
-      - .env
+      - ../.env
 
   websocket:
     container_name: backend_websocket
@@ -75,6 +75,6 @@ services:
       - app_logs:/var/log/app
     restart: on-failure
     env_file:
-      - .env
+      - ../.env
 
 
