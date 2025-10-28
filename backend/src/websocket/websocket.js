@@ -67,6 +67,16 @@ function resetGame() {
     });
 }
 
+function sendPaddleState() {
+    const paddleState = { ball, leftPaddle, rightPaddle, score };
+    console.log("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS");
+    app.websocketServer.clients.forEach((client) => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify(paddleState));
+        }
+    });
+}
+
 function resetBall(forceDirection = null) {
 		// Position centrale
 		ball.x = 1400 / 2;
@@ -107,6 +117,10 @@ function resetBall(forceDirection = null) {
 				launchTimeout = null;
 				isGamerunning = true;
 		}, 1000); // 1 secondes d’attente
+
+        // Envoi régulier de l’état des paddles pendant l’attente, tout les 10 ms
+        const paddleState = setInterval(sendPaddleState, 10);
+        setTimeout(() => clearInterval(paddleState), 1000);
 }
 
 function endGame() {
@@ -128,7 +142,7 @@ function endGame() {
         // Réinitialiser après 3 secondes
         setTimeout(() => {
             resetGame();
-        }, 3000);
+        }, 1000);
     }
 }
 
@@ -199,11 +213,9 @@ app.register(async function (app) {
         if (!players.left) {
             playerPosition = 'left';
             players.left = socket;
-            console.log('Joueur gauche connecté');
         } else if (!players.right) {
             playerPosition = 'right';
             players.right = socket;
-            console.log('Joueur droit connecté');
             
             // Démarrer le jeu quand les deux joueurs sont connectés
             setTimeout(() => {
