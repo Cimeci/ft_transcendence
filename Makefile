@@ -14,7 +14,7 @@ MONITOR_CONTAINERS	= 	prometheus alertmanager cadvisor es_exporter telegraf graf
 
 all: build up
 
-up: prom-crypt
+up: update_env
 	docker compose up
 
 build:
@@ -29,10 +29,10 @@ back:
 front:
 	 docker compose up --build $(FRONTEND_CONTAINERS)
 
-fullstack:
+fullstack: update_env
 	 docker compose up --build $(BACKEND_CONTAINERS) $(FRONTEND_CONTAINERS)
 
-monitor: prom-crypt
+monitor: update_env
 	docker compose up --build $(MONITOR_CONTAINERS)
 
 down:
@@ -47,8 +47,8 @@ clean: down-v
 	rm -f backend/src/tournament/data/tournament.sqlite
 	rm -f backend/src/user/data/user.sqlite
 
-prom-crypt:
-	python3 ./monitoring/generate_hash.py
+update_env:
+	python3 ./scripts/update_env.py
 
 look-logs:
 	sudo ls -l /var/lib/docker/volumes/ft_transcendence_app_logs/_data

@@ -4,7 +4,7 @@ import bcrypt
 import re
 from pathlib import Path
 
-ENV_FILE = Path("monitoring/.env")
+ENV_FILE = Path(".env")
 
 def read_env_file():
     if not ENV_FILE.exists():
@@ -48,6 +48,7 @@ def main():
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     updated_lines = update_or_add_hash(lines, hashed)
     ENV_FILE.write_text("\n".join(updated_lines) + "\n")
+
 
 if __name__ == "__main__":
     main()

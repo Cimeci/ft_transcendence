@@ -2,8 +2,10 @@ name: ft_transcendence
 
 include:
   - ./backend/compose-backend.yml
-  - ./elk/compose-elk.yml
-  - ./monitoring/compose-monitoring.yml
+  - path: ./elk/compose-elk.yml
+    env_file: .env
+  - path: ./monitoring/compose-monitoring.yml
+    env_file: .env
 
 services:
   frontend:
