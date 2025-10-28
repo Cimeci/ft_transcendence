@@ -66,10 +66,7 @@ cd ft_transcendence
 ```
 - 2️⃣ **Configure env variables**
 *[add details about it]*
-- 3️⃣ **Update your `/etc/hosts`**
-```bash
-```
-- 4️⃣ **Launch the app** 
+- 3️⃣ **Launch the app** 
 ```bash
 make
 ```
@@ -90,8 +87,8 @@ The *Makefile* manages the full Docker Compose lifecycle and provides convenient
 To get closer to a production-like environment, we placed all services behind a reverse proxy, allowing access to every component via HTTPS.
 This setup also enables connections from other machines if we want to offload resources from the main server or VM — for example, running Kibana or Grafana on a different host.
 
-![MONITORING](.readme_assets/app.png)
-*Monitoting architecture*
+![APP](.readme_assets/app.png)
+*Application architecture*
 
 ---
 ### Frontend
@@ -110,6 +107,8 @@ A core pillar of observability, monitoring allows us to visualize metrics from t
 
 ![MONITORING](.readme_assets/monitoring.png)
 *Monitoting architecture*
+
+> You can connect to Prometheus at `https://localhost:4443/prometheus/` and Grafana at `https://localhost:4443/grafana/` with the `admin` user name and password defined in the `.env`.
 
 #### Security Concerns
 Grafana and Prometheus, which are accessible from outside the system, require a secure connection with a username and password defined in the .env file.
@@ -177,6 +176,9 @@ This stack allows us to:
 - Search through millions of log entries in seconds
 - Create real-time dashboards and alerts
 - Monitor application health and performance
+
+
+> You can connect to Kibana at `https://localhost:4443/kibana/` with the `elastic` user name and password defined in the `.env`.
 
 #### Virtual Machine environnment
 As the subject specifies it itself:
