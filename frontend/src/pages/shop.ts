@@ -255,7 +255,7 @@ export function ShopPage(): HTMLElement {
     async function buyItem(item: ShopItem) {
         const jwt = localStorage.getItem("jwt") || "";
 
-        const body: any = { [item.type]: item.name };
+        const body: any = { [item.type]: item.name, amount: item.price };
 
         const response = await fetch('/user/shop', {
             method: 'PATCH',
