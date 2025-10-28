@@ -33,7 +33,7 @@ services:
       co.elastic.logs/module: elasticsearch
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
-      - esdata01:/usr/share/elasticsearch/data
+      - es-data:/usr/share/elasticsearch/data
     environment:
       - CLUSTER_NAME=${CLUSTER_NAME}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
@@ -86,7 +86,7 @@ services:
       co.elastic.logs/module: kibana
     volumes:
       - certs:/usr/share/kibana/config/certs
-      - kibanadata:/usr/share/kibana/data
+      - kibana-data:/usr/share/kibana/data
     expose:
       - "5601"
     environment:
@@ -139,7 +139,7 @@ services:
       co.elastic.logs/module: logstash
     volumes:
       - certs:/usr/share/logstash/certs
-      - logstashdata:/usr/share/logstash/data
+      - logstash-data:/usr/share/logstash/data
       - logstash-keystore:/usr/share/logstash/config
       - "./logstash_ingest_data/:/usr/share/logstash/ingest_data/"
     environment:
@@ -170,7 +170,7 @@ services:
       co.elastic.logs/module: filebeat
     volumes:
       - certs:/usr/share/filebeat/certs
-      - filebeatdata:/usr/share/filebeat/data
+      - filebeat-data:/usr/share/filebeat/data
       - app_logs:/var/log/app:ro 
     environment:
       - ELASTIC_USER=elastic

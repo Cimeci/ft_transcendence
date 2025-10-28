@@ -29,6 +29,9 @@ services:
     depends_on:
       - frontend
       - gateway
+      #- kibana
+      #- prometheus
+      #- grafana
     build:
       context: ./reverse-proxy
     ports:
@@ -39,25 +42,16 @@ services:
 
 volumes:
   certs:
-    driver: local
-  esdata01:
-    driver: local
-  kibanadata:
-    driver: local
-  logstashdata:
-    driver: local
+  es-data:
+  kibana-data:
+  logstash-data:
   logstash-keystore:
-  filebeatdata:
-    driver: local
+  filebeat-data:
   app_logs:
-    driver: local
   prometheus-data:
   grafana-data:
 
 networks:
   app:
-    driver: bridge
   elk:
-    driver: bridge
   monitoring:
-    driver: bridge
