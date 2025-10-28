@@ -239,7 +239,7 @@ export const translations = {
 		// Navbar link
 		home: "Inicio",
 		inventory: "Inventario",
-		settings: "Parámetro",
+		settings: "Parámetros",
 		shop: "Tienda",
 		logout: "Cerrar sesión",
 		// PongPage
