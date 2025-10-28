@@ -77,8 +77,7 @@ async function CreateTournament(btn: HTMLButtonElement, uuid_host:string, name: 
           	method: "POST",
           	headers: {
                 "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-                "Accept": "application/json",
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({ host_uuid: uuid_host, name: name, length: lenght })
         });
