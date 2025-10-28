@@ -90,6 +90,9 @@ The *Makefile* manages the full Docker Compose lifecycle and provides convenient
 To get closer to a production-like environment, we placed all services behind a reverse proxy, allowing access to every component via HTTPS.
 This setup also enables connections from other machines if we want to offload resources from the main server or VM — for example, running Kibana or Grafana on a different host.
 
+![MONITORING](.readme_assets/app.png)
+*Monitoting architecture*
+
 ---
 ### Frontend
 
@@ -105,7 +108,7 @@ A core pillar of observability, monitoring allows us to visualize metrics from t
 - **Grafana**: A powerful monitoring and visualization tool, used here primarily as a UI to build dashboards from our metrics.
 - **Various Exporters**: Expose component metrics through APIs for Prometheus to scrape.
 
-![MONITORING](.readme_assets/monitor.png)
+![MONITORING](.readme_assets/monitoring.png)
 *Monitoting architecture*
 
 #### Security Concerns

@@ -47,10 +47,19 @@ const tournament = `
 
 db.exec(tournament);
 app.addHook('onClose', async (instance) => {
-  db.close();
+    db.close();
 });
 
 app.get('/tournament', async (request, reply) => {
+    try {
+        await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'get-user-infos_attempt'
+        }, 'Get User Infos Unauthorized: invalid jwt token');
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+
     try {
         const tournaments = db.prepare('SELECT * FROM tournament').all();
         request.log.info({

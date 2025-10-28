@@ -41,7 +41,7 @@ export function HomePage(): HTMLElement {
 	TournamentLinkContainer.appendChild(TournatmentImg);
 
 	TournatmentImg.addEventListener("click", () => {
-		navigateTo('/tournament/menu')
+		navigateTo('/Tournament/menu')
 	});
 
 	LinkContainer.appendChild(TournamentLinkContainer);
