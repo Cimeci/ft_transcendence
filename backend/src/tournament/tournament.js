@@ -161,8 +161,9 @@ app.post('/tournament', async (request, reply) => {
         request.log.info({
             event: 'new-tournament_attempt'
         }, 'New Tournament Created Success');
-        return { message: 'Tournament created successfully', matches };
+        return { message: 'Tournament created successfully', matches, uuid: uuid };
     } catch(err){
+        console.log("ERROR : ", err);
         request.log.error({
             error: {
                 message: err.message,
