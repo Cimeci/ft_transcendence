@@ -10,18 +10,93 @@ import type { Friend } from "./friends";
 let nb_players = {value: 16};
 
 export type TournamentVisibility = 'public' | 'private';
-export interface Tournament {
-  name: string;
-  maxPlayers: number;
-  activePlayers: number;
-  visibility: TournamentVisibility;
-  password?: string;
-  players?: string[];
-  started?: boolean;
+
+interface Game {
+	round: number,
+	id: string,
 }
 
-export const tournamentList: Tournament[] = [];
+interface Players {
+	uuid: string;
+}
+
+export interface Tournament {
+    uuid: string,
+    host: string,
+    name: string,
+    size: number,
+    players :Players,
+    game: Game[],
+    winner: string,
+	visibility?: string,
+	password?: string,
+}
+
+export let tournamentList: Tournament[] = [];
 export let currentTournament: Tournament | null = null; // tournament  select  ! HAVE TO CHANGE IT BY THE BD ! //
+
+async function GetTournamentList() {
+    const jwt = localStorage.getItem("jwt");
+    try {
+        const resp = await fetch("/tournament/tournament", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${jwt}`,
+                "Accept": "application/json",
+				"Content-Type": "application/json",
+            },
+        });
+     
+        const text = await resp.text();
+        
+        if (!resp.ok) {
+            console.error("Erreur lors de la récupération des tournois :", resp.status, resp.statusText);
+            return null;
+        }
+        
+        const ct = resp.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+            console.error("Réponse non-JSON reçue. Contenu:", text.substring(0, 200));
+            return null;
+        }
+        
+        const data: Tournament[] = JSON.parse(text);
+        tournamentList = data;
+        
+    } catch (error) {
+        console.error("Error network :", error);
+    }
+}
+
+async function CreateTournament(btn: HTMLButtonElement, uuid_host:string, name: string, lenght: number) {
+    const token = localStorage.getItem("jwt") || "";
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = "…";
+    try {
+        const resp = await fetch(`/tournament/tournament`, {
+          	method: "POST",
+          	headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body: JSON.stringify({ host_uuid: uuid_host, name: name, length: lenght })
+        });
+        if (resp.ok) {
+          	return;
+        }
+        if (resp.status === 400) { btn.textContent = "Invalid Input"; return; }
+        if (resp.status === 401) { alert(t.Session_expired); btn.textContent = old; return; }
+        console.error("POST /tournament failed:", resp.status);
+        btn.textContent = old;
+    } catch (e) {
+        console.error(e);
+        btn.textContent = old;
+    } finally {
+        btn.disabled = false;
+    }
+}
 
 export function PongTournamentMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
@@ -115,6 +190,50 @@ export function PongTournamentMenuPage(): HTMLElement {
 		syncAria();
     });
 
+	const HostBtn = document.createElement("button");
+	HostBtn.className = "h-[7vh] w-9/10 bg-green-600 text-white rounded-xl hover:bg-green-700 hover:scale-102 duration-300 transition-all";
+	HostBtn.textContent = t.host;
+    HostBtn.addEventListener("click", () => {
+		//! ADD CREATE TOURNAMENT FETCH
+
+		if (!GameName.value)
+		{
+			GameName.classList.add("text-red-600", "shake");
+			GameName.placeholder = t.empty_input;
+			setTimeout(() => {GameName.placeholder = t.tournament_name; GameName.classList.remove("text-red-600", "shake");}, 1000)
+		}
+		if (!GamePassword.value)
+		{
+			GamePassword.classList.add("text-red-600", "shake");
+			GamePassword.placeholder = t.empty_input;
+			EyePassword.classList.add("shake");
+			setTimeout(() => {
+				GamePassword.placeholder = t.password;
+				GamePassword.classList.remove("text-red-600", "shake");
+				EyePassword.classList.remove("shake");
+			}, 1000)
+		}
+		if (GameName.value)
+		{
+			const visibility: TournamentVisibility = toggleInput.checked ? "private" : "public";
+			if (visibility === "public" || visibility === "private" && GamePassword.value)
+			{
+				const uuid = getUser()?.uuid || 'err';
+                CreateTournament(HostBtn, uuid, GameName.value, nb_players.value);
+                // tournamentList.unshift(t);
+                // currentTournament = t;
+                renderJoinList();
+
+                GameName.value = "";
+                GamePassword.value = "";
+                PasswordWrapper.classList.toggle("hidden", !toggleInput.checked);
+                mainContainer.classList.add("fade-out");
+                setTimeout(() => { navigateTo("/tournament/host"); }, 1000);
+            }
+        }
+    });
+    HostContainer.appendChild(HostBtn);
+
 	const JoinContainer = document.createElement("div");
     JoinContainer.className = "flex flex-col items-center justify-center border-2 rounded-xl p-10 w-[90vw] lg:w-[40vw] h-[70vh] min-h-[20rem] overflow-hidden";
 
@@ -190,6 +309,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 	JoinList.className = "gap-10 p-2 text-center w-full flex-1 min-h-0 overflow-y-auto border-2 rounded-xl overflow-x-hidden";
 	JoinContainer.appendChild(JoinList);
 
+	GetTournamentList().then(() => renderJoinList());
 	const renderJoinList = () => {
 		JoinList.innerHTML = "";
 		tournamentList.forEach(tournament => {
@@ -205,17 +325,18 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 				const tnb = document.createElement("p");
 				tnb.className = "w-1/3";
-				tnb.textContent = `${tournament.activePlayers}/${tournament.maxPlayers}`;
+				// tnb.textContent = `${tournament.activePlayers}/${tournament.maxPlayers}`;
 				li.appendChild(tnb);
 
 				const tvis = document.createElement("p");
 				tvis.className = "w-1/3";
-				tvis.textContent = t[tournament.visibility];
+				// tvis.textContent = t[tournament.visibility];
 				li.appendChild(tvis);
     		};
     		renderLabel();
 
     		li.addEventListener("click", () => {
+				//! CALL JOIN INFO TOURNAMENT
       			JoinContainer.querySelectorAll(".join-form").forEach(el => el.remove());
 				if (currentJoinForm) {
 					currentJoinForm.remove();
@@ -229,6 +350,7 @@ export function PongTournamentMenuPage(): HTMLElement {
                 } else {
                     currentTournament = tournament;
                     mainContainer.classList.add("fade-out");
+					//! CALL JOIN TOURNAMENT
                     setTimeout(() => navigateTo("/tournament/join"), 1000);
                 }
       			setTimeout(renderLabel, 1000);
@@ -238,58 +360,6 @@ export function PongTournamentMenuPage(): HTMLElement {
 	};
 
 	renderJoinList();
-
-
-	const HostBtn = document.createElement("button");
-	HostBtn.className = "h-[7vh] w-9/10 bg-green-600 text-white rounded-xl hover:bg-green-700 hover:scale-102 duration-300 transition-all";
-	HostBtn.textContent = t.host;
-    HostBtn.addEventListener("click", () => {
-		if (!GameName.value)
-		{
-			GameName.classList.add("text-red-600", "shake");
-			GameName.placeholder = t.empty_input;
-			setTimeout(() => {GameName.placeholder = t.tournament_name; GameName.classList.remove("text-red-600", "shake");}, 1000)
-		}
-		if (!GamePassword.value)
-		{
-			GamePassword.classList.add("text-red-600", "shake");
-			GamePassword.placeholder = t.empty_input;
-			EyePassword.classList.add("shake");
-			setTimeout(() => {
-				GamePassword.placeholder = t.password;
-				GamePassword.classList.remove("text-red-600", "shake");
-				EyePassword.classList.remove("shake");
-			}, 1000)
-		}
-		if (GameName.value)
-		{
-			const visibility: TournamentVisibility = toggleInput.checked ? "private" : "public";
-			if (visibility === "public" || visibility === "private" && GamePassword.value)
-			{
-                const t: Tournament = {
-                    name: GameName.value,
-                    maxPlayers: nb_players.value,
-                    activePlayers: 1,
-                    visibility,
-                    ...(visibility === "private" ? { password: GamePassword.value } : {}),
-                    players: Array.from({ length: nb_players.value }, (_, i) =>
-                        `${translations[getCurrentLang()].player} ${i + 1}`
-                    ),
-                    started: false,
-                };
-                tournamentList.unshift(t);
-                currentTournament = t;
-                renderJoinList();
-
-                GameName.value = "";
-                GamePassword.value = "";
-                PasswordWrapper.classList.toggle("hidden", !toggleInput.checked);
-                mainContainer.classList.add("fade-out");
-                setTimeout(() => { navigateTo("/tournament/host"); }, 1000);
-            }
-        }
-    });
-    HostContainer.appendChild(HostBtn);
 	
 	TournamentContainer.appendChild(HostContainer); 
 	TournamentContainer.appendChild(JoinContainer);
@@ -308,13 +378,15 @@ export function PongTournamentPageJoin(): HTMLElement {
     Title.textContent = currentTournament?.name + " " + t.tournament;
     mainContainer.appendChild(Title);
 
-    const size = currentTournament?.maxPlayers ?? nb_players.value;
-    const players = (currentTournament?.players?.length
-        ? currentTournament.players.slice()
-        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
+    // const size = currentTournament?.size ?? nb_players.value;
+    // const players = (currentTournament?.players?.length
+    //     ? currentTournament.players.slice()
+    //     : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
 	
+	//! CALL INFO TOURNAMENT
 
-    const bracket = createTournamentBracket(players);
+    // const bracket = createTournamentBracket(players);
+	const bracket = document.createElement("div");
     bracket.classList.add("mt-15", "pl-5");
     mainContainer.appendChild(bracket);
 
@@ -453,6 +525,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 	ConfirmBtn.onclick = () => {
 		mainContainer.classList.add("fade-out");
 		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
+		//! QUIT TOURNAMENT
 	};
 	actions.appendChild(ConfirmBtn);
 
@@ -489,15 +562,19 @@ export function PongTournamentPageHost(): HTMLElement {
     Title.textContent = currentTournament?.name + " " + t.tournament;
     mainContainer.appendChild(Title);
 
-    const size = currentTournament?.maxPlayers ?? nb_players.value;
-    const players = (currentTournament?.players?.length
-        ? currentTournament.players
-        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
+    // const size = currentTournament?.maxPlayers ?? nb_players.value;
+    // const players = (currentTournament?.players?.length
+    //     ? currentTournament.players
+    //     : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
+
+	//! CALL INFOS BACK TOURNAMENT BRACKET
+
     const bracketContainer = document.createElement("div");
     bracketContainer.className = "mt-15 pl-5 w-full";
     const renderBracket = () => {
         bracketContainer.innerHTML = "";
-        const b = createTournamentBracket(players);
+        // const b = createTournamentBracket(players);
+        const b = document.createElement("div");
         b.classList.add("mt-0", "pl-0");
         bracketContainer.appendChild(b);
     };
@@ -615,11 +692,12 @@ export function PongTournamentPageHost(): HTMLElement {
 	shuffleBtn.textContent = t.shuffle;
     shuffleBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
     shuffleBtn.onclick = () => {
-        for (let i = players.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [players[i], players[j]] = [players[j], players[i]];
-        }
-        if (currentTournament) currentTournament.players = players.slice();
+		//! CALL SHUFFLE BACK
+        // for (let i = players.length - 1; i > 0; i--) {
+        //     const j = Math.floor(Math.random() * (i + 1));
+        //     [players[i], players[j]] = [players[j], players[i]];
+        // }
+        // if (currentTournament) currentTournament.players = players.slice();
         renderBracket();
     };
 
@@ -662,6 +740,7 @@ export function PongTournamentPageHost(): HTMLElement {
 	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
 	ConfirmBtn.textContent = t.back;
 	ConfirmBtn.onclick = () => {
+		//! QUIT TOURNAMENT AND DELETE TOURNAMENT
 		mainContainer.classList.add("fade-out");
 		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
 	};
@@ -708,13 +787,15 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
     Title.textContent = currentTournament?.name + " " + t.tournament;
     mainContainer.appendChild(Title);
 
-    const size = currentTournament?.maxPlayers ?? nb_players.value;
-    const players = (currentTournament?.players?.length
-        ? currentTournament.players.slice()
-        : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
+    // const size = currentTournament?.maxPlayers ?? nb_players.value;
+    // const players = (currentTournament?.players?.length
+    //     ? currentTournament.players.slice()
+    //     : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
 	
+	//! CALL INFO TOURNAMENT CURRENT GAME
 
-    const bracket = createTournamentBracket(players);
+    // const bracket = createTournamentBracket(players);
+	const bracket = document.createElement("div");
     bracket.classList.add("mt-15", "pl-5");
     mainContainer.appendChild(bracket);
 
@@ -749,6 +830,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 	ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
 	ConfirmBtn.textContent = t.back;
 	ConfirmBtn.onclick = () => {
+		//! QUIT TOURNAMENT
 		mainContainer.classList.add("fade-out");
 		setTimeout(() => {navigateTo("/tournament/menu");}, 1000);
 	};
