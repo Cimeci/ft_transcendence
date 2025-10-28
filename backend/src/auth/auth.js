@@ -435,7 +435,7 @@ app.get('/google/callback', async(request, reply) => {
         const { token } = await app.google.getAccessTokenFromAuthorizationCodeFlow(request);
         
         //requete HTTP pour recuperer la data
-        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        let response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token.access_token}`
@@ -486,9 +486,7 @@ app.get('/google/callback', async(request, reply) => {
         } else {
             const uuid = crypto.randomUUID();
             db.prepare('INSERT INTO user (uuid, google_id, username, email, password, avatar) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, google_id, given_name, email, null, picture);
-            jwtToken, refreshToken = await generateTokens(uuid, given_name, email);
-            
-            //jwtToken = await app.jwt.sign({ userId: uuid });
+            ({jwtToken, refreshToken} = await generateTokens(uuid, given_name, email));
 
             const info = { uuid: uuid, username: given_name, email: email, hash: null , avatar: picture}
             response = await fetch('http://user:4000/insert', {
@@ -594,6 +592,7 @@ app.get('/github/callback', async function (request, reply) {
 
         const local = db.prepare('SELECT password FROM user WHERE email = ?').get(emailPrimary);
         if (local && local.password){
+
             request.log.warn({
                 event: 'github_oauth_attempt',
                 user: { email: emailPrimary }
@@ -645,7 +644,7 @@ app.get('/github/callback', async function (request, reply) {
             if (!response.ok)
                 throw new Error(`HTTP error! status: ${response.status}`);
 
-            ({jwtToken, refreshToken} = await generateTokens(uuid, login, emailPrimar));
+            ({jwtToken, refreshToken} = await generateTokens(uuid, login, emailPrimary));
             //jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
             request.log.info({
                 event: 'github_oauth_attempt',
