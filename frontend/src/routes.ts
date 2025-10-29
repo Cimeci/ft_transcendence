@@ -13,48 +13,15 @@ import { PongOnlineMenuPage, PongOnlineGamePage, PongOnlineOverlayPage } from '.
 import { PongTournamentMenuPage, PongTournamentPageJoin, PongTournamentPageHost, PongTournamentPageCurrentGame } from './pages/tournament';
 import { LandingPage } from './pages/landing';
 import { CreditsPage } from './pages/credits';
-import { FriendsPage, type InvitePayload } from './pages/friends';
+import { FriendsPage } from './pages/friends';
 import { UserPage } from './pages/user';
-import { addNotification, removeNotification } from './components/notifications_overlay'
+import { addNotification, loadAndDisplayNotifications, type InvitePayload } from './components/notifications_overlay'
 import { ensureUser, onUserChange} from './linkUser';
 
-const PUBLIC_ROUTES = new Set<string>(['/', '/login', '/register', '/oauth/callback']);
+const publicRoot = ['/', '/login', '/register', '/oauth/callback'];
+const privateRoot = ['/home', '/shop', '/friends', '/inventory', '/pong/menu', '/pong/local/menu', '/pong/local/game', '/pong/local/game/overlay', '/pong/online/menu', '/pong/online/game', '/pong/online/game/overlay', '/Tournament/menu', '/Tournament/host', '/Tournament/join', '/Tournament/game', '/settings', '/credits', '/profile'];
 
 document.getElementById("jschef")?.remove();
-
-function b64urlDecode(input: string): string {
-  	input = input.replace(/-/g, '+').replace(/_/g, '/');
-
-  	const pad = input.length % 4;
-  	if (pad)
-		input += '='.repeat(4 - pad);
-  	try {
-  	  	return decodeURIComponent(atob(input).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-  	} catch {
-  	  	return '';
-  	}
-}
-
-function isJwtValid(): boolean {
-  	const token = localStorage.getItem("jwt");
-  	if (!token)
-		return false;
-
-  	const parts = token.split('.');
-  	if (parts.length !== 3)
-		return false;
-
-  	try {
-  	  	const payload = JSON.parse(b64urlDecode(parts[1]) || '{}');
-  	  	if (typeof payload.exp !== 'number')
-			return false;
-
-  	  	const now = Math.floor(Date.now() / 1000);
-  	  	return payload.exp > now;
-  	} catch {
-  	  	return false;
-  	}
-}
 
 function render401(): HTMLElement {
   	const el = document.createElement('div');
@@ -89,10 +56,35 @@ function render401(): HTMLElement {
 }
 
 function render404(): HTMLElement {
-	const notFound = document.createElement('div');
-	notFound.innerHTML = '<h1 class="md:text-6xl sm:text-4xl text-2xl font-bold mb-4">404</h1><p class="text-2xl">Page not found.</p>';
-	notFound.className = "bg-gradient-to-r from-black via-green-900 to-black text-white flex items-center justify-center flex-1 bg-black bg-opacity-90 p-0 z-2002";
-	return (notFound);
+  	const el = document.createElement('div');
+  	el.className = 'bg-gradient-to-r from-black via-green-900 to-black text-white flex items-center justify-center flex-1 bg-opacity-90 p-0 z-2002';
+
+	const main = document.createElement("div");
+	main.className = "flex flex-col justify-center text-center p-8";
+	el.appendChild(main);
+
+	const div = document.createElement("div");{
+	div.className = "flex flex-col justify-center text-center";
+	main.appendChild(div);
+
+	const h1 = document.createElement("h1");
+	h1.className = "md:text-6xl sm:text-4xl text-3xl font-bold mb-4 duration-400 transition-all hover:scale-105";
+	h1.textContent = "404";
+	div.appendChild(h1);
+
+	const p = document.createElement("p");
+	p.className = "text-2xl duration-400 transition-all hover:scale-105";
+	p.textContent = "Not Found";
+	div.appendChild(p);
+	}
+
+	const a = document.createElement("a");
+	a.className = "absolute bottom-1/4 text-green-400 text-2xl hover:text-green-500 duration-400 transition-all hover:scale-105";
+	a.href = "/login";
+	a.textContent = "Return to login page";
+	el.appendChild(a);
+
+  	return el;
 }
 
 const routes: { [key: string]: () => HTMLElement } = {
@@ -120,51 +112,107 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/oauth/callback': OAuthCallbackPage
 };
 
-export const navigateTo = (url: string) => {
+export const navigateTo = async (url: string) => {
 	history.pushState(null, '', url);
-	renderPage();
+	await renderPage();
 };
 
-const renderPage = () => {
-	const path = window.location.pathname;
+async function isJwtValid(): Promise<boolean> {
+    const jwt = localStorage.getItem("jwt");
+    console.log("CHECK JWT", jwt);
+    if (!jwt) return false;
+    
+    try {
+        const resp = await fetch(`/user/jwt-test`, {
+            method: "POST",
+            headers: {
+                'Authorization': `Bearer ${jwt}`,
+            }
+        });
+        
+        console.log("RESP JWT Status:", resp.status, "OK:", resp.ok);
+        
+        if (!resp.ok) {
+            try {
+                const errorData = await resp.json();
+                console.error("JWT ERROR Details:", errorData);
+            } catch (e) {
+                console.error("JWT ERROR Status:", resp.status, "No details available");
+            }
+            return false;
+        }
+        
+        // Vérifier que la réponse est valide
+        const data = await resp.json();
+        console.log("JWT SUCCESS:", data);
+        return true;
+        
+    } catch (e) {
+        console.error("POST JWT Network Error: ", e);
+        return false;
+    }
+}
 
-  	const isPublic = PUBLIC_ROUTES.has(path);
-  	const allowed = isPublic || isJwtValid();
+const renderPage = async () => {
+    const path = window.location.pathname;
+    const isPublic = publicRoot.includes(path);
+	const isPrivate = privateRoot.includes(path);
 
-	const pageRenderer = routes[path];
-	let contentToRender: HTMLElement;
-	
-	if (!allowed) {
-    	contentToRender = render401();
-	} else if (typeof pageRenderer === 'function') {
-		contentToRender = pageRenderer();
-	} else {
-		contentToRender = render404();
-	}
- 
-	const appElement = document.getElementById('app');
-	if (appElement) {
-		appElement.innerHTML = '';
-		appElement.appendChild(contentToRender);
-	}
-
-	const oldNavbar = document.querySelector('nav.navbar-burger');
-	if (oldNavbar)
-		oldNavbar.remove();
-
-	const navbar = createNavbar(navRoutesForNavbar);
-	document.body.prepend(navbar);
-
-	const navbarLinks = document.querySelectorAll('nav .navbar-links a[data-link]');
-	navbarLinks.forEach(link => {
-		const href = link.getAttribute('href');
-		if (href === path) {
-			link.classList.add('active');
-		} else {
-			link.classList.remove('active');
-		}
-	});
+    console.log("Rendering page:", path, "isPublic:", isPublic);
+    
+    if (isPublic) {
+        console.log("Public route, rendering directly");
+        renderContent(path);
+        return;
+    }
+    
+    const jwtValid = await isJwtValid();
+    console.log("Private route - JWT valid:", jwtValid);
+    
+    if (!jwtValid && isPrivate) {
+        const appContainer = document.getElementById('app');
+        if (appContainer) {
+            appContainer.innerHTML = '';
+            appContainer.appendChild(render401());
+        }
+        return;
+    }
+    renderContent(path);
 };
+
+function renderContent(path: string) {
+    const pageRenderer = routes[path];
+    let contentToRender: HTMLElement;
+
+    if (typeof pageRenderer === 'function') {
+        contentToRender = pageRenderer();
+    } else {
+        contentToRender = render404();
+    }
+
+    const appElement = document.getElementById('app');
+    if (appElement) {
+        appElement.innerHTML = '';
+        appElement.appendChild(contentToRender);
+    }
+
+    const oldNavbar = document.querySelector('nav.navbar-burger');
+    if (oldNavbar)
+        oldNavbar.remove();
+
+    const navbar = createNavbar(navRoutesForNavbar);
+    document.body.prepend(navbar);
+
+    const navbarLinks = document.querySelectorAll('nav .navbar-links a[data-link]');
+    navbarLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href === path) {
+            link.classList.add('active');
+        } else {
+            link.classList.remove('active');
+        }
+    });
+}
 
 document.addEventListener('click', event => {
 	const target = event.target as HTMLElement;
@@ -180,7 +228,7 @@ document.addEventListener('click', event => {
 	}
 });
 
-window.addEventListener('popstate', renderPage);
+window.addEventListener('popstate', () => renderPage());
 
 const navRoutesForNavbar: { [key: string]: string } = {
 	'/friends': 'friends',
@@ -295,16 +343,18 @@ window.addEventListener('resize', positionToastRoot);
 
 
 async function bootstrap() {
-  await ensureUser();
-  window.renderPage = renderPage;
-  renderPage();
+  	await ensureUser();
+  	window.renderPage = renderPage;
+  	renderPage();
+
+  	loadAndDisplayNotifications();
 }
 
 onUserChange(() => {
-  const oldNavbar = document.querySelector('nav.navbar-burger');
-  if (oldNavbar) oldNavbar.remove();
-  const navbar = createNavbar(navRoutesForNavbar);
-  document.body.prepend(navbar);
+  	const oldNavbar = document.querySelector('nav.navbar-burger');
+  	if (oldNavbar) oldNavbar.remove();
+  	const navbar = createNavbar(navRoutesForNavbar);
+  	document.body.prepend(navbar);
 });
 
 bootstrap();

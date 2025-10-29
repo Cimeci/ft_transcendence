@@ -6,15 +6,6 @@ import { navigateTo } from "../routes";
 
 export let inputRef: HTMLInputElement | null = null;
 
-export type InvitePayload = {
-  	username: string;
-  	id: string;
-  	avatar: string;
-  	message?: string;
-  	onAccept?: () => void;
-  	onRefuse?: () => void;
-};
-
 export type Friend = { id: string; username: string; invitation: string, avatar: string, bar?: string, ball?:string };
 
 export function FriendsPage(): HTMLElement {

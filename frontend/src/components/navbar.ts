@@ -39,7 +39,6 @@ interface InventoryResponse {
 	avatar_use: { id: string; name: string }[];
 }
 
-//! le changement en OFFLINE ne fonctionne pas
 const setUserOnline = async (uuid: string, online: string) => {
 	console.log("USER ONLINE", uuid, online);
 	const res = await fetch('/user/env', { method: 'GET' });

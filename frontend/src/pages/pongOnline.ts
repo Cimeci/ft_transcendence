@@ -7,7 +7,18 @@ import { getUserInventory } from './inventory';
 
 export const gameHistory: string[] = [];
 
+interface GAME {
+	uuid: string,
+	host_player: string,
+	invited_player:string,
+}
+
 export function PongOnlineMenuPage(): HTMLElement {
+	//! CREATE GAME
+	// const game: GAME = {
+		
+	// }
+
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "p-10 pt-25 min-h-screen w-full flex flex-col xl:flex-row items-center justify-center gap-10 bg-linear-to-bl from-black via-green-900 to-black"
 
@@ -109,15 +120,45 @@ export function PongOnlineMenuPage(): HTMLElement {
 			const btn = document.createElement("button");
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
-			btn.addEventListener("click", () => {
-				username2.textContent = e.username;
-				bar2.src = e.bar || "";
-				// window.showInvite({
-				// 	username: e.username || "default",
-				// 	id: e.id.split("-")[0] || t.err_id,
-				// 	avatar: e.avatar || "/avatar/default_avatar.png",
-				// 	message: `${t.Invitation_against} ${getUser()?.username || 'default'}`,
-				// });
+			btn.addEventListener("click", async () => {
+				//! INVITE FRIEND TO ONLINE GAME
+				// console.log("BODY INVITATION: ", e?.uuid, " |", e.id);
+			
+				// if (!e?.uuid) {
+				// 	console.error("No tournament UUID");
+				// 	btn.textContent = t.error;
+				// 	return;
+				// }
+			
+				// btn.textContent = "...";
+				// btn.disabled = true;
+			
+				// try {
+				// 	const check = await Invitation(e.uuid, e.id, "tournament");
+				
+				// 	if (check === true) {
+				// 		btn.textContent = t.requests_send;
+				// 		btn.disabled = true;
+				// 		btn.style.backgroundColor = "#00ff08ff";
+				// 	} else {
+				// 		btn.textContent = t.error;
+				// 		btn.disabled = false;
+				// 		// Réinitialiser après 2 secondes
+				// 		setTimeout(() => {
+				// 			btn.textContent = t.invite;
+				// 			btn.disabled = false;
+				// 		}, 2000);
+				// 	}
+				// } catch (error) {
+				// 	console.error("Invitation error:", error);
+				// 	btn.textContent = t.error;
+				// 	btn.disabled = false;
+				// 	// Réinitialiser après 2 secondes
+				// 	setTimeout(() => {
+				// 		btn.textContent = t.invite;
+				// 		btn.disabled = false;
+				// 	}, 2000);
+				// }
 			});
 			li.appendChild(btn);
 			lstFriends.appendChild(li);
