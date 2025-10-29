@@ -33,12 +33,12 @@ export async function GetData(uuid: string) {
 async function GetBtnType(): Promise<number>{
     const uuid = getUuid();
 
-	const currentUser = getUser();
-	if (!currentUser) throw new Error("No user logged in");
+    const currentUser = getUser();
+    if (!currentUser) throw new Error("No user logged in");
     console.log("UUID", uuid);
     
-	const me = currentUser.uuid;
-	if (uuid === me) return (0);
+    const me = currentUser.uuid;
+    if (uuid === me) return (0);
     
     console.log("ME:", me);
 
@@ -46,24 +46,24 @@ async function GetBtnType(): Promise<number>{
     if (!token) throw new Error("Missing token");
 
     const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
-	if (!resp.ok) throw new Error(String(resp.status));
+    if (!resp.ok) throw new Error(String(resp.status));
 
-	const data = await resp.json();
+    const data = await resp.json();
     console.log("DATA:", data);
 
-	const rows = [
-		...(data.friendship ?? []),
-		...(data.sentRequest ?? []),
-		...(data.receivedRequest ?? []),
-	];
-	console.log("ROWS:", rows);
+    const rows = [
+        ...(data.friendship ?? []),
+        ...(data.sentRequest ?? []),
+        ...(data.receivedRequest ?? []),
+    ];
+    console.log("ROWS:", rows);
     
-	const relation = rows.find(
-		(r) =>
-			(r.user_id === me && r.friend_id === uuid) ||
-			(r.friend_id === me && r.user_id === uuid)
-	);
-	console.log("FOUND RELATION:", relation);
+    const relation = rows.find(
+        (r) =>
+            (r.user_id === me && r.friend_id === uuid) ||
+            (r.friend_id === me && r.user_id === uuid)
+    );
+    console.log("FOUND RELATION:", relation);
 
     if (!relation) return 1;
     if (relation.status === "accepted") return 2;
@@ -116,12 +116,12 @@ export function UserPage(): HTMLElement {
         s1.className = "flex flex-col items-left sm:items-center justify-center text-left sm:text-center  gap-1";
 
         const s1a = document.createElement("p");
-	    s1a.className = "text-xs uppercase text-white/60";
-	    s1a.textContent = t.Total_game;
+        s1a.className = "text-xs uppercase text-white/60";
+        s1a.textContent = t.Total_game;
 
         const s1b = document.createElement("p");
-	    s1b.className = "text-lg font-semibold";
-	    s1b.textContent = "err";
+        s1b.className = "text-lg font-semibold";
+        s1b.textContent = "err";
 
         s1.appendChild(s1a); s1.appendChild(s1b);
 
@@ -129,12 +129,12 @@ export function UserPage(): HTMLElement {
         s2.className = "flex flex-col items-center justify-center text-center gap-1";
 
         const s2a = document.createElement("p");
-	    s2a.className = "text-xs uppercase text-white/60";
-	    s2a.textContent = t.Win;
+        s2a.className = "text-xs uppercase text-white/60";
+        s2a.textContent = t.Win;
 
         const s2b = document.createElement("p");
-	    s2b.className = "text-lg font-semibold";
-	    s2b.textContent = "err";
+        s2b.className = "text-lg font-semibold";
+        s2b.textContent = "err";
 
         s2.appendChild(s2a); s2.appendChild(s2b);
 
@@ -142,12 +142,12 @@ export function UserPage(): HTMLElement {
         s3.className = "flex flex-col items-right sm:items-center justify-center text-right sm:text-center gap-1";
 
         const s3a = document.createElement("p");
-	    s3a.className = "text-xs uppercase text-white/60";
-	    s3a.textContent = t.Lose;
+        s3a.className = "text-xs uppercase text-white/60";
+        s3a.textContent = t.Lose;
 
         const s3b = document.createElement("p");
-	    s3b.className = "text-lg font-semibold";
-	    s3b.textContent = "err";
+        s3b.className = "text-lg font-semibold";
+        s3b.textContent = "err";
 
         s3.appendChild(s3a); s3.appendChild(s3b);
 
@@ -225,38 +225,38 @@ export function UserPage(): HTMLElement {
             addBtn.className = "inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 duration-300 transition-all hover:scale-105 text-white text-sm shadow";
             addBtn.textContent = t.add;
             addBtn.addEventListener(("click"), async () => {
-				const token = localStorage.getItem("jwt") || "";
- 				addBtn.disabled = true;
- 				const old = addBtn.textContent;
- 				addBtn.textContent = "…";
-				try {
+                const token = localStorage.getItem("jwt") || "";
+                 addBtn.disabled = true;
+                 const old = addBtn.textContent;
+                 addBtn.textContent = "…";
+                try {
                     const uuid = getUuid();
-				    const resp = await fetch(`/user/friendship/${encodeURIComponent(uuid)}`, {
-				        method: "POST",
-				        headers: { Authorization: `Bearer ${token}` },
-				    });
-				    if (resp.ok) {
+                    const resp = await fetch(`/user/friendship/${encodeURIComponent(uuid)}`, {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (resp.ok) {
                         addBtn.textContent = t.requests_send;
                         window.location.reload();
-				        return;
-				    }
-				    if (resp.status === 409) {
-				        return;
-				    }
-				    if (resp.status === 401) {
-				        alert(t.Session_expired);
-				        addBtn.textContent = old;
-				        return;
-				    }
-				    console.error("POST /friendship failed:", resp.status);
-				    addBtn.textContent = old;
-				} catch (e) {
-				    console.error(e);
-				    addBtn.textContent = old;
-				} finally {
-				    addBtn.disabled = false;
-			}
-			});
+                        return;
+                    }
+                    if (resp.status === 409) {
+                        return;
+                    }
+                    if (resp.status === 401) {
+                        alert(t.Session_expired);
+                        addBtn.textContent = old;
+                        return;
+                    }
+                    console.error("POST /friendship failed:", resp.status);
+                    addBtn.textContent = old;
+                } catch (e) {
+                    console.error(e);
+                    addBtn.textContent = old;
+                } finally {
+                    addBtn.disabled = false;
+            }
+            });
 
             const addIcon = document.createElement("img");
             addIcon.src = "/icons/plus.svg";
@@ -451,7 +451,6 @@ export function UserPage(): HTMLElement {
  
     (async () => {
         const u = await GetData(getUuid()); if (!u) return;
-        console.log('USER: ', u);
         name.textContent = u.username || u.uuid || "unknown";
         avatar.src = u.avatar_use?.[0]?.id;
         bg.src = u.background_use?.[0]?.id;
@@ -461,7 +460,7 @@ export function UserPage(): HTMLElement {
         const games_info = JSON.parse(u.games);
         s1b.textContent = games_info ? games_info.length : "0";
         s2b.textContent = u.game_ratio + "%";
-	    s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
+        s3b.textContent = String(100 - Number(u.game_ratio)) + "%";
         u.is_online == 1 ? status.classList.add("bg-green-600"): status.classList.add("bg-gray-600")
         u.is_online == 1 ? avatar.classList.add("ring-green-500/50"): avatar.classList.add("ring-gray-500/50")
 

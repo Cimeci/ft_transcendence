@@ -122,6 +122,8 @@ const routes: { [key: string]: () => HTMLElement } = {
 
 export const navigateTo = (url: string) => {
 	history.pushState(null, '', url);
+	if (url.search('profile') != -1)
+		document.location.reload();
 	renderPage();
 };
 
