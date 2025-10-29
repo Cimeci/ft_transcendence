@@ -349,6 +349,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 			// fetch('')
 			return;
 		}
+		if (window.location.pathname.search('game') == -1) user2.score = 5;
 		if (keys["Escape"]) return;
 		if (keys["q"]) user1.score = 5;
 		if (keys["e"]) {ball.speedX *= 1.1; ball.speedY *= 1.1;}
@@ -380,7 +381,6 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		if (user1.score === 5 || user2.score === 5) {
 			isGameOver = true;
 			(async () => {
-				console.log("GAMEID", gameId);
 				if (gameId) {
 					const token = localStorage.getItem("jwt") || "";
 					try {

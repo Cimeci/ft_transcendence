@@ -217,10 +217,8 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 			(document.body as HTMLElement) ||
 			(document.documentElement as HTMLElement);
 		if (root) {
-			root.classList.add('fade-out');
 			root.addEventListener('animationend', () => navigateTo("/profile"), { once: true });
-			// Fallback si l’animation ne se déclenche pas
-			setTimeout(() => {navigateTo(`/profile?id=${encodeURIComponent(getUser()?.uuid || t.err_id)}`); root.classList.remove('fade-out');}, 600);
+			navigateTo(`/profile?id=${encodeURIComponent(getUser()?.uuid || t.err_id)}`);
 		}
 	});
 
