@@ -209,19 +209,29 @@ app.patch('/join', async (request, reply) => {
             }, 'Tournament Join Failed: Tournament not found');
             return reply.code(404).send({ error: 'Tournament not found' });
         }
+        
         const players = tournament.players ? JSON.parse(tournament.players) : [];
-        if (players.includes(uuidPlayer)) {
+        
+        const playerExists = players.some(player => player.uuid === uuidPlayer);
+        if (playerExists) {
             request.log.warn({
                 event: 'tournament-join_attempt'
             }, 'Tournament Join Failed: Player already in tournament');
             return reply.code(400).send({ error: 'Player already in this tournament' });
         }
-        players.push(uuidPlayer);
+        
+        // Ajouter le joueur
+        players.push({ uuid: uuidPlayer });
         db.prepare('UPDATE tournament SET players = ? WHERE uuid = ?').run(JSON.stringify(players), uuid_tournament);
+        
         request.log.info({
             event: 'tournament-join_attempt'
         }, 'Tournament Join Success: Player added to tournament');
-        reply.send('Player added to tournament');
+        reply.send({ 
+            success: true, 
+            message: 'Player added to tournament',
+            tournament: { ...tournament, players: players }
+        });
     } catch(err) {
         request.log.error({
             error: {
@@ -292,6 +302,11 @@ app.patch('/tournament/:uuid', async (request, reply) => {
         reply.code(500).send({ error: 'Internal Server Error' });   
     }
 });
+
+
+//! DELETE FUNCTION, TO REMOVE ALL THE PLAYERS AND THE TOURNAMENT WHEN THE HOST LEAVE THE TOURNAMENT
+
+//! DELETE FUNCTION, TO REMOVE PLAYER FROM THE TOURNAMENT PLAYERS DB. WHEN A PLAYER LEAVE THE TOURNAMENT
 
 async function createGame (player1_uuid = null, player2_uuid = null, tournament = null, token ){
     const infoplay = {
