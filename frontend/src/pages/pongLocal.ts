@@ -542,7 +542,7 @@ export function PongLocalGamePage(): HTMLElement {
 	}
 
 	const Avatar1 = document.createElement("img");
-	Avatar1.src = getUser()?.avatar || "/avatar/default_avatar.png";
+	Avatar1.src = "/avatar/default_avatar.png";
 	Avatar1.className = "border-1 size-15 rounded-lg";
 	getAvatarUser1();
 	Profile1.appendChild(Avatar1);

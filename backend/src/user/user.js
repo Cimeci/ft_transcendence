@@ -930,11 +930,7 @@ app.post('/invit/:uuid', async(request, reply) => {
         return reply.code(404).send({ error: 'User not found' });
     }
 
-<<<<<<< HEAD
     db.prepare('INSERT INTO notification (prim_uuid, uuid, sender_uuid, reciever_uuid, mode) VALUES (?, ?, ?, ?, ?)').run(prim_uuid, uuid, sender_uuid, reciever_uuid, mode);
-=======
-    db.prepare('INSERT INTO notification (uuid, sender, receiver, mode) VALUES (?, ?, ?, ?)').run(uuid, sender_uuid, receiver_uuid, mode);
->>>>>>> refs/remotes/origin/main
 
     request.log.info({
         event: 'get-invit-uuid-infos_attempt'
