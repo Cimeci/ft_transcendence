@@ -585,6 +585,8 @@ export function PongTournamentPageJoin(): HTMLElement {
 			}
 		})();
 
+		console.log("FRIEND_DATA", friendData);
+
 		friendData.forEach(e => {
 			const li: HTMLLIElement = document.createElement("li");
 			li.className = "flex justify-between items-center p-2 w-full min-h-12"
@@ -786,39 +788,41 @@ export function PongTournamentPageHost(): HTMLElement {
 		let friendData: Friend[] = [];
 
 		const token = localStorage.getItem("jwt") || "";
-		(async () => {
-		  	try {
-		  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
-		  	  	if (!resp.ok) throw new Error(String(resp.status));
-
-		  	  	const data = await resp.json();
-		  	  	const me = getUser()?.uuid;
-				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
-
-				const list = await Promise.all(rows.map(async (r) => {
-		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
-		  	  	  	try {
-		  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
-		  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
-		  	  	  	  	});
-		  	  	  	  	if (r2.ok) {
-		  	  	  	  	  	const { user } = await r2.json();
-		  	  	  	  	  	return {
-		  	  	  	  	  	  	id: other,
-		  	  	  	  	  	  	username: user.username || other,
-		  	  	  	  	  	  	invitation: t.friends,
-		  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
-		  	  	  	  	  	};
-		  	  	  	  	}
-		  	  	  	} catch {}
-		  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
-		  	  	}));
-		  	  	friendData = list;
-		  	} catch (e) {
-		  	  	console.error("load friendship failed", e);
-		  	  	friendData = [];
-		  	}
-		})();
+	  	try {
+	  	  	const resp = await fetch("/user/friendship", {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}` 
+				}
+			});
+	  	  	if (!resp.ok) throw new Error(String(resp.status));
+	  	  	const data = await resp.json();
+	  	  	const me = getUser()?.uuid;
+			const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
+			const list = await Promise.all(rows.map(async (r) => {
+	  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
+	  	  	  	try {
+	  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+	  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
+	  	  	  	  	});
+	  	  	  	  	if (r2.ok) {
+	  	  	  	  	  	const { user } = await r2.json();
+	  	  	  	  	  	return {
+	  	  	  	  	  	  	id: other,
+	  	  	  	  	  	  	username: user.username || other,
+	  	  	  	  	  	  	invitation: t.friends,
+	  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
+	  	  	  	  	  	};
+	  	  	  	  	}
+	  	  	  	} catch {}
+	  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
+	  	  	}));
+	  	  	friendData = list;
+	  	} catch (e) {
+	  	  	console.error("load friendship failed", e);
+	  	  	friendData = [];
+	  	}
 
 
 		friendData.forEach(e => {
@@ -843,7 +847,24 @@ export function PongTournamentPageHost(): HTMLElement {
 			const btn = document.createElement("button");
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
-			btn.addEventListener("click", () => {
+			btn.addEventListener("click", async () => {
+				console.log("INVITE FRIEND:", `/user/invit/${e.id}`);
+				try {
+					const resp = await fetch(`/user/invit/${encodeURIComponent(e.id)}`, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${token}`
+						},
+						body: JSON.stringify({
+							uuid: currentTournament?.uuid,
+							mode: "tournament"
+						})
+					});
+					console.log("INVITE RESPONSE:", resp);
+				} catch (error) {
+					console.error("Erreur lors de l'envoi de l'invitation:", error);
+				}
 				window.showInvite({
     	            username: e.username,
     	            id: e.id,

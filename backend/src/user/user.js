@@ -97,7 +97,8 @@ const inventory = `
 const notif = `
     CREATE TABLE IF NOT EXISTS notification (
         uuid TEXT PRIMARY KEY,
-        player_uuid TEXT NOT NULL,
+        sender TEXT NOT NULL,
+        receiver TEXT NOT NULL,
         response INTEGER default 0,
         mode TEXT
     );
@@ -887,18 +888,29 @@ app.get('/me', async(request, reply) => {
 })
 
 app.post('/invit/:uuid', async(request, reply) => {
-    const key = request.headers['x-internal-key'];
-    if (key !== process.env.JWT_SECRET) {
+    // const key = request.headers['x-internal-key'];
+    // if (key !== process.env.JWT_SECRET) {
+    //     request.log.warn({
+    //         event: 'delete-user_attempt'
+    //     }, 'Delete User Unauthorized: invalid jwt token');
+    //     reply.code(401).send({ error: 'Unauthorized'});
+    // }
+    console.log("REQUEST BODY :", request.body);
+    let sender_uuid;
+    try {
+        sender_uuid = await checkToken(request);
+    } catch (err) {
         request.log.warn({
-            event: 'delete-user_attempt'
-        }, 'Delete User Unauthorized: invalid jwt token');
+            event: 'post-invit-uuid_attempt'
+        }, 'Post invit uuid Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
     
-    const player_uuid  = request.params.uuid;
+    const receiver_uuid  = request.params.uuid;
     const { uuid, mode } = request.body;
+    console.log("DATA :", uuid, mode, receiver_uuid, sender_uuid);
 
-    const user = db.prepare(`SELECT * WHERE uuid = ?`).get(player_uuid);
+    const user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(receiver_uuid);
 
     if (!user) {
         request.log.warn({
@@ -907,7 +919,7 @@ app.post('/invit/:uuid', async(request, reply) => {
         return reply.code(404).send({ error: 'User not found' });
     }
 
-    db.prepare('INSERT notification (uuid, player_uuid) VALUES (?, ?)').run(uuid, player_uuid);
+    db.prepare('INSERT INTO notification (uuid, sender, receiver, mode) VALUES (?, ?, ?, ?)').run(uuid, sender_uuid, receiver_uuid, mode);
 
     request.log.info({
         event: 'get-invit-uuid-infos_attempt'
