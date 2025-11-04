@@ -891,6 +891,13 @@ app.get('/me', async(request, reply) => {
 })
 
 app.post('/invit/:uuid', async(request, reply) => {
+    // const key = request.headers['x-internal-key'];
+    // if (key !== process.env.JWT_SECRET) {
+    //     request.log.warn({
+    //         event: 'delete-user_attempt'
+    //     }, 'Delete User Unauthorized: invalid jwt token');
+    //     reply.code(401).send({ error: 'Unauthorized'});
+    // }
     let sender_uuid;
     try {
         sender_uuid = await checkToken(request);
@@ -901,24 +908,33 @@ app.post('/invit/:uuid', async(request, reply) => {
         reply.code(401).send({ error: 'Unauthorized'});
     }
     
+<<<<<<< HEAD
     const prim_uuid = crypto.randomUUID()
     
     const reciever_uuid = request.params.uuid;
+=======
+    const receiver_uuid  = request.params.uuid;
+>>>>>>> refs/remotes/origin/main
     const { uuid, mode } = request.body;
-    console.log("\nLOG UUID: ", request.body, "reciever_uuid: ", reciever_uuid, "sender_uuid: ", sender_uuid, "\n\n");
+
+    console.log("\nLOG UUID: ", request.body, "reciever_uuid: ", receiver_uuid, "sender_uuid: ", sender_uuid, "\n\n");
 
     const sender_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(sender_uuid);
-    const reciever_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(reciever_uuid);
+    const receiver_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(receiver_uuid);
 
 
-    if (!reciever_user || !sender_user) {
+    if (!receiver_user || !sender_user) {
         request.log.warn({
             event: 'get-invit-uuid_attempt'
         }, 'Get invit uuid Failed: User not found');
         return reply.code(404).send({ error: 'User not found' });
     }
 
+<<<<<<< HEAD
     db.prepare('INSERT INTO notification (prim_uuid, uuid, sender_uuid, reciever_uuid, mode) VALUES (?, ?, ?, ?, ?)').run(prim_uuid, uuid, sender_uuid, reciever_uuid, mode);
+=======
+    db.prepare('INSERT INTO notification (uuid, sender, receiver, mode) VALUES (?, ?, ?, ?)').run(uuid, sender_uuid, receiver_uuid, mode);
+>>>>>>> refs/remotes/origin/main
 
     request.log.info({
         event: 'get-invit-uuid-infos_attempt'

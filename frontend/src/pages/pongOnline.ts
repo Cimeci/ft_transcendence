@@ -4,14 +4,34 @@ import { getUser } from "../linkUser";
 import { t } from "./settings";
 import type { Friend } from "./friends";
 import { getUserInventory } from './inventory';
+import { onUserChange } from "../linkUser";
 
 export const gameHistory: string[] = [];
 
-interface GAME {
-	uuid: string,
-	host_player: string,
-	invited_player:string,
+export interface User {
+	name: string;
+	uuid?: string;
+	score: number;
 }
+
+export const user1: User = {
+	name: "user1",
+	score: 0,
+};
+
+export const user2: User = {
+	name: "user2",
+	uuid: "",
+	score: 0,
+};
+
+let gameuuid: string;
+
+// interface GAME {
+// 	uuid: string,
+// 	host_player: string,
+// 	invited_player:string,
+// }
 
 export function PongOnlineMenuPage(): HTMLElement {
 	//! CREATE GAME
@@ -120,7 +140,18 @@ export function PongOnlineMenuPage(): HTMLElement {
 			const btn = document.createElement("button");
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
-			btn.addEventListener("click", async () => {
+			btn.addEventListener("click", () => {
+				username2.textContent = e.username;
+				bar2.src = e.bar || "";
+				user2.name = e.username;
+				user2.uuid = e.id;
+				// window.showInvite({
+				// 	username: e.username || "default",
+				// 	id: e.id.split("-")[0] || t.err_id,
+				// 	avatar: e.avatar || "/avatar/default_avatar.png",
+				// 	message: `${t.Invitation_against} ${getUser()?.username || 'default'}`,
+				// });
+			//btn.addEventListener("click", async () => {
 				//! INVITE FRIEND TO ONLINE GAME
 				// console.log("BODY INVITATION: ", e?.uuid, " |", e.id);
 			
@@ -200,7 +231,10 @@ export function PongOnlineMenuPage(): HTMLElement {
 
 	const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
 	playBtn.onclick = () => {
-		if (user2.name) navigateTo("/pong/online/game");
+		if (user2.name) {
+			console.log("Navigating to /pong/online/game");
+			navigateTo("/pong/online/game");
+		}
 		else
 		{
 			username.classList.add("placeholder-red-700", "shake");
@@ -279,21 +313,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 	return (mainContainer);
 }
 
-export interface User {
-	name: string;
-	score: number;
-}
-
-export const user1: User = {
-	name: "user1",
-	score: 0,
-};
-
-export const user2: User = {
-	name: "user2",
-	score: 0,
-};
-
 export function PongOnlineOverlayPage(): HTMLElement {
 	const overlay = document.createElement("div");
 	overlay.className = "gap-30 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800";
@@ -343,8 +362,10 @@ export function PongOnlineOverlayPage(): HTMLElement {
 	return overlay;
 }
 
-function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElement {
-	let socket = new WebSocket(`wss://${window.location.host}/websocket`);
+function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: String): HTMLElement {
+	console.log("Initializing OnlinePong with game UUID:", gameuuid);
+	let socket = new WebSocket(`wss://${window.location.host}/websocket/${gameuuid}`);
+	console.log("WebSocket URL:", socket);
 	let myPosition: 'left' | 'right' | null = null;
 	
 	socket.onopen = () => {
@@ -704,6 +725,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLEleme
 }
 
 export function PongOnlineGamePage(): HTMLElement {
+	
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "gap-2 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800"
 
@@ -725,6 +747,8 @@ export function PongOnlineGamePage(): HTMLElement {
 	Avatar1.className = "border-1 size-15 rounded-lg";
 	Profile1.appendChild(Avatar1);
 
+	console.log("player:", user1.name, "vs", user2.name);
+	
 	const Score1 = document.createElement("h1");
 	Score1.className = "text-3xl tracking-widest text-green-400 neon-matrix";
 	Score1.textContent = user1.name + ": " + user1.score
@@ -748,8 +772,39 @@ export function PongOnlineGamePage(): HTMLElement {
 
 	mainContainer.appendChild(ScorePong);
 
-	const canvas = OnlinePong(Score1, Score2);
-	mainContainer.appendChild(canvas);
-
+	console.log("Creating online game for players:", user1.name, "and", user2.name);
+	const token = localStorage.getItem("jwt") || "";
+	let gameId;
+	(async () => {
+		try {
+			const resp = await fetch('/game/game', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`,
+				},
+				body: JSON.stringify({
+					player1: user1.name,
+					player2: user2.name,
+					player2_uuid: user2.uuid || null,
+					mode: "online"
+				}),
+			});
+			const data = await resp.json();
+			gameId = data.uuid;
+			gameuuid = gameId;
+		} catch (e) {
+			console.error("Erreur lors de la création du jeu :", e);
+			navigateTo("/pong/online/menu");
+			return;
+		}
+		console.log("GAME CREATED with ID:", gameId);
+		const canvas = OnlinePong(Score1, Score2, gameuuid);
+		mainContainer.appendChild(canvas);
+	
+		console.log("ONLINE PONG GAME PAGE RENDERED");
+	})();
 	return mainContainer;
 }
+
+onUserChange(u => { if (u) user1.name = u.username; });

@@ -70,8 +70,15 @@ app.post('/game', async (request, reply) => {
             db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null);
             console.log("local game created");}
         else{
+            const gameExists = db.prepare('SELECT * FROM game WHERE (player1_uuid = ? AND player2_uuid = ? OR player1_uuid = ? AND player2_uuid = ?) AND winner IS NULL').get(player1_uuid, player2_uuid, player2_uuid, player1_uuid);
+            if (gameExists) {
+                request.log.warn({
+                    event: 'game-exists'
+                    }, 'Game Exists: A game between these players is already in progress');
+                return reply.send({ uuid: gameExists.uuid});
+            };
             //db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
-            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, null, null, mode, tournament || null, null);
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
         }
         request.log.info({
             event: 'new-game_attempt'

@@ -573,6 +573,8 @@ export function PongLocalGamePage(): HTMLElement {
 	const canvas = LocalPong(Score1, Score2);
 	mainContainer.appendChild(canvas);
 
+	console.log("player:", user1.name, "vs", user2.name);
+
 	const token = localStorage.getItem("jwt") || "";
 	(async () => {
 		const gameId = localStorage.getItem("game_uuid") || "err";
