@@ -908,13 +908,9 @@ app.post('/invit/:uuid', async(request, reply) => {
         reply.code(401).send({ error: 'Unauthorized'});
     }
     
-<<<<<<< HEAD
     const prim_uuid = crypto.randomUUID()
     
     const reciever_uuid = request.params.uuid;
-=======
-    const receiver_uuid  = request.params.uuid;
->>>>>>> refs/remotes/origin/main
     const { uuid, mode } = request.body;
 
     console.log("\nLOG UUID: ", request.body, "reciever_uuid: ", receiver_uuid, "sender_uuid: ", sender_uuid, "\n\n");
