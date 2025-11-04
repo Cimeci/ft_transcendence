@@ -58,7 +58,34 @@ export function PongLocalMenuPage(): HTMLElement {
 
 	const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
 	playBtn.onclick = () => {
-		if (user2.name) navigateTo("/pong/local/game");
+		if (user2.name)
+		{
+			const token = localStorage.getItem("jwt") || "";
+			(async () => {
+			try {
+				const resp = await fetch('/game/game', {
+					method: 'POST',
+					headers: { 
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({
+						player1: user1.name,
+						player2: user2.name,
+						mode: "local"
+					})
+				});
+				const data = await resp.json();
+				localStorage.setItem("game_uuid", data.uuid);
+				navigateTo("/pong/local/game");
+			} catch(e){
+				const old = playBtn.textContent
+				playBtn.textContent = t.error;
+				setTimeout(() => {playBtn.textContent = old}, 300);
+				return;
+			};
+			})();
+		}
 		else
 		{
 			username.classList.add("placeholder-red-700", "shake");
@@ -128,6 +155,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	})
 	username.addEventListener(("input"), () => {
 		user2.name = username.value;
+		localStorage.setItem("username2", user2.name);
 	})
 	container3.appendChild(username);
 
@@ -151,7 +179,6 @@ export function PongLocalMenuPage(): HTMLElement {
 
 let Bg_src = "/bg/default_bg.png";
 let Ball_src = "/ball/default_ball.png";
-let gameId: string | null = null;
 
 export interface User {
 	name: string;
@@ -381,6 +408,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		if (user1.score === 5 || user2.score === 5) {
 			isGameOver = true;
 			(async () => {
+				const gameId = localStorage.getItem("game_uuid");
 				if (gameId) {
 					const token = localStorage.getItem("jwt") || "";
 					try {
@@ -514,7 +542,7 @@ export function PongLocalGamePage(): HTMLElement {
 	}
 
 	const Avatar1 = document.createElement("img");
-	Avatar1.src = "/avatar/default_avatar.png";
+	Avatar1.src = getUser()?.avatar || "/avatar/default_avatar.png";
 	Avatar1.className = "border-1 size-15 rounded-lg";
 	getAvatarUser1();
 	Profile1.appendChild(Avatar1);
@@ -547,28 +575,24 @@ export function PongLocalGamePage(): HTMLElement {
 
 	const token = localStorage.getItem("jwt") || "";
 	(async () => {
+		const gameId = localStorage.getItem("game_uuid") || "err";
 		try {
-			const resp = await fetch('/game/game', {
-				method: 'POST',
+			const resp = await fetch(`/game/game/${encodeURIComponent(gameId)}`, {
+				method: 'GET',
 				headers: { 
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify({
-					player1: user1.name,
-					player2: user2.name,
-					mode: "local"
-				})
 			});
 			const data = await resp.json();
-			gameId = data.uuid;
-			console.log("GAME CREATED with ID:", gameId);
-	} catch(e){
-		console.error("Erreur lors de la création du jeu :", e);
-		navigateTo("/pong/local/menu");
-		return;
-	};
+			console.log("DATA GAME:", data);
+			user1.name = data.player1;
+			user2.name = data.player2;
+		} catch(e){
+			return;
+		};
 	})();
+
 	return mainContainer;
 }
 

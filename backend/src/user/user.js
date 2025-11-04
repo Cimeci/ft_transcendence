@@ -96,7 +96,8 @@ const inventory = `
 
 const notif = `
     CREATE TABLE IF NOT EXISTS notification (
-        uuid TEXT PRIMARY KEY,
+        prim_uuid TEXT PRIMARY KEY,
+        uuid TEXT,
         sender_uuid TEXT,
         reciever_uuid TEXT,
         player_uuid TEXT,
@@ -900,6 +901,8 @@ app.post('/invit/:uuid', async(request, reply) => {
         reply.code(401).send({ error: 'Unauthorized'});
     }
     
+    const prim_uuid = crypto.randomUUID()
+    
     const reciever_uuid = request.params.uuid;
     const { uuid, mode } = request.body;
     console.log("\nLOG UUID: ", request.body, "reciever_uuid: ", reciever_uuid, "sender_uuid: ", sender_uuid, "\n\n");
@@ -915,7 +918,7 @@ app.post('/invit/:uuid', async(request, reply) => {
         return reply.code(404).send({ error: 'User not found' });
     }
 
-    db.prepare('INSERT INTO notification (uuid, sender_uuid, reciever_uuid, mode) VALUES (?, ?, ?, ?)').run(uuid, sender_uuid, reciever_uuid, mode);
+    db.prepare('INSERT INTO notification (prim_uuid, uuid, sender_uuid, reciever_uuid, mode) VALUES (?, ?, ?, ?, ?)').run(prim_uuid, uuid, sender_uuid, reciever_uuid, mode);
 
     request.log.info({
         event: 'get-invit-uuid-infos_attempt'
