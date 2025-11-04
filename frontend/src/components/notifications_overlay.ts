@@ -5,7 +5,7 @@ import { getUidInventory } from "../components/utils";
 
 export type UserNotification = {
 	sender_uuid: string;
-	reciever_uuid: string;
+	receiver_uuid: string;
     uuid: string;
     response: number;
     mode: string;
@@ -75,14 +75,20 @@ async function fetchNotifications(): Promise<UserNotification[]> {
         });
 
         if (!response.ok) {
+
+            if (response.status === 500) {
+                console.warn('⚠️ Server error 500 - returning empty notifications');
+                return [];
+            }
+            
             const errorText = await response.text();
             console.error('❌ Fetch failed:', response.status, response.statusText, errorText);
             throw new Error(`Erreur ${response.status}: ${response.statusText}`);
         }
-
         const data = await response.json();
-		console.log('📨 Notifications data received:', data);
-        return data.notifications;
+        console.log('📨 Notifications data received:', data);
+        
+        return Array.isArray(data.notifications) ? data.notifications : [];
     } catch (error) {
         console.error('Erreur:', error);
         return [];
@@ -109,11 +115,14 @@ export async function responseInvitation(game_uuid: string, response: number)
             console.error("PATCH INVIT RESPONSE: ", resp.status);
             throw new Error('Erreur lors de la récupération');
         }
-        const data = await resp.json();
-        if (data.mode === "tournament")
-			navigateTo(`/Tournament/join?uid=${game_uuid}`);
-		else
-			navigateTo(`/pong/online/menu?id=${game_uuid}`);
+        if (response === 1)
+        {
+            const data = await resp.json();
+            if (data.mode === "tournament")
+		    	navigateTo(`/Tournament/join?uid=${game_uuid}`);
+		    else
+		    	navigateTo(`/pong/online/menu?uid=${game_uuid}`);
+        }
     } catch (error) {
         console.error('Erreur:', error);
     }
@@ -132,14 +141,18 @@ export async function loadAndDisplayNotifications() {
                 console.error('Error fetching user:', user);
                 return;
             }
-            addNotification({
-                username: `${user.username} ${t.invite}`,
-                id: notif.sender_uuid,
-                avatar: user.avatar,
-                message: `${notif.mode}`,
-                onAccept: () => responseInvitation(notif.uuid, 1),
-                onRefuse: () => responseInvitation(notif.uuid, 0)
-            });
+            console.log("NOTIF :", notif);
+            if (!notif.response)
+            {
+                addNotification({
+                    username: `${user.username} ${t.invite}`,
+                    id: notif.sender_uuid,
+                    avatar: user.avatar,
+                    message: `${notif.mode}`,
+                    onAccept: () => responseInvitation(notif.uuid, 1),
+                    onRefuse: () => responseInvitation(notif.uuid, -1)
+                });
+            }
         });
     } catch (error) {
         console.error('Erreur lors du chargement des notifications:', error);

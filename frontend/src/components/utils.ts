@@ -93,7 +93,7 @@ export async function SetWallet(uuid: string, amount: Number)
     const jwt = localStorage.getItem("jwt") || "";
 
     const response = await fetch('/user/wallet', {
-        method: 'PATCH',
+        method: ' ',
         headers: {
             'Authorization': `Bearer ${jwt}`,
             'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ export async function SetWallet(uuid: string, amount: Number)
 export async function getUidInventory(uuid: string){
     console.log("getuuisInventory uuiiiiddididiid: ", uuid);
     const jwt = localStorage.getItem("jwt");
-    if (!jwt) return new Error("jwt");
+    if (!jwt) return {};
     try {
         const r2 = await fetch(`/user/${encodeURIComponent(uuid)}`,{
             method: "GET",
@@ -121,17 +121,23 @@ export async function getUidInventory(uuid: string){
         });
         console.log("RESP GET UUID: ", r2);
         if (r2.ok) {
-            const { user } = await r2.json();
+            const data = await r2.json();
+            console.log("USER GET HEREEEE: ", data.user);
             return {
-                id: uuid,
-                username: user.username,
-                avatar: user.avatar_use[0].id,
+                id: data.user.uuid,
+                username: data.user.username || "default",
+                avatar: data.user.avatar_use[0].id || "/avatar/default_avatar.png",
+                ball: data.user.ball_use[0].id || "/ball/default_ball.png",
+                bar: data.user.paddle_use[0].id || "/playbar/default_bar.png", 
+                bg: data.user.background_use[0].id || "/bg/default_bg.png",
             };
         }
+        else
+            return { id: uuid, username: "err", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png"};
     } catch (e){
         console.error("GET uuid inventory", e)
     }
-    return { id: uuid, username: uuid, avatar: "/avatar/default_avatar.png" };
+    return { id: uuid, username: "TRY", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png"};
 }
 
 export async function Invitation(game_uuid: string, friend_uuid: string, mode: string)

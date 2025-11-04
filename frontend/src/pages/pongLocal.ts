@@ -169,7 +169,7 @@ export function PongLocalMenuPage(): HTMLElement {
 		
 		const bar = document.createElement("img");
 		bar.src = "/playbar/default_bar.png";
-		user2.paddle = "/bar/default_bar.png";
+		user2.paddle = "/playbar/default_bar.png";
 		bar.className = "m-auto h-full rounded-xl";
 		barContainer.appendChild(bar);
 	}
@@ -284,7 +284,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	ballImg.onload = () => { ballImgLoaded = true; };
 
 	const resolveBarPath = () => {
-		const raw = user1.paddle.replace("/bar/", "/playbar/");
+		const raw = user1.paddle.replace("/playbar/", "/playbar/");
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBarSrc = resolveBarPath();
@@ -588,8 +588,8 @@ export function PongLocalGamePage(): HTMLElement {
 			});
 			const data = await resp.json();
 			console.log("DATA GAME:", data);
-			user1.name = data.player1;
-			user2.name = data.player2;
+			Score1.textContent = data.player1 + ": " + data.score1;
+			Score2.textContent = data.player2 + ": " + data.score2;
 		} catch(e){
 			return;
 		};

@@ -1,5 +1,5 @@
 import { t } from "./settings";
-import { CreateWrappedButton, CreateSlider, Invitation } from "../components/utils";
+import { CreateWrappedButton, CreateSlider, Invitation, getUidInventory } from "../components/utils";
 import { createInputWithEye, togglePassword } from "./register"; 
 import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
@@ -101,7 +101,7 @@ async function CreateTournament(btn: HTMLButtonElement, uuid_host:string, name: 
     }
 }
 
-function getUuid(): string {
+export function getUuid(): string {
     const url = new URL(window.location.href);
     const uuid = url.searchParams.get("uid") || "";
     return (uuid);
@@ -467,7 +467,10 @@ export function PongTournamentMenuPage(): HTMLElement {
 		ConfirmJoinBtn.addEventListener("click", () => {
 			if (!tournament.password || PasswordInputJoin.value === tournament.password) {
 				mainContainer.classList.add("fade-out");
-				setTimeout(() => navigateTo(`/Tournament/join?uid=${tournament.uuid}`), 1000);
+				if (tournament.host === getUser()?.uuid)
+					setTimeout(() => navigateTo(`/Tournament/host?uid=${tournament.uuid}`), 1000);
+				else
+                	setTimeout(() => navigateTo(`/Tournament/join?uid=${tournament.uuid}`), 1000);
 			} else {
 				ConfirmJoinBtn.classList.add("shake")
 				setTimeout(() => {ConfirmJoinBtn.classList.remove("shake")}, 600)
@@ -531,6 +534,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 
     		li.addEventListener("click", () => {
       			JoinContainer.querySelectorAll(".join-form").forEach(el => el.remove());
+				
 				if (currentJoinForm) {
 					currentJoinForm.remove();
 					currentJoinForm = null;
@@ -543,7 +547,10 @@ export function PongTournamentMenuPage(): HTMLElement {
                 } else {
                     mainContainer.classList.add("fade-out");
 					JoinTournament(tournament);
-                    setTimeout(() => navigateTo(`/Tournament/join?uid=${tournament.uuid}`), 1000);
+					if (tournament.host === getUser()?.uuid)
+						setTimeout(() => navigateTo(`/Tournament/host?uid=${tournament.uuid}`), 1000);
+					else
+                    	setTimeout(() => navigateTo(`/Tournament/join?uid=${tournament.uuid}`), 1000);
                 }
       			setTimeout(renderLabel, 1000);
     		});
@@ -563,6 +570,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 export function PongTournamentPageJoin(): HTMLElement {
     let currentTournament: Tournament | undefined;
 	let refreshInterval: number | null = null;
+	let hostname = "hostname";
 	
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
@@ -576,7 +584,11 @@ export function PongTournamentPageJoin(): HTMLElement {
         try {
             currentTournament = await getCurrentTournament();
             console.log("CURRENT : ", currentTournament);
-            await renderTournament();
+			const inv = await getUidInventory(currentTournament?.host || "err");
+			if (inv)
+				hostname = inv.username;		
+			await renderTournament();
+			
         } catch (error) {
             console.error("Erreur lors du chargement du tournoi:", error);
             loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
@@ -590,6 +602,11 @@ export function PongTournamentPageJoin(): HTMLElement {
     	Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
     	Title.textContent = currentTournament?.name + " " + t.tournament;
     	mainContainer.appendChild(Title);
+
+		const hostName = document.createElement("h1");
+		hostName.className = "absolute top-5 left-5 tracking-widest text-2xl neon-matrix mb-15";
+		hostName.textContent = t.host + ": " + hostname;
+		mainContainer.appendChild(hostName);
 
     	const size = currentTournament?.size ?? nb_players.value;
 		

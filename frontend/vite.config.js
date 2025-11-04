@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/auth': 'http://backend_gateway:4000',
-      '/user': 'http://localhost:4443',
+      '/user': 'http://backend_gateway:4000',
       '/game': 'http://backend_gateway:4000',
       '/tournament': 'http://backend_gateway:4000',
       '/ws': { target: 'ws://backend_websocket:4000', ws: true, changeOrigin: true },
