@@ -1,6 +1,5 @@
-import { getCurrentLang, t } from "./settings";
-import { translations } from "../i18n";
-import { CreateWrappedButton, CreateSlider } from "../components/utils";
+import { t } from "./settings";
+import { CreateWrappedButton, CreateSlider, Invitation } from "../components/utils";
 import { createInputWithEye, togglePassword } from "./register"; 
 import { navigateTo } from "../routes";
 import { createTournamentBracket } from "../components/bracket";
@@ -18,7 +17,7 @@ interface Game {
 	id: string,
 }
 
-interface Players {
+export interface Players {
 	uuid: string,
 }
 
@@ -150,27 +149,67 @@ async function getPlayerNames(uuids: string[]): Promise<string[]> {
     }
 }
 
-function parsePlayer(tournament: Tournament) {
+function setupBracketAutoRefresh(tournamentUUID: string, bracketContainer: HTMLElement, interval: number = 60000) {
+    const refreshInterval = setInterval(async () => {
+        try {
+            await GetTournamentList();
+            const updatedTournament = tournamentList.find(t => t.uuid === tournamentUUID);
+            if (updatedTournament) {
+                updateBracketDisplay(updatedTournament, bracketContainer);
+            }
+        } catch (error) {
+            console.error("Error refreshing bracket:", error);
+        }
+    }, interval);
 
-	const playersData = tournament?.players;
-    let playerArray: Players[] = [];
-    if (typeof playersData === 'string') {
-        playerArray = JSON.parse(playersData);
-    } else if (Array.isArray(playersData)) {
-        playerArray = playersData;
-    }
+    window.addEventListener('beforeunload', () => {
+        clearInterval(refreshInterval);
+    });
 
-    if (Array.isArray(playerArray) && playerArray.length > 0) {
-        return playerArray;
-    }
+    return refreshInterval;
 }
 
-async function JoinTournament(tournament: Tournament) {
+async function updateBracketDisplay(tournament: Tournament, bracketContainer: HTMLElement) {
+    const playerArray = parsePlayer(tournament);
+    let players: string[] = [];
+
+    if (Array.isArray(playerArray) && playerArray.length > 0) {
+        const playerUuids = playerArray.map(p => p.uuid);
+        players = await getPlayerNames(playerUuids);
+    } else {
+        players = Array.from({ length: tournament.size }, (_, i) => `${t.player} ${i + 1}`);
+    }
+
+    bracketContainer.innerHTML = "";
+    const newBracket = createTournamentBracket(players);
+    newBracket.classList.add("mt-15", "pl-5");
+    bracketContainer.appendChild(newBracket);
+}
+
+function parsePlayer(tournament: Tournament): Players[] {
+    const playersData = tournament?.players;
+    let playerArray: Players[] = [];
+
+    try {
+        if (typeof playersData === 'string') {
+            playerArray = JSON.parse(playersData);
+        } else if (Array.isArray(playersData)) {
+            playerArray = playersData;
+        }
+    } catch (error) {
+        console.error("Erreur lors du parsing des joueurs:", error);
+        playerArray = [];
+    }
+
+    return Array.isArray(playerArray) ? playerArray : [];
+}
+
+async function JoinTournament(tournament: Tournament): Promise<boolean> {
 	const jwt = localStorage.getItem("jwt");
 	if (!jwt)
-		return;
+		return false;
 	try {
-		const resp = await fetch('/join', {
+		const resp = await fetch('/tournament/join', {
     		method: 'PATCH',
     		headers: {
 				"Authorization": `Bearer ${jwt}`,
@@ -180,15 +219,76 @@ async function JoinTournament(tournament: Tournament) {
   		});
 
   		if (resp.ok) {
+			await GetTournamentList();
     		return (true);
   		} else {
     		console.log('Error Patch join', resp.status);
+			const errorData = await resp.json();
+            console.log('Error details:', errorData);
   		}
 	} catch (e) {
 		console.error("ERROR PATCH join", e);
 	}
 	return (false);
-} 
+}
+
+//! QUIT TOURNAMENT
+async function QuitTournament(tournament: Tournament): Promise<boolean>{
+	const jwt = localStorage.getItem("jwt");
+	if (!jwt)
+		return false;
+	try {
+		const resp = await fetch('/tournament/tournament_players', {
+    		method: 'DELETE',
+    		headers: {
+				"Authorization": `Bearer ${jwt}`,
+    	  		'Content-Type': 'application/json',
+    		},
+    		body: JSON.stringify({ uuid_tournament: tournament.uuid })
+  		});
+
+  		if (resp.ok) {
+			await GetTournamentList();
+    		return (true);
+  		} else {
+    		console.log('Error Patch delete', resp.status);
+			const errorData = await resp.json();
+            console.log('Error details:', errorData);
+  		}
+	} catch (e) {
+		console.error("ERROR PATCH delete", e);
+	}
+	return (false);
+}
+
+//! QUIT PLAYERS TOURNAMENT
+async function QuitPLayersTournament(tournament: Tournament): Promise<boolean>{
+	const jwt = localStorage.getItem("jwt");
+	if (!jwt)
+		return false;
+	try {
+		const resp = await fetch('/tournament/tournament_players', {
+    		method: 'DELETE',
+    		headers: {
+				"Authorization": `Bearer ${jwt}`,
+    	  		'Content-Type': 'application/json',
+    		},
+    		body: JSON.stringify({ uuid_tournament: tournament.uuid })
+  		});
+
+  		if (resp.ok) {
+			await GetTournamentList();
+    		return (true);
+  		} else {
+    		console.log('Error Patch delete', resp.status);
+			const errorData = await resp.json();
+            console.log('Error details:', errorData);
+  		}
+	} catch (e) {
+		console.error("ERROR PATCH delete", e);
+	}
+	return (false);
+}
 
 export function PongTournamentMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
@@ -229,7 +329,6 @@ export function PongTournamentMenuPage(): HTMLElement {
     EyePassword.alt = "Show/Hide";
     EyePassword.onclick = () => togglePassword(GamePassword, EyePassword);
 
-    // wrapper input + œil (on le toggle)
     const PasswordWrapper = createInputWithEye(GamePassword, EyePassword);
     HostContainer.appendChild(PasswordWrapper);
 
@@ -286,8 +385,6 @@ export function PongTournamentMenuPage(): HTMLElement {
 	HostBtn.className = "h-[7vh] w-9/10 bg-green-600 text-white rounded-xl hover:bg-green-700 hover:scale-102 duration-300 transition-all";
 	HostBtn.textContent = t.host;
     HostBtn.addEventListener("click", async () => {
-		//! ADD CREATE TOURNAMENT FETCH
-
 		if (!GameName.value)
 		{
 			GameName.classList.add("text-red-600", "shake");
@@ -418,17 +515,19 @@ export function PongTournamentMenuPage(): HTMLElement {
 				const tnb = document.createElement("p");
 				tnb.className = "w-1/3";
 				
-				const playerCount = parsePlayer(tournament)
-				console.log("TOURNAMENT PLAYER: ", playerCount);
-				tnb.textContent = `${playerCount?.length}/${tournament.size}`;
-				li.appendChild(tnb);
+            	const playerCount = parsePlayer(tournament);
+            	console.log("TOURNAMENT PLAYER: ", playerCount);
+            	tnb.textContent = `${playerCount.length}/${tournament.size}`;
+            	li.appendChild(tnb);
 
 				const tvis = document.createElement("p");
 				tvis.className = "w-1/3";
-				// tvis.textContent = t[tournament.visibility];
+				tvis.textContent = tournament.visibility === 1 ? t.private: t.public;
 				li.appendChild(tvis);
     		};
-    		renderLabel();
+			console.log("TOURNAMENT LENGHT", tournament.size , parsePlayer(tournament).length)
+			if (tournament.size > parsePlayer(tournament).length)
+    			renderLabel();
 
     		li.addEventListener("click", () => {
       			JoinContainer.querySelectorAll(".join-form").forEach(el => el.remove());
@@ -463,12 +562,14 @@ export function PongTournamentMenuPage(): HTMLElement {
 
 export function PongTournamentPageJoin(): HTMLElement {
     let currentTournament: Tournament | undefined;
+	let refreshInterval: number | null = null;
+	
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
     const loadingContainer = document.createElement("div");
     loadingContainer.className = "flex items-center justify-center";
-    loadingContainer.innerHTML = "<p>Chargement du tournoi...</p>";
+    loadingContainer.innerHTML = `<p>${t.login} ${t.tournament}...</p>`;
     mainContainer.appendChild(loadingContainer);
 
     async function initializeTournament() {
@@ -483,40 +584,34 @@ export function PongTournamentPageJoin(): HTMLElement {
     }
 
     async function renderTournament() {
-        loadingContainer.remove();
+    	loadingContainer.remove();
 
-        const Title = document.createElement("h1");
-        Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
-        Title.textContent = currentTournament?.name + " " + t.tournament;
-        mainContainer.appendChild(Title);
+    	const Title = document.createElement("h1");
+    	Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
+    	Title.textContent = currentTournament?.name + " " + t.tournament;
+    	mainContainer.appendChild(Title);
 
-        const size = currentTournament?.size ?? nb_players.value;
-        
-        let players: string[];
-        try {
-            const playersData = currentTournament?.players;
-            let playerArray: Players[] = [];
+    	const size = currentTournament?.size ?? nb_players.value;
+		
+    	const playerArray = parsePlayer(currentTournament!);
+    	let players: string[] = [];
 
-            if (typeof playersData === 'string') {
-                playerArray = JSON.parse(playersData);
-            } else if (Array.isArray(playersData)) {
-                playerArray = playersData;
-            }
-            
-            if (Array.isArray(playerArray) && playerArray.length > 0) {
-                const playerUuids = playerArray.map(p => p.uuid);
-                players = await getPlayerNames(playerUuids);
-            } else {
-                players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
-            }
-        } catch (error) {
-            console.error("Erreur lors du traitement des joueurs:", error);
-            players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
-        }
+    	if (Array.isArray(playerArray) && playerArray.length > 0) {
+    	    const playerUuids = playerArray.map(p => p.uuid);
+    	    players = await getPlayerNames(playerUuids);
+    	} else {
+    	    players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
+    	}
 
-        const bracket = createTournamentBracket(players);
-        bracket.classList.add("mt-15", "pl-5");
-        mainContainer.appendChild(bracket);
+    	const bracketContainer = createTournamentBracket(players);
+		bracketContainer.id = "bracket-container";
+    	bracketContainer.classList.add("mt-15", "pl-5");
+    	mainContainer.appendChild(bracketContainer);
+
+		await updateBracketDisplay(currentTournament!, bracketContainer);
+
+		if (currentTournament)
+            refreshInterval = setupBracketAutoRefresh(currentTournament.uuid, bracketContainer);
 
 		const rightContainer = document.createElement("div");
 		rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
@@ -552,42 +647,43 @@ export function PongTournamentPageJoin(): HTMLElement {
 
 		const token = localStorage.getItem("jwt") || "";
 		(async () => {
-			try {
-				const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
-				if (!resp.ok) throw new Error(String(resp.status));
+		  	try {
+		  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+		  	  	if (!resp.ok) throw new Error(String(resp.status));
 
-				const data = await resp.json();
-				const me = getUser()?.uuid;
+		  	  	const data = await resp.json();
+		  	  	const me = getUser()?.uuid;
 				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
 
+				console.log("DATA FRIEND RESP :", data);
+				console.log("DATA FRIEND ME :", me);
+				console.log("DATA FRIEND ROWS :", rows);
+
 				const list = await Promise.all(rows.map(async (r) => {
-					const other = r.user_id === me ? r.friend_id : r.user_id;
-					try {
-						const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
-							headers: { Authorization: `Bearer ${token}` }
-						});
-						if (r2.ok) {
-							const { user } = await r2.json();
-							return {
-								id: other,
-								username: user.username || other,
-								invitation: t.friends,
-								avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
-							};
-						}
-					} catch {}
-					return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
-				}));
-				friendData = list;
-			} catch (e) {
-				console.error("load friendship failed", e);
-				friendData = [];
-			}
-		})();
-
-		console.log("FRIEND_DATA", friendData);
-
-		friendData.forEach(e => {
+		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
+		  	  	  	try {
+		  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+		  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
+		  	  	  	  	});
+		  	  	  	  	if (r2.ok) {
+		  	  	  	  	  	const { user } = await r2.json();
+		  	  	  	  	  	return {
+		  	  	  	  	  	  	id: other,
+		  	  	  	  	  	  	username: user.username || other,
+		  	  	  	  	  	  	invitation: t.friends,
+		  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
+		  	  	  	  	  	};
+		  	  	  	  	}
+		  	  	  	} catch {}
+		  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
+		  	  	}));
+		  	  	friendData = list;
+		  	} catch (e) {
+		  	  	console.error("load friendship failed", e);
+		  	  	friendData = [];
+		  	}
+			console.log("FRIEND DATA: ", friendData);
+			friendData.forEach(e => {
 			const li: HTMLLIElement = document.createElement("li");
 			li.className = "flex justify-between items-center p-2 w-full min-h-12"
 
@@ -609,17 +705,50 @@ export function PongTournamentPageJoin(): HTMLElement {
 			const btn = document.createElement("button");
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
-			btn.addEventListener("click", () => {
-				window.showInvite({
-    	            username: e.username,
-    	            id: e.id,
-    	            avatar: e.avatar,
-    	            message: e.invitation,
-    	        });
+			btn.addEventListener("click", async () => {
+			    console.log("BODY INVITATION: ", currentTournament?.uuid, " |", e.id);
+			
+			    if (!currentTournament?.uuid) {
+			        console.error("No tournament UUID");
+			        btn.textContent = t.error;
+			        return;
+			    }
+			
+			    btn.textContent = "...";
+			    btn.disabled = true;
+			
+			    try {
+			        const check = await Invitation(currentTournament.uuid, e.id, "tournament");
+				
+			        if (check === true) {
+			            btn.textContent = t.requests_send;
+			            btn.disabled = true;
+			            btn.style.backgroundColor = "#00ff08ff";
+			        } else {
+			            btn.textContent = t.error;
+			            btn.disabled = false;
+			            // Réinitialiser après 2 secondes
+			            setTimeout(() => {
+			                btn.textContent = t.invite;
+			                btn.disabled = false;
+			            }, 2000);
+			        }
+			    } catch (error) {
+			        console.error("Invitation error:", error);
+			        btn.textContent = t.error;
+			        btn.disabled = false;
+			        // Réinitialiser après 2 secondes
+			        setTimeout(() => {
+			            btn.textContent = t.invite;
+			            btn.disabled = false;
+			        }, 2000);
+			    }
 			});
 			li.appendChild(btn);
 			lstFriends.appendChild(li);
 		});
+
+		})();
 
 
 		const BackToMenuOverlay = document.createElement("div");
@@ -653,9 +782,10 @@ export function PongTournamentPageJoin(): HTMLElement {
 		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
 		ConfirmBtn.textContent = t.back;
 		ConfirmBtn.onclick = () => {
+			//! QuitPlayersTournament(currentTournament);
+			//! QUIT TOURNAMENT
 			mainContainer.classList.add("fade-out");
 			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
-			//! QUIT TOURNAMENT
 		};
 		actions.appendChild(ConfirmBtn);
 
@@ -679,6 +809,13 @@ export function PongTournamentPageJoin(): HTMLElement {
 		};
 		document.addEventListener("keydown", onEsc);
 	}
+
+    mainContainer.addEventListener('DOMNodeRemoved', () => {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    });
+
 	initializeTournament();
 
     return (mainContainer);
@@ -712,32 +849,19 @@ export function PongTournamentPageHost(): HTMLElement {
     	loadingContainer.remove();
 
     	const Title = document.createElement("h1");
-    	Title.className = "mt-15 md:mt-10 tracking-widest lg:text-6xl md:text-4xl text-2xl neon-matrix";
+    	Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
     	Title.textContent = currentTournament?.name + " " + t.tournament;
     	mainContainer.appendChild(Title);
 
     	const size = currentTournament?.size ?? nb_players.value;
-    	console.log("VERIF :", currentTournament?.players, " |", Array.isArray(currentTournament?.players), " |", currentTournament?.players?.length);
 		
+    	const playerArray = parsePlayer(currentTournament!);
     	let playerUuids: string[] = [];
-    	try {
-    	    const playersData = currentTournament?.players;
-    	    let playerArray: Players[] = [];
 
-    	    if (typeof playersData === 'string') {
-    	        playerArray = JSON.parse(playersData);
-    	    } else if (Array.isArray(playersData)) {
-    	        playerArray = playersData;
-    	    }
-		
-    	    if (Array.isArray(playerArray) && playerArray.length > 0) {
-    	        playerUuids = playerArray.map(p => p.uuid);
-    	    }
-    	} catch (error) {
-    	    console.error("Erreur lors du traitement des joueurs:", error);
+    	if (Array.isArray(playerArray) && playerArray.length > 0) {
+    	    playerUuids = playerArray.map(p => p.uuid);
     	}
 
-    	// Transformer les UUID en noms
     	let players: string[];
     	if (playerUuids.length > 0) {
     	    players = await getPlayerNames(playerUuids);
@@ -746,8 +870,8 @@ export function PongTournamentPageHost(): HTMLElement {
     	}
 
     	console.log("PLAYERS WITH NAMES:", players);
-		
-		const bracketContainer = createTournamentBracket(players);
+	
+    	const bracketContainer = createTournamentBracket(players);
     	bracketContainer.className = "mt-15 pl-5 w-full";
     	const renderBracket = () => {
     	    bracketContainer.innerHTML = "";
@@ -788,44 +912,44 @@ export function PongTournamentPageHost(): HTMLElement {
 		let friendData: Friend[] = [];
 
 		const token = localStorage.getItem("jwt") || "";
-	  	try {
-	  	  	const resp = await fetch("/user/friendship", {
-				method: 'GET',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}` 
-				}
-			});
-	  	  	if (!resp.ok) throw new Error(String(resp.status));
-	  	  	const data = await resp.json();
-	  	  	const me = getUser()?.uuid;
-			const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
-			const list = await Promise.all(rows.map(async (r) => {
-	  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
-	  	  	  	try {
-	  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
-	  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
-	  	  	  	  	});
-	  	  	  	  	if (r2.ok) {
-	  	  	  	  	  	const { user } = await r2.json();
-	  	  	  	  	  	return {
-	  	  	  	  	  	  	id: other,
-	  	  	  	  	  	  	username: user.username || other,
-	  	  	  	  	  	  	invitation: t.friends,
-	  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
-	  	  	  	  	  	};
-	  	  	  	  	}
-	  	  	  	} catch {}
-	  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
-	  	  	}));
-	  	  	friendData = list;
-	  	} catch (e) {
-	  	  	console.error("load friendship failed", e);
-	  	  	friendData = [];
-	  	}
+		(async () => {
+		  	try {
+		  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+		  	  	if (!resp.ok) throw new Error(String(resp.status));
 
+		  	  	const data = await resp.json();
+		  	  	const me = getUser()?.uuid;
+				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
 
-		friendData.forEach(e => {
+				console.log("DATA FRIEND RESP :", data);
+				console.log("DATA FRIEND ME :", me);
+				console.log("DATA FRIEND ROWS :", rows);
+
+				const list = await Promise.all(rows.map(async (r) => {
+		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
+		  	  	  	try {
+		  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+		  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
+		  	  	  	  	});
+		  	  	  	  	if (r2.ok) {
+		  	  	  	  	  	const { user } = await r2.json();
+		  	  	  	  	  	return {
+		  	  	  	  	  	  	id: other,
+		  	  	  	  	  	  	username: user.username || other,
+		  	  	  	  	  	  	invitation: t.friends,
+		  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png"
+		  	  	  	  	  	};
+		  	  	  	  	}
+		  	  	  	} catch {}
+		  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png" };
+		  	  	}));
+		  	  	friendData = list;
+		  	} catch (e) {
+		  	  	console.error("load friendship failed", e);
+		  	  	friendData = [];
+		  	}
+			console.log("FRIEND DATA: ", friendData);
+			friendData.forEach(e => {
 			const li: HTMLLIElement = document.createElement("li");
 			li.className = "flex justify-between items-center p-2 w-full min-h-12"
 
@@ -848,33 +972,49 @@ export function PongTournamentPageHost(): HTMLElement {
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
 			btn.addEventListener("click", async () => {
-				console.log("INVITE FRIEND:", `/user/invit/${e.id}`);
-				try {
-					const resp = await fetch(`/user/invit/${encodeURIComponent(e.id)}`, {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Authorization': `Bearer ${token}`
-						},
-						body: JSON.stringify({
-							uuid: currentTournament?.uuid,
-							mode: "tournament"
-						})
-					});
-					console.log("INVITE RESPONSE:", resp);
-				} catch (error) {
-					console.error("Erreur lors de l'envoi de l'invitation:", error);
-				}
-				window.showInvite({
-    	            username: e.username,
-    	            id: e.id,
-    	            avatar: e.avatar,
-    	            message: e.invitation,
-    	        });
+			    console.log("BODY INVITATION: ", currentTournament?.uuid, " |", e.id);
+			
+			    if (!currentTournament?.uuid) {
+			        console.error("No tournament UUID");
+			        btn.textContent = t.error;
+			        return;
+			    }
+			
+			    btn.textContent = "...";
+			    btn.disabled = true;
+			
+			    try {
+			        const check = await Invitation(currentTournament.uuid, e.id, "tournament");
+				
+			        if (check === true) {
+			            btn.textContent = t.requests_send;
+			            btn.disabled = true;
+			            btn.style.backgroundColor = "#00ff08ff";
+			        } else {
+			            btn.textContent = t.error;
+			            btn.disabled = false;
+			            // Réinitialiser après 2 secondes
+			            setTimeout(() => {
+			                btn.textContent = t.invite;
+			                btn.disabled = false;
+			            }, 2000);
+			        }
+			    } catch (error) {
+			        console.error("Invitation error:", error);
+			        btn.textContent = t.error;
+			        btn.disabled = false;
+			        // Réinitialiser après 2 secondes
+			        setTimeout(() => {
+			            btn.textContent = t.invite;
+			            btn.disabled = false;
+			        }, 2000);
+			    }
 			});
 			li.appendChild(btn);
 			lstFriends.appendChild(li);
 		});
+
+		})();
 
     	const actionsCol = document.createElement("div");
     	actionsCol.className = "w-9/10 p-3 flex flex-col items-center justify-center gap-3 glass-blur";

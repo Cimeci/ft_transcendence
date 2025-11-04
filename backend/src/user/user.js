@@ -100,7 +100,8 @@ const notif = `
         sender TEXT NOT NULL,
         receiver TEXT NOT NULL,
         response INTEGER default 0,
-        mode TEXT
+        mode TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 `
 
@@ -186,7 +187,7 @@ app.post('/insert', async(request, reply) => {
     }
 
     const { uuid, username, email, hash, avatar } = request.body;
-
+    console.log(request.body);
     try{
         db.prepare('INSERT INTO user (uuid, username, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
@@ -895,7 +896,6 @@ app.post('/invit/:uuid', async(request, reply) => {
     //     }, 'Delete User Unauthorized: invalid jwt token');
     //     reply.code(401).send({ error: 'Unauthorized'});
     // }
-    console.log("REQUEST BODY :", request.body);
     let sender_uuid;
     try {
         sender_uuid = await checkToken(request);
@@ -908,11 +908,14 @@ app.post('/invit/:uuid', async(request, reply) => {
     
     const receiver_uuid  = request.params.uuid;
     const { uuid, mode } = request.body;
-    console.log("DATA :", uuid, mode, receiver_uuid, sender_uuid);
 
-    const user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(receiver_uuid);
+    console.log("\nLOG UUID: ", request.body, "reciever_uuid: ", receiver_uuid, "sender_uuid: ", sender_uuid, "\n\n");
 
-    if (!user) {
+    const sender_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(sender_uuid);
+    const receiver_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(receiver_uuid);
+
+
+    if (!receiver_user || !sender_user) {
         request.log.warn({
             event: 'get-invit-uuid_attempt'
         }, 'Get invit uuid Failed: User not found');
@@ -928,55 +931,135 @@ app.post('/invit/:uuid', async(request, reply) => {
 });
 
 app.patch('/invit/:uuid', async(request, reply) => {
+    let reciever_uuid;
+    try {
+        reciever_uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'patch-invit_attempt'
+        }, 'Patch invit Unauthorized: invalid jwt token');
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
+    
+    const uuid  = request.params.uuid;
+    const { response } = request.body;
+    console.log("📝 Données reçues - UUID:", uuid, "| Response:", response, "| Receiver UUID:", reciever_uuid);
+
+    try {
+        const existingNotification = db.prepare('SELECT * FROM notification WHERE uuid = ? AND reciever_uuid = ?').get(uuid, reciever_uuid);
+        
+        if (!existingNotification) {
+            request.log.warn({
+                event: 'patch-invit_attempt'
+            }, 'Notification not found for this user');
+            return reply.code(404).send({ error: 'Notification not found' });
+        }
+
+        const mode = db.prepare('SELECT mode FROM notification WHERE uuid = ?').get(uuid);
+        const user = db.prepare('SELECT username FROM user WHERE uuid = ?').get(reciever_uuid);
+        
+        if (response === 1) {
+            try {
+                const gameResponse = await fetch('http://game:4000/set-up-game', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-internal-key': process.env.JWT_SECRET
+                    },
+                    body: JSON.stringify({ 
+                        reciever_uuid: reciever_uuid, 
+                        username: user.username, 
+                        uuid: uuid 
+                    })
+                });
+                if (!gameResponse.ok) {
+                    console.error('Erreur service game:', gameResponse.status);
+                }
+            } catch (fetchError) {
+                console.error('Exception service game:', fetchError);
+            }
+        }
+        
+        if (mode && mode.mode === 'tournament' && response === 1) {
+            try {
+                const tournamentResponse = await fetch('http://tournament:4000/join', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `${request.headers.authorization}`,
+                    },
+                    body: JSON.stringify({ 
+                        uuid_tournament: uuid,
+                    })
+                });
+                if (!tournamentResponse.ok) {
+                    console.error('Erreur service tournament:', tournamentResponse.status);
+                }
+            } catch (fetchError) {
+                console.error('Exception service tournament:', fetchError);
+            }
+        }
+        
+        request.log.info({
+            event: 'patch-invit_attempt'
+        }, 'Invitation response processed successfully');
+        
+        return reply.send({ 
+            success: true, 
+            mode: mode?.mode 
+        });
+        
+    } catch (err) {
+        console.error('Erreur dans PATCH /invit:', err);
+        console.error('Stack trace:', err.stack);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code,
+                stack: err.stack
+            },
+            event: 'patch-invit_attempt'
+        }, 'Patch invit failed with error');
+        reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
+
+app.get('/notifications', async(request, reply) => {
     let player_uuid;
     try {
         player_uuid = await checkToken(request);
     } catch (err) {
         request.log.warn({
-            event: 'post-invit-uuid_attempt'
-        }, 'Post invit uuid Unauthorized: invalid jwt token');
+            event: 'get-notifications_attempt'
+        }, 'Get Notifications Unauthorized: invalid jwt token');
         reply.code(401).send({ error: 'Unauthorized'});
     }
-    
-    const uuid  = request.params.uuid;
-    const { response } = request.body;
-    try {
 
-        db.prepare(`UPDATE notification SET response = ? WHERE uuid = ? AND player_uuid = ?`).run(response, uuid, player_uuid);
-        const mode = db.prepare('SELECT mode FROM notification WHERE uuid = ?').get(uuid);
-        const username = db.prepare('SELECT username FROM user WHERE uuid = ?').get(player_uuid);
-        if (response === 1) {
-            await fetch ('http://localhost:game/set-up-game', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-internal-key': process.env.JWT_SECRET
-                },
-                body: JSON.stringify({ player_uuid, username, uuid })
-            });
-        }
-        if (mode && mode.mode === 'tournament' && response === 1) {
-            await fetch ('http://localhost:tournament/join', {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `${request.headers.authorization}`,
-                },
-                body: JSON.stringify({ uuid })
-            });
-        }
+    try {
+        const notifications = db.prepare(`
+            SELECT
+                sender_uuid,
+                reciever_uuid,
+                uuid, 
+                response, 
+                mode
+            FROM notification 
+            WHERE reciever_uuid = ?
+        `).all(player_uuid);
+
         request.log.info({
-            event: 'post-invit-uuid_attempt'
-        }, 'User invit uuid Sucess');
-        return reply.send({ success: true })
+            event: 'get-notifications_attempt'
+        }, 'Notifications retrieved successfully');
+
+        return reply.send({ notifications });
     } catch (err) {
         request.log.error({
             error: {
                 message: err.message,
                 code: err.code
             },
-            event: 'post-invit-uuid_attempt'
-        }, 'Post invit uuid Failed');
+            event: 'get-notifications_attempt'
+        }, 'Get notifications failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
     }
 });
@@ -1070,12 +1153,45 @@ app.post('/jwt-test', async(request, reply) => {
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return reply.status(401).send({ error: 'Missing or invalid token' });
         }
-
-        const token = request.headers.authorization.slice(7);
+        
         const payload = await request.jwtVerify();
-        return reply.send({ message: 'Token is valid', payload });
+        const user = db.prepare('SELECT uuid, username, email FROM user WHERE uuid = ?').get(payload.uuid);
+        
+        if (!user) {
+            request.log.warn({
+                event: 'jwt-test_attempt',
+                uuid: payload.uuid
+            }, 'JWT Test Failed: User not found in database');
+            return reply.status(404).send({ 
+                error: 'User not found in database',
+                uuid: payload.uuid 
+            });
+        }
+        
+        request.log.info({
+            event: 'jwt-test_attempt',
+            user: { uuid: user.uuid, username: user.username }
+        }, 'JWT Test Success: Token is valid and user exists');
+        
+        return reply.send({ 
+            message: 'Token is valid and user exists', 
+            payload: payload,
+            user: {
+                uuid: user.uuid,
+                username: user.username,
+                email: user.email
+            }
+        });
+        
     } catch (err) {
         console.error('JWT Verification Error:', err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'jwt-test_attempt'
+        }, 'JWT Test Failed: Invalid or expired token');
         return reply.status(401).send({ error: 'Invalid or expired token' });
     }
 });

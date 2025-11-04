@@ -1,3 +1,4 @@
+import { getUser } from "../linkUser";
 import { navigateTo } from "../routes";
 
 export function CreateSlider(ref: { value: number }, txt: string, minValue: number, maxValue: number, onChange?: (v: number) => void) : HTMLElement
@@ -87,7 +88,7 @@ export function CreateWrappedButton(mainContainer: HTMLElement, txt: string, pat
     return (PlayContainer);
 }
 
-export async function SetWallet(amount: Number)
+export async function SetWallet(uuid: string, amount: Number)
 {
     const jwt = localStorage.getItem("jwt") || "";
 
@@ -97,10 +98,68 @@ export async function SetWallet(amount: Number)
             'Authorization': `Bearer ${jwt}`,
             'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ uuid: uuid, amount: amount })
     });
 
     if (!response.ok) {
         console.error('Erreur:', response.status);
         return;
     }
+}
+
+export async function getUidInventory(uuid: string){
+    console.log("getuuisInventory uuiiiiddididiid: ", uuid);
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) return new Error("jwt");
+    try {
+        const r2 = await fetch(`/user/${encodeURIComponent(uuid)}`,{
+            method: "GET",
+            headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+            }
+        });
+        console.log("RESP GET UUID: ", r2);
+        if (r2.ok) {
+            const { user } = await r2.json();
+            return {
+                id: uuid,
+                username: user.username,
+                avatar: user.avatar_use[0].id,
+            };
+        }
+    } catch (e){
+        console.error("GET uuid inventory", e)
+    }
+    return { id: uuid, username: uuid, avatar: "/avatar/default_avatar.png" };
+}
+
+export async function Invitation(game_uuid: string, friend_uuid: string, mode: string)
+{
+    console.log("INVITATION INFO:", game_uuid, "| " ,friend_uuid, "| ", mode)
+    const jwt = localStorage.getItem("jwt");
+    if (!jwt) return new Error("Error JWT");
+    try {
+        const resp = await fetch(`/user/invit/${encodeURIComponent(friend_uuid)}`, {
+			method: "POST",
+			headers: {
+			    'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                uuid: game_uuid,
+                mode: mode
+            })
+		});
+        console.log("RESP POST INVIT: ", resp);
+        if (!resp.ok)
+        {
+            console.error(resp.status);
+        }
+        else
+            return (true);
+    } catch (e) {
+        console.error("POST INVITATION: ", e);
+    }
+    return false;
 }
