@@ -421,10 +421,10 @@ export function PongOnlineOverlayPage(): HTMLElement {
 	return overlay;
 }
 
+
 function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game, user1Inventory: Inventory, user2Inventory: Inventory): HTMLElement {
 	console.log("Initializing OnlinePong with game UUID:", game.uuid);
 	let socket = new WebSocket(`wss://${window.location.host}/websocket/${game.uuid}`);
-	console.log("WebSocket URL:", socket);
 	let myPosition: 'left' | 'right' | null = null;
 	
 	socket.onopen = () => {
@@ -438,7 +438,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 		ball: { x: number; y: number; radius: number };
 		paddles: { leftY: number; rightY: number };
 		scores: { left: number; right: number };
-		state?: 'waiting' | 'playing' | 'game_over';
+		state?: 'waiting' | 'playing' | 'game_over' | 'finish';
 		winner?: 'left' | 'right';
 	};
 
@@ -617,6 +617,12 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 		try {
 			const msg = JSON.parse(ev.data);
 			
+			if (msg?.event === "game_over") {
+				socket.close();
+				setTimeout(() => {
+					navigateTo("/pong/online/game/overlay");
+				}, 2000);
+			}
 			// Recevoir la position assignée
 			if (msg.event === 'assigned') {
 				myPosition = msg.position;
@@ -643,8 +649,8 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 					},
 		  			state: msg.event === 'finish' ? 'game_over' : 'playing',
 		  			winner: msg.winner
-		  		};
-
+		  		};				
+				
 				if (state?.scores) {
 					user1.score = state.scores.left ?? 0;
 					user2.score = state.scores.right ?? 0;
@@ -663,7 +669,17 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 				}
 			}
 
-			if (state?.state === 'game_over') {
+			if (state?.state === 'game_over' || window.location.pathname.search('game') == -1 || socket.readyState !== WebSocket.OPEN) {
+				if (window.location.pathname.search('game') == -1){
+					if (game.player1_uuid !== getUser()?.uuid){
+						user1.score = 5;
+						user2.score = 0;
+					}
+					else {
+						user1.score = 0;
+						user2.score = 5;
+					}
+				}
 				cleanup();
 				setTimeout(() => {
 					navigateTo("/pong/online/game/overlay");

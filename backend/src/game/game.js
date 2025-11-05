@@ -8,21 +8,20 @@ import crypto from 'crypto';
 dotenv.config();
 
 // Configuration du logger fastify
-// const loggerConfig = {
-//     transport: {
-//         target: 'pino/file',
-//         options: {
-//             destination: '/var/log/app/game-service.log',
-//             mkdir: true
-//         }
-//     },
-//     redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
-//     base: { service: 'game'},
-//     formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
-// }
+const loggerConfig = {
+    transport: {
+        target: 'pino/file',
+        options: {
+            destination: '/var/log/app/game-service.log',
+            mkdir: true
+        }
+    },
+    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+    base: { service: 'game'},
+    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+}
 
-// const app = fastify({ logger: loggerConfig });
-const app = fastify({ logger: true });
+const app = fastify({ logger: loggerConfig });
 
 await app.register(jwt, {
   secret: process.env.JWT_SECRET,
@@ -100,6 +99,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     const { gameId } = request.params;
     const { score1, score2, winner } = request.body;
 
+    console.log("DATA", score1, score2, winner);
     const data = db.prepare('SELECT player1_uuid, player2_uuid FROM game WHERE uuid = ?').get(gameId);
     if (!data) {
         request.log.warn({

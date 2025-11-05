@@ -7,20 +7,19 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 // Configuration du logger fastify
-// const loggerConfig = {
-// 	transport: {
-// 		target: 'pino/file',
-// 		options: {
-// 			destination: '/var/log/app/websocket-service.log',
-// 			mkdir: true
-// 		}
-// 	},
-// 	redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
-// 	base: { service: 'websocket'},
-// 	formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
-// }
-// const app = fastify({ logger: loggerConfig });
-const app = fastify({ logger: true });
+const loggerConfig = {
+    transport: {
+        target: 'pino/file',
+        options: {
+            destination: '/var/log/app/websocket-service.log',
+            mkdir: true
+        }
+    },
+    redact: ['password', 'hash', 'JWT_SECRET', 'uuid'],
+    base: { service: 'websocket'},
+    formatters: { time: () => `,"timestamp":"${new Date().toISOString()}"` }
+}
+const app = fastify({ logger: loggerConfig });
 
 await app.register(fastifyMetrics, { endpoint: '/metrics' });
 
@@ -30,23 +29,8 @@ app.register(websocket);
 const paddleWidth = 10;
 const paddleHeight = 120;
 const speed = 8;
-
 let gameuuid = null;
-
-// let ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 5, speedY: 5 };
-// let leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
-// let rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
-// let ballRotation = 0;
-
-// let score = { left: 0, right: 0 };
-// let isGamerunning = false;
-// let launchTimeout; // <-- ajouté
 const BALL_SPIN_STEP = Math.PI / 6;
-
-// let players = {
-// 	left: null,
-// 	right: null,
-// };
 
 const games = {};
 
@@ -66,6 +50,40 @@ class Game {
         };
         this.clients = [];
         this.updateGameInterval = setInterval(this.updateGame.bind(this), 1000 / 60);
+    }
+
+    finishGame() {
+
+        this.ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 0, speedY: 0 };
+        this.leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
+        this.rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
+        this.isGamerunning = false;
+        
+        if (this.launchTimeout) {
+            clearTimeout(this.launchTimeout);
+            this.launchTimeout = null;
+        }
+        console.log("READYSTATE 1", this.clients[1].readyState);
+        
+        console.log("READYSTATE 0", this.clients[0].readyState);
+
+        if (this.clients[0].readyState === 1){
+            console.log("SALUT===========");
+            this.score.left = 5;
+            this.score.right = 0;
+        }
+        else {
+            console.log("ANTOINe===========");
+            this.score.right = 5;
+            this.score.left = 0;
+        }
+        // Informer tous les clients
+        const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score, event: 'game_over' };
+        this.clients.forEach((client) => {
+            if (client.readyState === 1) {
+                client.send(JSON.stringify(gameState));
+            }
+        });
     }
 
     resetGame() {
@@ -247,7 +265,6 @@ app.register(async function (app) {
             game.players.right = socket;    
             game.clients.push(socket);
         
-            console.log("Resetting game state for all clients", game);
             // Démarrer le jeu quand les deux joueurs sont connectés
             setTimeout(() => {
                 game.resetBall();
@@ -272,7 +289,6 @@ app.register(async function (app) {
 		socket.on('message', async (message) => {
         try {
             const messageData = JSON.parse(message.toString());
-            console.log('Message reçu:', messageData);
 
             // Récupérer le username si fourni
             if (messageData.event === 'join' && messageData.username) {
@@ -325,9 +341,8 @@ app.register(async function (app) {
             } else if (playerPosition === 'right') {
                 game.players.right = null;
             }
-            
             // Réinitialiser le jeu si un joueur part
-            game.resetGame();
+            game.finishGame();
         });
 
         socket.on('error', (error) => {
@@ -335,8 +350,6 @@ app.register(async function (app) {
         });
     });
 });
-
-// setInterval(updateGame, 1000 / 60);
 
 // Gestion des erreurs de connexion WebSocket
 // app.on('ws-error', (err, req) => {
