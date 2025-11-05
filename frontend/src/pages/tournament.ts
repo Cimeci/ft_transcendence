@@ -9,6 +9,21 @@ import type { Friend } from "./friends";
 
 let nb_players = {value: 16};
 
+const refreshIntervals: Set<number> = new Set();
+
+export function cleanupAllIntervals() {
+    refreshIntervals.forEach(interval => {
+        window.clearInterval(interval);
+    });
+    refreshIntervals.clear();
+}
+
+function setupManagedInterval(callback: () => void, delay: number): number {
+    const interval = window.setInterval(callback, delay);
+    refreshIntervals.add(interval);
+    return interval;
+}
+
 export type TournamentVisibility = 0 | 1;
 //? 0 = public | 1 = private
 
@@ -31,12 +46,65 @@ export interface Tournament {
 	winner: string,
 	visibility: number,
 	password?: string,
+	launch: number,
 }
 
 export let tournamentList: Tournament[] = [];
 
+//? -------- UTILS -------- ?//
+
+async function refreshTournamentData(tournamentUUID?: string): Promise<boolean> {
+    try {
+        const previousList = [...tournamentList];
+        await GetTournamentList();
+        
+        const hasChanged = JSON.stringify(previousList) !== JSON.stringify(tournamentList);
+        
+        if (tournamentUUID) {
+            const currentTournament = tournamentList.find(t => t.uuid === tournamentUUID);
+            if (currentTournament) {
+                window.dispatchEvent(new CustomEvent('tournamentUpdated', {
+                    detail: { tournament: currentTournament, hasChanged }
+                }));
+            }
+        }
+        
+        return hasChanged;
+    } catch (error) {
+        console.error("Error refreshing tournament data:", error);
+        return false;
+    }
+}
+
+export async function getDataUuidTournament(uuid: string){
+	const jwt = localStorage.getItem("jwt");
+    try {
+        const resp = await fetch(`/tournament/tournament/${encodeURIComponent(uuid)}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${jwt}`,
+				"Content-Type": "application/json",
+            },
+        });
+        
+        if (!resp.ok) {
+            console.error("Erreur lors de la récupération des tournois :", resp.status, resp.statusText);
+            return null;
+        }
+		const data: Tournament = await resp.json();
+		// console.log("GET DATA TOURNAMENT: ", data);
+		return (data);
+    } catch (error) {
+        console.error("Error network :", error);
+    }
+}
+
 async function GetTournamentList() {
     const jwt = localStorage.getItem("jwt");
+	if (!jwt) {
+        console.error("No JWT token found");
+        return null;
+    }
     try {
         const resp = await fetch("/tournament/tournament", {
             method: "GET",
@@ -47,24 +115,19 @@ async function GetTournamentList() {
             },
         });
      
-        const text = await resp.text();
-        
         if (!resp.ok) {
             console.error("Erreur lors de la récupération des tournois :", resp.status, resp.statusText);
             return null;
         }
-        
-        const ct = resp.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-            console.error("Réponse non-JSON reçue. Contenu:", text.substring(0, 200));
-            return null;
-        }
-        
-        const data: Tournament[] = JSON.parse(text);
+
+        const data: Tournament[] = await resp.json();
         tournamentList = data;
+        // console.log("Tournament list updated:", tournamentList);
+        return data;
         
     } catch (error) {
         console.error("Error network :", error);
+		return null;
     }
 }
 
@@ -107,19 +170,28 @@ export function getUuid(): string {
     return (uuid);
 }
 
-async function getCurrentTournament(): Promise<Tournament | undefined> {
+export async function getCurrentTournament(): Promise<Tournament | undefined> {
     try {
-        await GetTournamentList();
+        const updatedList = await GetTournamentList();
         const uuid = getUuid();
         console.log("UUID :", uuid);
-        console.log("TOURNAMENTLIST :", tournamentList);
+        console.log("TOURNAMENTLIST :", updatedList);
         
         if (!uuid) {
             console.error("Aucun UUID trouvé dans l'URL");
             return undefined;
         }
         
-        const tournament = tournamentList.find(tournament => tournament.uuid === uuid);
+        const tournament = tournamentList.find(t => t.uuid === uuid);
+        if (!tournament) {
+            console.warn("Tournoi non trouvé avec l'UUID:", uuid);
+            const directData = await getDataUuidTournament(uuid);
+            if (directData) {
+                tournamentList.push(directData);
+                return directData;
+            }
+        }
+        
         console.log("TOURNAMENT FIND: ", tournament);
         return tournament;
     } catch (error) {
@@ -128,7 +200,7 @@ async function getCurrentTournament(): Promise<Tournament | undefined> {
     }
 }
 
-async function getPlayerNames(uuids: string[]): Promise<string[]> {
+export async function getPlayerNames(uuids: string[]): Promise<string[]> {
     try {
         const names = await Promise.all(
             uuids.map(async (uuid) => {
@@ -150,43 +222,31 @@ async function getPlayerNames(uuids: string[]): Promise<string[]> {
 }
 
 function setupBracketAutoRefresh(tournamentUUID: string, bracketContainer: HTMLElement, interval: number = 60000) {
-    const refreshInterval = setInterval(async () => {
+    const refreshInterval = setupManagedInterval(async () => {
         try {
-            await GetTournamentList();
-            const updatedTournament = tournamentList.find(t => t.uuid === tournamentUUID);
-            if (updatedTournament) {
-                updateBracketDisplay(updatedTournament, bracketContainer);
+            const hasChanged = await refreshTournamentData(tournamentUUID);
+            if (hasChanged) {
+                const updatedTournament = tournamentList.find(t => t.uuid === tournamentUUID);
+                if (updatedTournament) {
+                    await updateBracketDisplay(updatedTournament, bracketContainer);
+                }
             }
         } catch (error) {
             console.error("Error refreshing bracket:", error);
         }
     }, interval);
 
-    window.addEventListener('beforeunload', () => {
-        clearInterval(refreshInterval);
-    });
-
     return refreshInterval;
 }
 
-async function updateBracketDisplay(tournament: Tournament, bracketContainer: HTMLElement) {
-    const playerArray = parsePlayer(tournament);
-    let players: string[] = [];
-
-    if (Array.isArray(playerArray) && playerArray.length > 0) {
-        const playerUuids = playerArray.map(p => p.uuid);
-        players = await getPlayerNames(playerUuids);
-    } else {
-        players = Array.from({ length: tournament.size }, (_, i) => `${t.player} ${i + 1}`);
-    }
-
+export async function updateBracketDisplay(tournament: Tournament, bracketContainer: HTMLElement) {
     bracketContainer.innerHTML = "";
-    const newBracket = createTournamentBracket(players);
+    const newBracket = await createTournamentBracket(tournament);
     newBracket.classList.add("mt-15", "pl-5");
     bracketContainer.appendChild(newBracket);
 }
 
-function parsePlayer(tournament: Tournament): Players[] {
+export function parsePlayer(tournament: Tournament): Players[] {
     const playersData = tournament?.players;
     let playerArray: Players[] = [];
 
@@ -232,63 +292,32 @@ async function JoinTournament(tournament: Tournament): Promise<boolean> {
 	return (false);
 }
 
-//! QUIT TOURNAMENT
-async function QuitTournament(tournament: Tournament): Promise<boolean>{
+
+async function launchTournament(uuid: string): Promise<boolean>{
 	const jwt = localStorage.getItem("jwt");
 	if (!jwt)
 		return false;
 	try {
-		const resp = await fetch('/tournament/tournament_players', {
-    		method: 'DELETE',
+		const resp = await fetch(`/tournament/tournament/launch/${encodeURIComponent(uuid)}`, {
+			method: 'PATCH',
     		headers: {
 				"Authorization": `Bearer ${jwt}`,
-    	  		'Content-Type': 'application/json',
     		},
-    		body: JSON.stringify({ uuid_tournament: tournament.uuid })
-  		});
-
-  		if (resp.ok) {
-			await GetTournamentList();
-    		return (true);
-  		} else {
-    		console.log('Error Patch delete', resp.status);
+		});
+		if (resp.ok) {
+			return (true);
+		} else {
+			console.log('Error Patch join', resp.status);
 			const errorData = await resp.json();
             console.log('Error details:', errorData);
-  		}
+		}
 	} catch (e) {
-		console.error("ERROR PATCH delete", e);
+		console.error("ERROR PATCH join", e);
 	}
 	return (false);
 }
 
-//! QUIT PLAYERS TOURNAMENT
-async function QuitPLayersTournament(tournament: Tournament): Promise<boolean>{
-	const jwt = localStorage.getItem("jwt");
-	if (!jwt)
-		return false;
-	try {
-		const resp = await fetch('/tournament/tournament_players', {
-    		method: 'DELETE',
-    		headers: {
-				"Authorization": `Bearer ${jwt}`,
-    	  		'Content-Type': 'application/json',
-    		},
-    		body: JSON.stringify({ uuid_tournament: tournament.uuid })
-  		});
-
-  		if (resp.ok) {
-			await GetTournamentList();
-    		return (true);
-  		} else {
-    		console.log('Error Patch delete', resp.status);
-			const errorData = await resp.json();
-            console.log('Error details:', errorData);
-  		}
-	} catch (e) {
-		console.error("ERROR PATCH delete", e);
-	}
-	return (false);
-}
+//? ------ PAGE ------ ?//
 
 export function PongTournamentMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
@@ -417,6 +446,7 @@ export function PongTournamentMenuPage(): HTMLElement {
                 	GamePassword.value = "";
                 	PasswordWrapper.classList.toggle("hidden", !toggleInput.checked);
                 	mainContainer.classList.add("fade-out");
+					stopRefresh();
                 	setTimeout(() => { navigateTo(`/Tournament/host?uid=${tournament_uid}`); }, 1000);
 				}
             }
@@ -465,8 +495,9 @@ export function PongTournamentMenuPage(): HTMLElement {
 		ConfirmJoinBtn.className = "h-[7vh] btn-fluid bg-green-600 text-white rounded-xl hover:scale-102 hover:bg-green-700 transition-all";
 		ConfirmJoinBtn.textContent = t.join;
 		ConfirmJoinBtn.addEventListener("click", () => {
-			if (!tournament.password || PasswordInputJoin.value === tournament.password) {
+			if ((!tournament.password || PasswordInputJoin.value === tournament.password ) && tournament.launch == 0) {
 				mainContainer.classList.add("fade-out");
+				stopRefresh();
 				if (tournament.host === getUser()?.uuid)
 					setTimeout(() => navigateTo(`/Tournament/host?uid=${tournament.uuid}`), 1000);
 				else
@@ -501,7 +532,34 @@ export function PongTournamentMenuPage(): HTMLElement {
 	JoinList.className = "gap-10 p-2 text-center w-full flex-1 min-h-0 overflow-y-auto border-2 rounded-xl overflow-x-hidden";
 	JoinContainer.appendChild(JoinList);
 
-	GetTournamentList().then(() => {console.log("TOURNAMENTLIST LIST: ", tournamentList); renderJoinList()});
+	let refreshInterval: number | null = null;
+
+	function startRefresh() {
+	    stopRefresh();
+	    refreshInterval = setupManagedInterval(async () => {
+	        console.log("Refreshing tournament list...");
+	        await refreshTournamentData();
+	        renderJoinList();
+	    }, 5000);
+	}
+
+	function stopRefresh() {
+	    if (refreshInterval) {
+	        window.clearInterval(refreshInterval);
+	        refreshIntervals.delete(refreshInterval);
+	        refreshInterval = null;
+	    }
+	}
+
+	mainContainer.addEventListener('DOMNodeRemoved', () => {
+	    stopRefresh();
+	});
+
+	GetTournamentList().then(() => {
+	    console.log("TOURNAMENTLIST LIST: ", tournamentList); 
+	    renderJoinList();
+	    startRefresh();
+	});
 	const renderJoinList = () => {
 		JoinList.innerHTML = "";
 		tournamentList.forEach(tournament => {
@@ -519,7 +577,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 				tnb.className = "w-1/3";
 				
             	const playerCount = parsePlayer(tournament);
-            	console.log("TOURNAMENT PLAYER: ", playerCount);
+            	// console.log("TOURNAMENT PLAYER: ", playerCount);
             	tnb.textContent = `${playerCount.length}/${tournament.size}`;
             	li.appendChild(tnb);
 
@@ -528,33 +586,36 @@ export function PongTournamentMenuPage(): HTMLElement {
 				tvis.textContent = tournament.visibility === 1 ? t.private: t.public;
 				li.appendChild(tvis);
     		};
-			console.log("TOURNAMENT LENGHT", tournament.size , parsePlayer(tournament).length)
-			if (tournament.size > parsePlayer(tournament).length)
-    			renderLabel();
+    		renderLabel();
 
-    		li.addEventListener("click", () => {
-      			JoinContainer.querySelectorAll(".join-form").forEach(el => el.remove());
-				
-				if (currentJoinForm) {
-					currentJoinForm.remove();
-					currentJoinForm = null;
-				}
-                if (tournament.visibility === 1) {
-					const form = createFormJoin(tournament);
-					currentJoinForm = form;
-					JoinList.insertAdjacentElement("afterend", form);
-					form.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                } else {
-                    mainContainer.classList.add("fade-out");
-					JoinTournament(tournament);
-					if (tournament.host === getUser()?.uuid)
-						setTimeout(() => navigateTo(`/Tournament/host?uid=${tournament.uuid}`), 1000);
-					else
-                    	setTimeout(() => navigateTo(`/Tournament/join?uid=${tournament.uuid}`), 1000);
-                }
-      			setTimeout(renderLabel, 1000);
-    		});
-    		JoinList.appendChild(li);
+			if (tournament.size > parsePlayer(tournament).length)
+			{
+    			li.addEventListener("click", () => {
+      				JoinContainer.querySelectorAll(".join-form").forEach(el => el.remove());
+
+					if (currentJoinForm) {
+						currentJoinForm.remove();
+						currentJoinForm = null;
+					}
+            	    if (tournament.visibility === 1) {
+						const form = createFormJoin(tournament);
+						currentJoinForm = form;
+						JoinList.insertAdjacentElement("afterend", form);
+						form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            	    } else {
+            	        mainContainer.classList.add("fade-out");
+						JoinTournament(tournament);
+						stopRefresh();
+						if (tournament.host === getUser()?.uuid)
+							setTimeout(() => navigateTo(`/Tournament/host?uid=${tournament.uuid}`), 1000);
+						else
+            	        	setTimeout(() => navigateTo(`/Tournament/join?uid=${tournament.uuid}`), 1000);
+            	    }
+      				setTimeout(renderLabel, 1000);
+    			});
+			}
+			if (tournament.launch == 0)
+    			JoinList.appendChild(li);
   		});
 	};
 
@@ -580,14 +641,45 @@ export function PongTournamentPageJoin(): HTMLElement {
     loadingContainer.innerHTML = `<p>${t.login} ${t.tournament}...</p>`;
     mainContainer.appendChild(loadingContainer);
 
+    async function checkAndRedirectIfLaunched() {
+        if (!currentTournament?.uuid) return;
+        
+        try {
+            const freshTournament = await getDataUuidTournament(currentTournament.uuid);
+            if (freshTournament && freshTournament.launch) {
+                console.log("Tournament launched, redirecting to game...", window.location.href);
+                stopRefresh();
+				navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+                return true;
+            }
+        } catch (error) {
+            console.error("Error checking tournament launch status:", error);
+        }
+        return false;
+    }
+
     async function initializeTournament() {
         try {
+			await refreshTournamentData();
             currentTournament = await getCurrentTournament();
             console.log("CURRENT : ", currentTournament);
-			const inv = await getUidInventory(currentTournament?.host || "err");
-			if (inv)
-				hostname = inv.username;		
-			await renderTournament();
+
+			if (currentTournament){
+
+				const isLaunched = await checkAndRedirectIfLaunched();
+                if (isLaunched) {
+					// navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+                    return;
+                }
+
+				const inv = await getUidInventory(currentTournament?.host || "err");
+				if (inv) hostname = inv.username;
+
+				mainContainer.innerHTML = "";
+                await renderTournament();
+			} else {
+                loadingContainer.innerHTML = "<p>Tournoi non trouvé</p>";
+            }
 			
         } catch (error) {
             console.error("Erreur lors du chargement du tournoi:", error);
@@ -607,28 +699,18 @@ export function PongTournamentPageJoin(): HTMLElement {
 		hostName.className = "absolute top-5 left-5 tracking-widest text-2xl neon-matrix mb-15";
 		hostName.textContent = t.host + ": " + hostname;
 		mainContainer.appendChild(hostName);
-
-    	const size = currentTournament?.size ?? nb_players.value;
 		
-    	const playerArray = parsePlayer(currentTournament!);
-    	let players: string[] = [];
-
-    	if (Array.isArray(playerArray) && playerArray.length > 0) {
-    	    const playerUuids = playerArray.map(p => p.uuid);
-    	    players = await getPlayerNames(playerUuids);
-    	} else {
-    	    players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
-    	}
-
-    	const bracketContainer = createTournamentBracket(players);
-		bracketContainer.id = "bracket-container";
-    	bracketContainer.classList.add("mt-15", "pl-5");
-    	mainContainer.appendChild(bracketContainer);
-
-		await updateBracketDisplay(currentTournament!, bracketContainer);
-
 		if (currentTournament)
-            refreshInterval = setupBracketAutoRefresh(currentTournament.uuid, bracketContainer);
+		{
+		    const bracketContainer = document.createElement("div");
+		    bracketContainer.id = "bracket-container";
+		    bracketContainer.classList.add("mt-15", "pl-5");
+		    mainContainer.appendChild(bracketContainer);
+		
+		    await updateBracketDisplay(currentTournament, bracketContainer);
+		
+		    refreshInterval = setupBracketAutoRefresh(currentTournament.uuid, bracketContainer);
+		}
 
 		const rightContainer = document.createElement("div");
 		rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
@@ -799,9 +881,8 @@ export function PongTournamentPageJoin(): HTMLElement {
 		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
 		ConfirmBtn.textContent = t.back;
 		ConfirmBtn.onclick = () => {
-			//! QuitPlayersTournament(currentTournament);
-			//! QUIT TOURNAMENT
 			mainContainer.classList.add("fade-out");
+			stopRefresh();
 			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
 		};
 		actions.appendChild(ConfirmBtn);
@@ -827,13 +908,41 @@ export function PongTournamentPageJoin(): HTMLElement {
 		document.addEventListener("keydown", onEsc);
 	}
 
-    mainContainer.addEventListener('DOMNodeRemoved', () => {
+    function startRefresh() {
+        stopRefresh();
+        refreshInterval = setupManagedInterval(async () => {
+            console.log("Refreshing join tournament data...");
+            
+            const shouldRedirect = await checkAndRedirectIfLaunched();
+            if (shouldRedirect) {
+                return;
+            }
+            
+            await refreshTournamentData(currentTournament?.uuid);
+            if (currentTournament) {
+                const bracketContainer = document.getElementById("bracket-container");
+                if (bracketContainer) {
+                    await updateBracketDisplay(currentTournament, bracketContainer);
+                }
+            }
+        }, 5000);
+    }
+
+    function stopRefresh() {
         if (refreshInterval) {
-            clearInterval(refreshInterval);
+            window.clearInterval(refreshInterval);
+            refreshIntervals.delete(refreshInterval);
+            refreshInterval = null;
         }
+    }
+
+    mainContainer.addEventListener('DOMNodeRemoved', () => {
+        stopRefresh();
     });
 
 	initializeTournament();
+	startRefresh();
+
 
     return (mainContainer);
 }
@@ -841,6 +950,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 export function PongTournamentPageHost(): HTMLElement {
 
 	let currentTournament: Tournament | undefined;
+	let refreshInterval: number | null = null;
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
@@ -852,10 +962,25 @@ export function PongTournamentPageHost(): HTMLElement {
 
 	async function initializeTournament() {
         try {
+			await refreshTournamentData();
             currentTournament = await getCurrentTournament();
             console.log("CURRENT TOURNAMENT HOST: ", currentTournament);
             
-            renderTournament();
+            if (currentTournament) {
+				if (currentTournament.launch)
+				{
+					navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+					stopRefresh();
+					return;
+				}
+				else
+				{
+					mainContainer.innerHTML = "";
+                	await renderTournament();
+				}
+            } else {
+                loadingContainer.innerHTML = "<p>Tournoi non trouvé</p>";
+            }
         } catch (error) {
             console.error("Erreur lors du chargement du tournoi:", error);
             loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
@@ -869,33 +994,37 @@ export function PongTournamentPageHost(): HTMLElement {
     	Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
     	Title.textContent = currentTournament?.name + " " + t.tournament;
     	mainContainer.appendChild(Title);
-
-    	const size = currentTournament?.size ?? nb_players.value;
-		
-    	const playerArray = parsePlayer(currentTournament!);
-    	let playerUuids: string[] = [];
-
-    	if (Array.isArray(playerArray) && playerArray.length > 0) {
-    	    playerUuids = playerArray.map(p => p.uuid);
-    	}
-
-    	let players: string[];
-    	if (playerUuids.length > 0) {
-    	    players = await getPlayerNames(playerUuids);
-    	} else {
-    	    players = Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`);
-    	}
-
-    	console.log("PLAYERS WITH NAMES:", players);
 	
-    	const bracketContainer = createTournamentBracket(players);
-    	bracketContainer.className = "mt-15 pl-5 w-full";
-    	const renderBracket = () => {
-    	    bracketContainer.innerHTML = "";
-    	    const b = createTournamentBracket(players);
-    	    b.classList.add("mt-0", "pl-0");
-    	    bracketContainer.appendChild(b);
-    	};
+		if (currentTournament)
+		{
+		    const bracketContainer = document.createElement("div");
+		    bracketContainer.id = "bracket-container";
+		    bracketContainer.className = "mt-15 pl-5 w-full";
+		    mainContainer.appendChild(bracketContainer);
+		
+		    await updateBracketDisplay(currentTournament, bracketContainer);
+		}
+
+		if (currentTournament) {
+            refreshInterval = setupManagedInterval(async () => {
+                console.log("Refreshing host tournament data...");
+                const hasChanged = await refreshTournamentData(currentTournament?.uuid);
+                if (hasChanged) {
+                    const updatedTournament = tournamentList.find(t => t.uuid === currentTournament?.uuid);
+                    if (updatedTournament) {
+                        currentTournament = updatedTournament;
+                        const bracketContainer = mainContainer.querySelector('.mt-15.pl-5') as HTMLElement;
+                        if (bracketContainer) {
+                            await updateBracketDisplay(currentTournament, bracketContainer);
+                        }
+                        if (currentTournament.launch) {
+                            stopRefresh();
+                            navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+                        }
+                    }
+                }
+            }, 5000);
+        }
 
 		const rightContainer = document.createElement("div");
 		rightContainer.className = "p-2 fixed top-0 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
@@ -1039,14 +1168,28 @@ export function PongTournamentPageHost(): HTMLElement {
     	const startBtn = document.createElement("button");
 		startBtn.textContent = t.host;
     	startBtn.className = "border-1 border-white/30 bg-green-500/80 w-full rounded-2xl text-3xl px-10 tracking-wide py-1.5 duration-300 transition-all hover:scale-105 hover:bg-green-700";
-		startBtn.onclick = () => navigateTo(`/Tournament/game?uid=${currentTournament ? currentTournament.uuid: ""}`);
+		startBtn.onclick = async () => {
+			if (currentTournament)
+			{
+				const ret = await launchTournament(currentTournament.uuid)
+				if (ret && currentTournament.size === parsePlayer(currentTournament).length)
+				{
+					stopRefresh();
+					navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+				}
+				else
+				{
+					const old = startBtn.textContent;
+					startBtn.textContent = t.error;
+					setTimeout(() => {startBtn.textContent = old;}, 300);
+				}
+			}
+		};
 
     	actionsCol.appendChild(startBtn);
     	rightContainer.appendChild(actionsCol);
 
 		mainContainer.appendChild(rightContainer);
-    	mainContainer.appendChild(bracketContainer);
-    	renderBracket();
 
     	const BackToMenuOverlay = document.createElement("div");
     	BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
@@ -1079,7 +1222,7 @@ export function PongTournamentPageHost(): HTMLElement {
 		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
 		ConfirmBtn.textContent = t.back;
 		ConfirmBtn.onclick = () => {
-			//! QUIT TOURNAMENT AND DELETE TOURNAMENT
+			stopRefresh();
 			mainContainer.classList.add("fade-out");
 			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
 		};
@@ -1108,7 +1251,29 @@ export function PongTournamentPageHost(): HTMLElement {
 		};
 		document.addEventListener("keydown", onEsc);
 	}
+
+	function startRefresh() {
+	    stopRefresh();
+	    refreshInterval = setupManagedInterval(async () => {
+	        await refreshTournamentData(currentTournament?.uuid);
+	        await initializeTournament();
+	    }, 5000);
+	}
+
+	function stopRefresh() {
+	    if (refreshInterval) {
+	        window.clearInterval(refreshInterval);
+	        refreshIntervals.delete(refreshInterval);
+	        refreshInterval = null;
+	    }
+	}
+
+	mainContainer.addEventListener('DOMNodeRemoved', () => {
+	    stopRefresh();
+	});
+
 	initializeTournament();
+	startRefresh();
 
     return (mainContainer);
 }
@@ -1116,6 +1281,7 @@ export function PongTournamentPageHost(): HTMLElement {
 export function PongTournamentPageCurrentGame(): HTMLElement {
 
 	let currentTournament: Tournament | undefined;
+	let refreshInterval: number | null = null;
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
@@ -1129,28 +1295,32 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
         try {
             currentTournament = await getCurrentTournament();
             console.log("CURRENT TOURNAMENT GAME: ", currentTournament);
-            
-            renderTournament();
+            if (typeof currentTournament !== undefined)
+            	await renderTournament();
         } catch (error) {
             console.error("Erreur lors du chargement du tournoi:", error);
             loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
         }
     }
 
-	function renderTournament(){
+	async function renderTournament(){
         loadingContainer.remove();
 
     	const Title = document.createElement("h1");
     	Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
     	Title.textContent = currentTournament?.name + " " + t.tournament;
-    	mainContainer.appendChild(Title);
 
-		const size = currentTournament?.size ?? nb_players.value;
-		const players = (currentTournament?.players && Array.isArray(currentTournament.players) && currentTournament.players.length ? currentTournament.players.map(p => p.uuid) : Array.from({ length: size }, (_, i) => `${t.player} ${i + 1}`));
+		if (currentTournament)
+		{
+		    const bracketContainer = document.createElement("div");
+		    bracketContainer.id = "bracket-container";
+		    bracketContainer.classList.add("mt-15", "pl-5");
+		    mainContainer.appendChild(bracketContainer);
 		
-    	const bracket = createTournamentBracket(players);
-    	bracket.classList.add("mt-15", "pl-5");
-    	mainContainer.appendChild(bracket);
+		    await updateBracketDisplay(currentTournament, bracketContainer);
+		
+		    refreshInterval = setupBracketAutoRefresh(currentTournament.uuid, bracketContainer);
+		}
 
 		const BackToMenuOverlay = document.createElement("div");
 		BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
@@ -1183,7 +1353,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
 		ConfirmBtn.textContent = t.back;
 		ConfirmBtn.onclick = () => {
-			//! QUIT TOURNAMENT
+			stopRefresh();
 			mainContainer.classList.add("fade-out");
 			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
 		};
@@ -1210,7 +1380,29 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 		};
 		document.addEventListener("keydown", onEsc);
 	}
+
+	function startRefresh() {
+	    stopRefresh();
+	    refreshInterval = setupManagedInterval(async () => {
+	        await refreshTournamentData(currentTournament?.uuid);
+	        await initializeTournament();
+	    }, 5000);
+	}
+
+	function stopRefresh() {
+	    if (refreshInterval) {
+	        window.clearInterval(refreshInterval);
+	        refreshIntervals.delete(refreshInterval);
+	        refreshInterval = null;
+	    }
+	}
+
+	mainContainer.addEventListener('DOMNodeRemoved', () => {
+	    stopRefresh();
+	});
+
 	initializeTournament();
+	startRefresh();
 
     return (mainContainer);
 }

@@ -2,6 +2,8 @@ import { navigateTo } from "../routes";
 import { t } from "../pages/settings";
 import { getUser } from "../linkUser";
 import { getUidInventory } from "../components/utils";
+import { getDataUuidTournament, parsePlayer } from "../pages/tournament";
+import { getDataGame } from "../pages/pongOnline";
 
 export type UserNotification = {
 	sender_uuid: string;
@@ -95,9 +97,34 @@ async function fetchNotifications(): Promise<UserNotification[]> {
     }
 }
 
-export async function responseInvitation(game_uuid: string, response: number)
+async function checkInvitation(mode: string, uuid: string): Promise<boolean> {
+    const token = localStorage.getItem("jwt");
+    if (!token) return false;
+    if (mode === "tournament")
+    {
+        const data = await getDataUuidTournament(uuid);
+        console.log("👋DATA Tournamnent: ", data);
+        if (data && data.size > parsePlayer(data).length)
+            return true;
+        return false;
+    }
+    else if (mode === "online")
+    {
+        const data = await getDataGame(uuid);
+        console.log("👋DATA game: ", data);
+        if (data && !data.player_2 && !data.player2_uuid)
+            return true;
+        return false;
+    }
+    return false;
+}
+
+export async function responseInvitation(mode: string, game_uuid: string, response: number)
 {
-	console.log("REPONSE INVITATION: ", game_uuid, " |", response);
+
+    console.log("REPONSE INVITATION: ", mode, " |", game_uuid, " |", response);
+    if (response === 1 && !(await checkInvitation(mode, game_uuid)))
+        return;
 	try {
         const token = localStorage.getItem('jwt');
 		if (!token) return new Error("jwt");
@@ -118,10 +145,13 @@ export async function responseInvitation(game_uuid: string, response: number)
         if (response === 1)
         {
             const data = await resp.json();
-            if (data.mode === "tournament")
-		    	navigateTo(`/Tournament/join?uid=${game_uuid}`);
-		    else
-		    	navigateTo(`/pong/online/menu?uid=${game_uuid}`);
+            if (data.success === true)
+            {
+                if (mode === "tournament")
+		        	navigateTo(`/Tournament/join?uid=${game_uuid}`);
+		        else if (mode === "online")
+		        	navigateTo(`/pong/online/menu?uid=${game_uuid}`);
+            }
         }
     } catch (error) {
         console.error('Erreur:', error);
@@ -149,8 +179,8 @@ export async function loadAndDisplayNotifications() {
                     id: notif.sender_uuid,
                     avatar: user.avatar,
                     message: `${notif.mode}`,
-                    onAccept: () => responseInvitation(notif.uuid, 1),
-                    onRefuse: () => responseInvitation(notif.uuid, -1)
+                    onAccept: () => responseInvitation(notif.mode, notif.uuid, 1),
+                    onRefuse: () => responseInvitation(notif.mode, notif.uuid, -1)
                 });
             }
         });

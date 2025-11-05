@@ -3,8 +3,6 @@ import { CreateWrappedButton, getUidInventory, Invitation } from "../components/
 import { getUser } from "../linkUser";
 import { t } from "./settings";
 import type { Friend } from "./friends";
-import { getUserInventory } from './inventory';
-import { onUserChange } from "../linkUser";
 import { getUuid } from './tournament';
 
 export const gameHistory: string[] = [];
@@ -26,7 +24,7 @@ export const user2: User = {
 	score: 0,
 };
 
-type Game = {
+export type Game = {
 	uuid: string,
 	player1: string,
 	player1_uuid: string,
@@ -46,9 +44,9 @@ interface Inventory {
 	bg: string;
 }
 
-async function getDataGame(uuidGame: string){
-	const token = localStorage.getItem("jwt") || "";
+export async function getDataGame(uuidGame: string){
 	try {
+		const token = localStorage.getItem("jwt") || "";
 		const resp = await fetch(`/game/game/${encodeURIComponent(uuidGame)}`, {
 			method: 'GET',
 			headers: {
@@ -59,7 +57,7 @@ async function getDataGame(uuidGame: string){
 		console.log("RESP GET DATA", resp);
 		if (resp.ok)
 		{
-			const data = resp.json();
+			const data = await resp.json();
 			console.log("GET DATA GAME: ", data);
 			return data;
 		}
@@ -73,11 +71,9 @@ export function PongOnlineMenuPage(): HTMLElement {
 	type PlayerType = 'host' | 'invit';
 
 	
-	let user1Inventory: Inventory = {id: "err", username: "player1", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
-	let user2Inventory: Inventory = {id: "err", username: "player2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
+	let user1Inventory: Inventory = {id: "", username: "player1", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
+	let user2Inventory: Inventory = {id: "", username: "player2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
 
-	let playerType: PlayerType;
-	
 	const uuidGame = getUuid();
 	console.log("UUID :", uuidGame);
 
@@ -97,24 +93,24 @@ export function PongOnlineMenuPage(): HTMLElement {
 		console.log("GAME DATA: ", gameData);
 		if (gameData && gameData.player1_uuid !== getUser()?.uuid)
 		{
-			playerType = "invit"
 			user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
 			user2Inventory = (await getUidInventory(getUser()?.uuid || "err")) as Inventory;
 		}
 		else
 		{
-			playerType = "host"
 			user1Inventory = (await getUidInventory((getUser()?.uuid || "err"))) as Inventory;
 			if (gameData.player2_uuid)
 				user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
 		}
 		console.log("USERINVENTORY1: ", user1Inventory);
 		console.log("USERINVENTORY2: ", user2Inventory);
+		console.log("------HERE------: ", user2Inventory.id);
+		if (user2Inventory.id)
+			stopRefresh();
 		render();
 	}
 
 	async function render() {
-
 		const rightContainer = document.createElement("div");{
 		rightContainer.className = "z-[200] p-2 fixed top-25 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
 		rightContainer.classList.add("hidden");
@@ -214,10 +210,10 @@ export function PongOnlineMenuPage(): HTMLElement {
 				btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 				btn.textContent = t.invite;
 				btn.addEventListener("click", async () => {
-					username2.textContent = e.username;
-					bar2.src = e.bar || "";
-					user2.name = e.username;
-					user2.uuid = e.id;
+					// username2.textContent = e.username;
+					// bar2.src = e.bar || "";
+					// user2.name = e.username;
+					// user2.uuid = e.id;
 				
 					console.log("BODY INVITATION: ", uuidGame, " |", e.id);
 				
@@ -269,6 +265,11 @@ export function PongOnlineMenuPage(): HTMLElement {
 		const container1 = document.createElement("div");
 		container1.className = "mt-30 xl:mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
 		mainContainer.appendChild(container1);
+
+		const title = document.createElement("p");
+		title.className = "fixed top-2 text-center";
+		title.textContent = t.host;
+		container1.appendChild(title);
 
 		const username = document.createElement("p");
 		username.className = "w-9/10 glass-blur text-xl py-1";
@@ -361,7 +362,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 	let refreshInterval: number | null = null;
 
 	function startRefresh() {
-	    refreshInterval = window.setInterval(Initializing, 30000); // 30 secondes
+	    refreshInterval = window.setInterval(Initializing, 5000); // 5 secondes
 	}
 
 	function stopRefresh() {
@@ -370,8 +371,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 	        refreshInterval = null;
 	    }
 	}
-
-	// startRefresh();
+	startRefresh();
 	
 	return (mainContainer);
 }	
