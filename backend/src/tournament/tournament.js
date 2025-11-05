@@ -43,7 +43,8 @@ const tournament = `
         game JSON NOT NULL,
         winner TEXT,
         visibility INTEGER,
-        password TEXT
+        password TEXT,
+        launch INTEGER
     );
 `
 
@@ -82,7 +83,7 @@ app.get('/tournament', async (request, reply) => {
 
 app.get('/tournament/:uuid', async (request, reply) => {
     const { uuid } = request.params;
-    const { player_uuid } = request.body;
+    // const { player_uuid } = request.body;
 
     try {
         const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
@@ -95,21 +96,20 @@ app.get('/tournament/:uuid', async (request, reply) => {
         request.log.info({
             event: 'get-tournament_attempt'
         }, ' Get Tournament sucess');
-        const resp = await fetch(`http://user:4000/user/invit/${player_uuid}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-internal-key': process.env.JWT_SECRET
-            },
-            //clarifier nom du body
-            body: JSON.stringify({ uuid: uuid, mode: 'tournament' })
-        });
+        // const resp = await fetch(`http://user:4000/user/invit/${player_uuid}`, {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         'x-internal-key': process.env.JWT_SECRET
+        //     },
+        //     body: JSON.stringify({ uuid: uuid, mode: 'tournament' })
+        // });
 
-        if (!resp.ok)
-            throw new Error(`HTTP error! status: ${resp.status}`
-        )
+        // if (!resp.ok)
+        //     throw new Error(`HTTP error! status: ${resp.status}`
+        // )
 
-        reply.send({ success: true });
+        reply.send(tournament);
     } catch(err) {
         request.log.error({
             error: {
@@ -164,7 +164,7 @@ app.post('/tournament', async (request, reply) => {
         const playersJSON = JSON.stringify(players);
         const matchJSON = JSON.stringify(matches);
 
-        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner, visibility, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, length, playersJSON, matchJSON, null, visibility, password);
+        db.prepare('INSERT INTO tournament (uuid, host, name, size, players, game, winner, visibility, password, launch) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, host_uuid, name, length, playersJSON, matchJSON, null, visibility, password, 0);
         request.log.info({
             event: 'new-tournament_attempt'
         }, 'New Tournament Created Success');
@@ -303,10 +303,45 @@ app.patch('/tournament/:uuid', async (request, reply) => {
     }
 });
 
+app.patch('/tournament/launch/:uuid', async (request, reply) => {
+    let uuidPlayer;
+    try {
+        uuidPlayer = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'tournament-join_attempt'
+        }, 'Tournament Join Unauthorized: invalid jwt token');
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
 
-//! DELETE FUNCTION, TO REMOVE ALL THE PLAYERS AND THE TOURNAMENT WHEN THE HOST LEAVE THE TOURNAMENT
+    const { uuid } = request.params;
 
-//! DELETE FUNCTION, TO REMOVE PLAYER FROM THE TOURNAMENT PLAYERS DB. WHEN A PLAYER LEAVE THE TOURNAMENT
+     try {
+        const tournament = db.prepare('SELECT * FROM tournament WHERE uuid = ?').get(uuid);
+        if (!tournament) {
+            request.log.warn({
+                event: 'tournament-winner_attempt'
+            }, 'Tournament Winner Failed: Tournament not found');
+            return reply.code(404).send({ error: 'Tournament not found' });
+        }
+
+        db.prepare('UPDATE tournament SET launch = ? WHERE uuid = ?').run(1, uuid);
+
+        request.log.info({
+            event: 'tournament-launch_attempt'
+        }, 'Tournament Launch Success: Tournament launched');
+        reply.send({success: true});
+    } catch(err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'tournament-launch_attempt'
+        }, 'Tournament launch Failed');
+        reply.code(500).send({ error: 'Internal Server Error' });   
+    }
+});
 
 async function createGame (player1_uuid = null, player2_uuid = null, tournament = null, token ){
     const infoplay = {

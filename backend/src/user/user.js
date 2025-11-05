@@ -1013,7 +1013,6 @@ app.patch('/invit/:uuid', async(request, reply) => {
         
         return reply.send({ 
             success: true, 
-            mode: mode?.mode 
         });
         
     } catch (err) {
