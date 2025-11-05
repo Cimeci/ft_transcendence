@@ -210,10 +210,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 				btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 				btn.textContent = t.invite;
 				btn.addEventListener("click", async () => {
-					// username2.textContent = e.username;
-					// bar2.src = e.bar || "";
-					// user2.name = e.username;
-					// user2.uuid = e.id;
 				
 					console.log("BODY INVITATION: ", uuidGame, " |", e.id);
 				
