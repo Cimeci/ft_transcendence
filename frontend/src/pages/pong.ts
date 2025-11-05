@@ -1,5 +1,6 @@
 import { t } from "./settings";
 import { navigateTo } from '../routes';
+import { getUser } from "../linkUser";
 
 export function PongMenuPage(): HTMLElement {
 	const mainContainer = document.createElement("div");
@@ -65,7 +66,35 @@ export function PongMenuPage(): HTMLElement {
 
 	const Btn = document.createElement("button");
 	Btn.className = "w-[10rem] md:w-[15rem] hover:scale-110 duration-300 transition all cursor-pointer glass-blur p-3";
-	Btn.onclick = () => { mainContainer.classList.add("fade-out"); setTimeout(() => { navigateTo("/pong/online/menu"); }, 500); }
+	Btn.onclick = () => {
+		const token = localStorage.getItem("jwt") || "";
+		(async () => {
+			try {
+				const resp = await fetch('/game/game', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`,
+					},
+					body: JSON.stringify({
+						player1: getUser()?.username,
+						player2: null,
+						player2_uuid: null,
+						mode: "online"
+					}),
+				});
+				if (resp.ok)
+				{
+					const data = await resp.json();
+					mainContainer.classList.add("fade-out");
+					setTimeout(() => { navigateTo(`/pong/online/menu?uid=${encodeURIComponent(data.uuid)}`);}, 500);
+				}
+			} catch (e) {
+				console.error("Erreur lors de la création du jeu :", e);
+				return;
+			}
+		})();
+	}
 	
 	const Img = document.createElement("img");
 	Img.className = "w-full h-full";
@@ -77,4 +106,3 @@ export function PongMenuPage(): HTMLElement {
 
 	return (mainContainer);
 }
-

@@ -2,7 +2,7 @@ import { translations } from '../i18n';
 import { getCurrentLang, t } from '../pages/settings';
 import { navigateTo } from '../routes';
 import { getUser, onUserChange } from '../linkUser';
-import { notifications, removeNotification } from './notifications_overlay';
+import { notifications, removeNotification, loadAndDisplayNotifications } from './notifications_overlay';
 
 
 
@@ -107,59 +107,99 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 
 	function renderNotifs() {
 	  listNotif.innerHTML = "";
-	  notifications.forEach(n => {
-		const li = document.createElement("li");
-		li.className = "w-full flex items-center gap-3 p-2 rounded-lg bg-white/5";
-
-		const avatarWrap = document.createElement('div');
-		avatarWrap.className = 'w-10 h-10 rounded-full bg-black flex items-center justify-center flex-none';
-		
-		const avatar = document.createElement('img');
-		avatar.src = n.avatar || '/avatar/default_avatar.png';
-		avatar.alt = '';
-		avatar.className = 'w-full h-full object-contain rounded-full';
-		avatarWrap.appendChild(avatar);
-		li.appendChild(avatarWrap);
-
-		const textWrap = document.createElement('div');
-		textWrap.className = 'min-w-0 flex-1';
-
-		const title = document.createElement('p');
-		title.className = 'font-semibold truncate';
-		title.textContent = n.username;
-
-		const sub = document.createElement('p');
-		sub.className = 'text-sm text-white/80 truncate';
-		sub.textContent = n.message ?? 'invites you to play';
 	
-		textWrap.appendChild(title); textWrap.appendChild(sub);
-		li.appendChild(textWrap);
-
-		const actions = document.createElement('div');
-		actions.className = 'flex items-center gap-2';
-
-		const accept = document.createElement('button');
-		accept.className = 'px-2 py-1 rounded-md bg-green-600 hover:bg-green-700 text-sm';
-		accept.textContent = 'Accept';
-		accept.onclick = () => { n.onAccept?.(); removeNotification(n.key); };
-
-		const refuse = document.createElement('button');
-		refuse.className = 'px-2 py-1 rounded-md bg-red-600 hover:bg-red-700 text-sm';
-		refuse.textContent = 'Refuse';
-		refuse.onclick = () => { n.onRefuse?.(); removeNotification(n.key); };
-
-		actions.appendChild(accept); actions.appendChild(refuse);
-		li.appendChild(actions);
-
-		listNotif.appendChild(li);
+	  // Afficher un indicateur de chargement
+	  if (notifications.length === 0) {
+	    const emptyMsg = document.createElement("li");
+	    emptyMsg.className = "w-full text-center p-4 text-white/60";
+	    emptyMsg.textContent = "No notifications";
+	    listNotif.appendChild(emptyMsg);
+	  }
+	  
+	  notifications.forEach(n => {
+	    const li = document.createElement("li");
+	    li.className = "w-full flex items-center gap-3 p-2 rounded-lg bg-white/5";
+	
+	    const avatarWrap = document.createElement('div');
+	    avatarWrap.className = 'w-10 h-10 rounded-full bg-black flex items-center justify-center flex-none';
+	
+	    const avatar = document.createElement('img');
+	    avatar.src = n.avatar || '/avatar/default_avatar.png';
+	    avatar.alt = '';
+	    avatar.className = 'w-full h-full object-contain rounded-full';
+	    avatarWrap.appendChild(avatar);
+	    li.appendChild(avatarWrap);
+	
+	    const textWrap = document.createElement('div');
+	    textWrap.className = 'min-w-0 flex-1';
+	
+	    const title = document.createElement('p');
+	    title.className = 'font-semibold truncate';
+	    title.textContent = n.username;
+	
+	    const sub = document.createElement('p');
+	    sub.className = 'text-sm text-white/80 truncate';
+	    sub.textContent = n.message ?? 'invites you to play';
+	
+	    textWrap.appendChild(title); textWrap.appendChild(sub);
+	    li.appendChild(textWrap);
+	
+	    const actions = document.createElement('div');
+	    actions.className = 'flex items-center gap-2';
+	
+	    const accept = document.createElement('button');
+	    accept.className = 'px-2 py-1 rounded-md bg-green-600 hover:bg-green-700 text-sm';
+	    accept.textContent = 'Accept';
+	    accept.onclick = () => { 
+	      n.onAccept?.(); 
+	      removeNotification(n.key); 
+	      // Recharger les notifications après action
+	      setTimeout(() => loadAndDisplayNotifications(), 500);
+	    };
+	
+	    const refuse = document.createElement('button');
+	    refuse.className = 'px-2 py-1 rounded-md bg-red-600 hover:bg-red-700 text-sm';
+	    refuse.textContent = 'Refuse';
+	    refuse.onclick = () => { 
+	      n.onRefuse?.(); 
+	      removeNotification(n.key); 
+	      // Recharger les notifications après action
+	      setTimeout(() => loadAndDisplayNotifications(), 500);
+	    };
+	
+	    actions.appendChild(accept); actions.appendChild(refuse);
+	    li.appendChild(actions);
+	
+	    listNotif.appendChild(li);
 	  });
 	}
 
 	notifBtn.addEventListener('click', (e) => {
-	  	e.stopPropagation();
-	  	overlayNotif.classList.toggle('hidden');
-		navLinks.classList.add('hidden');
-	  	renderNotifs();
+	  e.stopPropagation();
+	
+	  // Afficher un indicateur de chargement
+	  listNotif.innerHTML = `
+	    <li class="w-full text-center p-4 text-white/60">
+	      <div class="flex justify-center items-center gap-2">
+	        <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+	        <span>Loading notifications...</span>
+	      </div>
+	    </li>
+	  `;
+	  overlayNotif.classList.remove('hidden');
+	  navLinks.classList.add('hidden');
+	
+	  // Recharger et afficher les notifications
+	  loadAndDisplayNotifications().then(() => {
+	    renderNotifs();
+	  }).catch(error => {
+	    console.error('Error loading notifications:', error);
+	    listNotif.innerHTML = `
+	      <li class="w-full text-center p-4 text-red-400">
+	        Error loading notifications
+	      </li>
+	    `;
+	  });
 	});
 
 	// document.addEventListener('click', (e) => {

@@ -1,10 +1,11 @@
 import { navigateTo } from '../routes';
-import { CreateWrappedButton } from "../components/utils";
+import { CreateWrappedButton, getUidInventory, Invitation } from "../components/utils";
 import { getUser } from "../linkUser";
 import { t } from "./settings";
 import type { Friend } from "./friends";
 import { getUserInventory } from './inventory';
 import { onUserChange } from "../linkUser";
+import { getUuid } from './tournament';
 
 export const gameHistory: string[] = [];
 
@@ -25,295 +26,355 @@ export const user2: User = {
 	score: 0,
 };
 
-let name2: string
-let gameuuid: string;
+type Game = {
+	uuid: string,
+	player1: string,
+	player1_uuid: string,
+	player2: string,
+	player2_uuid: string,
+	mode: string,
+	tournament?: string,
+	winner?: string
+}
 
-// interface GAME {
-// 	uuid: string,
-// 	host_player: string,
-// 	invited_player:string,
-// }
+interface Inventory {
+	id: string;
+	username: string;
+	avatar: string;
+	ball: string;
+	bar: string;
+	bg: string;
+}
+
+async function getDataGame(uuidGame: string){
+	const token = localStorage.getItem("jwt") || "";
+	try {
+		const resp = await fetch(`/game/game/${encodeURIComponent(uuidGame)}`, {
+			method: 'GET',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`,
+			},
+		});
+		console.log("RESP GET DATA", resp);
+		if (resp.ok)
+		{
+			const data = resp.json();
+			console.log("GET DATA GAME: ", data);
+			return data;
+		}
+	} catch (e) {
+		console.error("Erreur lors de la recuperation de data game :", e);
+	}
+	return {};
+}
 
 export function PongOnlineMenuPage(): HTMLElement {
-	//! CREATE GAME
-	// const game: GAME = {
-		
-	// }
+	type PlayerType = 'host' | 'invit';
+
+	
+	let user1Inventory: Inventory = {id: "err", username: "player1", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
+	let user2Inventory: Inventory = {id: "err", username: "player2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
+
+	let playerType: PlayerType;
+	
+	const uuidGame = getUuid();
+	console.log("UUID :", uuidGame);
 
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "p-10 pt-25 min-h-screen w-full flex flex-col xl:flex-row items-center justify-center gap-10 bg-linear-to-bl from-black via-green-900 to-black"
 
-	const rightContainer = document.createElement("div");{
-	rightContainer.className = "z-[200] p-2 fixed top-25 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
-	rightContainer.classList.add("hidden");
-	mainContainer.appendChild(rightContainer);
+	const loadingContainer = document.createElement("div");
+    loadingContainer.className = "flex items-center justify-center";
+    loadingContainer.innerHTML = `<p>${t.login} ${t.online}...</p>`;
+    mainContainer.appendChild(loadingContainer);
 
-	const btnRightBar = document.createElement("button");
-	btnRightBar.className = "top-25 right-5 w-10 h-10 fixed z-[2000] cursor-pointer duration-200 transition-all hover:-translate-x-2";
-	btnRightBar.onclick = () => {
-		if (rightContainer.classList.contains("hidden")) {
-			btnRightBar.classList.remove("right-5", "hover:-translate-x-2");
-			btnRightBar.classList.add("right-[calc(15%+1.25rem)]", "hover:translate-x-2");
-			rightContainer.classList.remove("hidden");
-		} else {
-			btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
-			btnRightBar.classList.add("right-5", "hover:-translate-x-2");
-			btnRightBar.classList.remove("right-3/10", "hover:translate-x-2");
-			rightContainer.classList.add("hidden");
-		}
-	}
-	mainContainer.appendChild(btnRightBar);
+	async function Initializing() {
+		loadingContainer.remove();
+		mainContainer.innerHTML = ""
+		const gameData = await getDataGame(uuidGame);
 
-	const iconRightBar = document.createElement("img");
-	iconRightBar.className = "w-full h-full"
-	iconRightBar.src = "/icons/contact.svg"
-	btnRightBar.appendChild(iconRightBar);
-
-	const lstFriends = document.createElement("ul");
-	lstFriends.className = "glass-blur w-9/10 h-9/10 overflow-y-auto divide-y";
-	rightContainer.appendChild(lstFriends);
-
-
-	let friendData: Friend[] = [];
-
-	const token = localStorage.getItem("jwt") || "";
-	(async () => {
-	  	try {
-	  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
-	  	  	if (!resp.ok) throw new Error(String(resp.status));
-
-	  	  	const data = await resp.json();
-	  	  	const me = getUser()?.uuid;
-			const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
-
-			console.log("Data", data);
-			console.log("Rows", rows);
-			const list = await Promise.all(rows.map(async (r) => {
-	  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
-	  	  	  	try {
-	  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
-	  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
-	  	  	  	  	});
-	  	  	  	  	if (r2.ok) {
-	  	  	  	  	  	const { user } = await r2.json();
-						console.log("USER", user);
-	  	  	  	  	  	return {
-	  	  	  	  	  	  	id: other,
-	  	  	  	  	  	  	username: user.username || other,
-	  	  	  	  	  	  	invitation: t.friends,
-	  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png",
-							ball: user.ball_use[0].id || "/ball/default_ball.png",
-							bar: user.paddle_use[0].id || "/playbar/default_bar.png",
-	  	  	  	  	  	};
-	  	  	  	  	}
-	  	  	  	} catch {}
-	  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png",
-					ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png" };
-	  	  	}));
-	  	  	friendData = list;
-	  	} catch (e) {
-	  	  	console.error("load friendship failed", e);
-	  	  	friendData = [];
-	  	}
-
-		console.log("FRIEND_DATA", friendData);
-
-		friendData.forEach(e => {
-			console.log("EACH USER: ", e);
-			const li: HTMLLIElement = document.createElement("li");
-			li.className = "flex justify-between items-center p-2 w-full min-h-12"
-		
-			const profil = document.createElement("div");{
-			profil.className = "flex gap-2 justify-center items-center";
-			li.appendChild(profil);
-			
-			const icon = document.createElement("img");
-			icon.src = e.avatar;
-			icon.className = "w-8 h-8 rounded-full object-cover";
-			profil.appendChild(icon);
-			
-			const name = document.createElement("p");
-			name.className = "text-base";
-			name.textContent = e.username;
-			profil.appendChild(name);
-			}
-		
-			const btn = document.createElement("button");
-			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
-			btn.textContent = t.invite;
-			btn.addEventListener("click", () => {
-				username2.textContent = e.username;
-				bar2.src = e.bar || "";
-				user2.name = e.username;
-				user2.uuid = e.id;
-				name2 = e.username;
-				// window.showInvite({
-				// 	username: e.username || "default",
-				// 	id: e.id.split("-")[0] || t.err_id,
-				// 	avatar: e.avatar || "/avatar/default_avatar.png",
-				// 	message: `${t.Invitation_against} ${getUser()?.username || 'default'}`,
-				// });
-			//btn.addEventListener("click", async () => {
-				//! INVITE FRIEND TO ONLINE GAME
-				// console.log("BODY INVITATION: ", e?.uuid, " |", e.id);
-			
-				// if (!e?.uuid) {
-				// 	console.error("No tournament UUID");
-				// 	btn.textContent = t.error;
-				// 	return;
-				// }
-			
-				// btn.textContent = "...";
-				// btn.disabled = true;
-			
-				// try {
-				// 	const check = await Invitation(e.uuid, e.id, "tournament");
-				
-				// 	if (check === true) {
-				// 		btn.textContent = t.requests_send;
-				// 		btn.disabled = true;
-				// 		btn.style.backgroundColor = "#00ff08ff";
-				// 	} else {
-				// 		btn.textContent = t.error;
-				// 		btn.disabled = false;
-				// 		// Réinitialiser après 2 secondes
-				// 		setTimeout(() => {
-				// 			btn.textContent = t.invite;
-				// 			btn.disabled = false;
-				// 		}, 2000);
-				// 	}
-				// } catch (error) {
-				// 	console.error("Invitation error:", error);
-				// 	btn.textContent = t.error;
-				// 	btn.disabled = false;
-				// 	// Réinitialiser après 2 secondes
-				// 	setTimeout(() => {
-				// 		btn.textContent = t.invite;
-				// 		btn.disabled = false;
-				// 	}, 2000);
-				// }
-			});
-			li.appendChild(btn);
-			lstFriends.appendChild(li);
-		});
-	})();
-	}
-
-	const TitlePong = document.createElement("h1");
-	TitlePong.className = "pt-25 text-6xl sm:text-8xl tracking-widest absolute top-0 text-green-400 neon-matrix w-full text-center";
-	TitlePong.textContent = t.online;
-	mainContainer.appendChild(TitlePong);
-
-	const container1 = document.createElement("div");
-	container1.className = "mt-30 xl:mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
-	mainContainer.appendChild(container1);
-
-	const username = document.createElement("p");
-	username.className = "w-9/10 glass-blur text-xl py-1";
-	username.textContent = getUser()?.username || "default";
-	container1.appendChild(username);
-
-	const inventory = document.createElement("div");
-	inventory.className = "w-9/10 flex justify-around";
-	container1.appendChild(inventory);
-
-	const barContainer = document.createElement("div");
-		barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
-		inventory.appendChild(barContainer);
-		
-		const bar = document.createElement("img");
-		bar.src = "/playbar/default_bar.png";
-		bar.className = "m-auto h-full rounded-xl";
-		barContainer.appendChild(bar);
-
-
-	const container2 = document.createElement("div");
-	container2.className = "mt-15 p-5 w-9/10 xl:w-2/3 h-[60vh] flex flex-col gap-4 glass-blur justify-around items-center text-center";
-	mainContainer.appendChild(container2);
-
-	const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
-	playBtn.onclick = () => {
-		if (user2.name) {
-			console.log("Navigating to /pong/online/game");
-			navigateTo("/pong/online/game");
+		console.log("GAME DATA: ", gameData);
+		if (gameData && gameData.player1_uuid !== getUser()?.uuid)
+		{
+			playerType = "invit"
+			user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
+			user2Inventory = (await getUidInventory(getUser()?.uuid || "err")) as Inventory;
 		}
 		else
 		{
-			username.classList.add("placeholder-red-700", "shake");
-			setTimeout(() => {username.classList.remove("placeholder-red-700", "shake")}, 700)
+			playerType = "host"
+			user1Inventory = (await getUidInventory((getUser()?.uuid || "err"))) as Inventory;
+			if (gameData.player2_uuid)
+				user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
 		}
+		console.log("USERINVENTORY1: ", user1Inventory);
+		console.log("USERINVENTORY2: ", user2Inventory);
+		render();
 	}
-	container2.appendChild(playBtn);
 
-	const GlobalValue = document.createElement("div");
-	GlobalValue.className = "w-full flex justify-around"
-	container2.appendChild(GlobalValue);
+	async function render() {
 
-	const bgContainer = document.createElement("div");
-		bgContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
-		GlobalValue.appendChild(bgContainer);
+		const rightContainer = document.createElement("div");{
+		rightContainer.className = "z-[200] p-2 fixed top-25 right-0 h-full min-w-3/20 glass-blur flex flex-col gap-3 justify-between items-center";
+		rightContainer.classList.add("hidden");
+		mainContainer.appendChild(rightContainer);
+
+		const btnRightBar = document.createElement("button");
+		btnRightBar.className = "top-25 right-5 w-10 h-10 fixed z-[2000] cursor-pointer duration-200 transition-all hover:-translate-x-2";
+		btnRightBar.onclick = () => {
+			if (rightContainer.classList.contains("hidden")) {
+				btnRightBar.classList.remove("right-5", "hover:-translate-x-2");
+				btnRightBar.classList.add("right-[calc(15%+1.25rem)]", "hover:translate-x-2");
+				rightContainer.classList.remove("hidden");
+			} else {
+				btnRightBar.classList.remove("right-[calc(15%+1.25rem)]");
+				btnRightBar.classList.add("right-5", "hover:-translate-x-2");
+				btnRightBar.classList.remove("right-3/10", "hover:translate-x-2");
+				rightContainer.classList.add("hidden");
+			}
+		}
+		mainContainer.appendChild(btnRightBar);
+
+		const iconRightBar = document.createElement("img");
+		iconRightBar.className = "w-full h-full"
+		iconRightBar.src = "/icons/contact.svg"
+		btnRightBar.appendChild(iconRightBar);
+
+		const lstFriends = document.createElement("ul");
+		lstFriends.className = "glass-blur w-9/10 h-9/10 overflow-y-auto divide-y";
+		rightContainer.appendChild(lstFriends);
+
+
+		let friendData: Friend[] = [];
+
+		const token = localStorage.getItem("jwt") || "";
+		(async () => {
+		  	try {
+		  	  	const resp = await fetch("/user/friendship", { headers: { Authorization: `Bearer ${token}` } });
+		  	  	if (!resp.ok) throw new Error(String(resp.status));
+
+		  	  	const data = await resp.json();
+		  	  	const me = getUser()?.uuid;
+				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
+
+				console.log("Data", data);
+				console.log("Rows", rows);
+				const list = await Promise.all(rows.map(async (r) => {
+		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
+		  	  	  	try {
+		  	  	  	  	const r2 = await fetch(`/user/${encodeURIComponent(other)}`, {
+		  	  	  	  	  	headers: { Authorization: `Bearer ${token}` }
+		  	  	  	  	});
+		  	  	  	  	if (r2.ok) {
+		  	  	  	  	  	const { user } = await r2.json();
+							console.log("USER", user);
+		  	  	  	  	  	return {
+		  	  	  	  	  	  	id: other,
+		  	  	  	  	  	  	username: user.username || other,
+		  	  	  	  	  	  	invitation: t.friends,
+		  	  	  	  	  	  	avatar: user.avatar_use[0].id || "/avatar/default_avatar.png",
+								ball: user.ball_use[0].id || "/ball/default_ball.png",
+								bar: user.paddle_use[0].id || "/playbar/default_bar.png",
+		  	  	  	  	  	};
+		  	  	  	  	}
+		  	  	  	} catch {}
+		  	  	  	return { id: other, username: other, invitation: t.friends, avatar: "/avatar/default_avatar.png",
+						ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png" };
+		  	  	}));
+		  	  	friendData = list;
+		  	} catch (e) {
+		  	  	console.error("load friendship failed", e);
+		  	  	friendData = [];
+		  	}
 		
-		const bgTxt = document.createElement("p");
-		bgTxt.textContent = t.gamebackground;
-		bgContainer.appendChild(bgTxt);
-
-		const bg = document.createElement("img");
-		bg.src = "/bg/default_bg.gif";
-		bg.className = "m-auto w-full rounded-xl";
-		bgContainer.appendChild(bg);
-
-	const ballContainer = document.createElement("div");
-		ballContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
-		GlobalValue.appendChild(ballContainer);
+			console.log("FRIEND_DATA", friendData);
 		
-		const ballTxt = document.createElement("p");
-		ballTxt.textContent = t.ball;
-		ballContainer.appendChild(ballTxt);
+			friendData.forEach(e => {
+				console.log("EACH USER: ", e);
+				const li: HTMLLIElement = document.createElement("li");
+				li.className = "flex justify-between items-center p-2 w-full min-h-12"
+			
+				const profil = document.createElement("div");{
+				profil.className = "flex gap-2 justify-center items-center";
+				li.appendChild(profil);
+				
+				const icon = document.createElement("img");
+				icon.src = e.avatar;
+				icon.className = "w-8 h-8 rounded-full object-cover";
+				profil.appendChild(icon);
+				
+				const name = document.createElement("p");
+				name.className = "text-base";
+				name.textContent = e.username;
+				profil.appendChild(name);
+				}
+			
+				const btn = document.createElement("button");
+				btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
+				btn.textContent = t.invite;
+				btn.addEventListener("click", async () => {
+					username2.textContent = e.username;
+					bar2.src = e.bar || "";
+					user2.name = e.username;
+					user2.uuid = e.id;
+				
+					console.log("BODY INVITATION: ", uuidGame, " |", e.id);
+				
+					if (!uuidGame) {
+						console.error("No Game online UUID");
+						btn.textContent = t.error;
+						return;
+					}
+				
+					btn.textContent = "...";
+					btn.disabled = true;
+				
+					try {
+						const check = await Invitation(uuidGame, e.id, "online");
+					
+						if (check === true) {
+							btn.textContent = t.requests_send;
+							btn.disabled = true;
+							btn.style.backgroundColor = "#00ff08ff";
+						} else {
+							btn.textContent = t.error;
+							btn.disabled = false;
+							setTimeout(() => {
+								btn.textContent = t.invite;
+								btn.disabled = false;
+							}, 2000);
+						}
+					} catch (error) {
+						console.error("Invitation error:", error);
+						btn.textContent = t.error;
+						btn.disabled = false;
+						setTimeout(() => {
+							btn.textContent = t.invite;
+							btn.disabled = false;
+						}, 2000);
+					}
+				});
+				li.appendChild(btn);
+				lstFriends.appendChild(li);
+			});
+		})();
+		}
 
-		const ball = document.createElement("img");
-		ball.src = "/ball/default_ball.gif";
-		ball.className = "m-auto w-8/10 rounded-xl";
-		ballContainer.appendChild(ball);
+		const TitlePong = document.createElement("h1");
+		TitlePong.className = "pt-25 text-6xl sm:text-8xl tracking-widest absolute top-0 text-green-400 neon-matrix w-full text-center";
+		TitlePong.textContent = t.online;
+		mainContainer.appendChild(TitlePong);
 
+		const container1 = document.createElement("div");
+		container1.className = "mt-30 xl:mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
+		mainContainer.appendChild(container1);
+
+		const username = document.createElement("p");
+		username.className = "w-9/10 glass-blur text-xl py-1";
+		username.textContent = user1Inventory.username;
+		container1.appendChild(username);
+
+		const inventory = document.createElement("div");
+		inventory.className = "w-9/10 flex justify-around";
+		container1.appendChild(inventory);
+
+		const barContainer = document.createElement("div");
+			barContainer.className = "glass-blur h-[11rem] w-[11rem] p-1";
+			inventory.appendChild(barContainer);
+
+			const bar = document.createElement("img");
+			bar.src = user1Inventory.bar;
+			bar.className = "m-auto h-full rounded-xl";
+			barContainer.appendChild(bar);
+
+
+		const container2 = document.createElement("div");
+		container2.className = "mt-15 p-5 w-9/10 xl:w-2/3 h-[60vh] flex flex-col gap-4 glass-blur justify-around items-center text-center";
+		mainContainer.appendChild(container2);
+
+		const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
+		playBtn.onclick = () => {
+			console.log("Creating online game for players:", user1.name, "and", user2.name);
+			stopRefresh();
+			navigateTo(`/pong/online/game?uid=${encodeURIComponent(uuidGame)}`);
+		}
+		container2.appendChild(playBtn);
+
+		const GlobalValue = document.createElement("div");
+		GlobalValue.className = "w-full flex justify-around"
+		container2.appendChild(GlobalValue);
+
+		const bgContainer = document.createElement("div");
+			bgContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
+			GlobalValue.appendChild(bgContainer);
+
+			const bgTxt = document.createElement("p");
+			bgTxt.textContent = t.gamebackground;
+			bgContainer.appendChild(bgTxt);
+
+			const bg = document.createElement("img");
+			bg.src = user1Inventory.bg;
+			bg.className = "m-auto w-full rounded-xl";
+			bgContainer.appendChild(bg);
+
+		const ballContainer = document.createElement("div");
+			ballContainer.className = "glass-blur h-[16rem] w-[16rem] flex flex-col gap-2 p-1";
+			GlobalValue.appendChild(ballContainer);
+
+			const ballTxt = document.createElement("p");
+			ballTxt.textContent = t.ball;
+			ballContainer.appendChild(ballTxt);
+
+			const ball = document.createElement("img");
+			ball.src = user1Inventory.ball;
+			ball.className = "m-auto w-8/10 rounded-xl";
+			ballContainer.appendChild(ball);
+
+
+		const backBtn = CreateWrappedButton(mainContainer, t.back, "/pong/menu", 0);
+		container2.appendChild(backBtn);
+
+		const container3 = document.createElement("div");
+		container3.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
+		mainContainer.appendChild(container3);
+
+		const username2 = document.createElement("p");
+		username2.className = "w-9/10 glass-blur text-xl py-1";
+		username2.textContent = user2Inventory.username;
+		container3.appendChild(username2);
+
+		const inventory2 = document.createElement("div");
+		inventory2.className = "w-9/10 flex justify-around";
+		container3.appendChild(inventory2);
+
+		const barContainer2 = document.createElement("div");
+			barContainer2.className = "glass-blur h-[11rem] w-[11rem] p-1";
+			inventory2.appendChild(barContainer2);
+
+			const bar2 = document.createElement("img");
+			bar2.src = user2Inventory.bar;
+			bar2.className = "m-auto h-full rounded-xl";
+			barContainer2.appendChild(bar2);
+	}
+	Initializing();
+	let refreshInterval: number | null = null;
+
+	function startRefresh() {
+	    refreshInterval = window.setInterval(Initializing, 30000); // 30 secondes
+	}
+
+	function stopRefresh() {
+	    if (refreshInterval) {
+	        window.clearInterval(refreshInterval);
+	        refreshInterval = null;
+	    }
+	}
+
+	// startRefresh();
 	
-	const backBtn = CreateWrappedButton(mainContainer, t.back, "/pong/menu", 0);
-	container2.appendChild(backBtn);
-
-
-
-	const container3 = document.createElement("div");
-	container3.className = "mt-15 p-10 w-9/10 xl:w-1/3 h-[55vh] flex flex-col gap-10 glass-blur justify-around items-center text-center";
-	mainContainer.appendChild(container3);
-
-	const username2 = document.createElement("p");
-	username2.className = "w-9/10 glass-blur text-xl py-1";
-	username2.textContent = "USER NAME OPPONENT"; //! USER NAME OPPONENT
-	container3.appendChild(username2);
-
-	const inventory2 = document.createElement("div");
-	inventory2.className = "w-9/10 flex justify-around";
-	container3.appendChild(inventory2);
-
-	const barContainer2 = document.createElement("div");
-		barContainer2.className = "glass-blur h-[11rem] w-[11rem] p-1";
-		inventory2.appendChild(barContainer2);
-		
-		const bar2 = document.createElement("img");
-		bar2.src = "/playbar/default_bar.png";
-		bar2.className = "m-auto h-full rounded-xl";
-		barContainer2.appendChild(bar2);
-
-	async function setInventory() {
-		const userInventory = await getUserInventory();
-
-		ball.src = userInventory?.ball_use[0].id || "/ball/default_ball.png";
-		bar.src = userInventory?.paddle_use[0].id || "/playbar/default_bar.png";
-		bg.src = userInventory?.background_use[0].id || "/bg/default_bg.png";
-	}
-	setInventory();
-
 	return (mainContainer);
-}
+}	
 
 export function PongOnlineOverlayPage(): HTMLElement {
 	const overlay = document.createElement("div");
@@ -364,9 +425,10 @@ export function PongOnlineOverlayPage(): HTMLElement {
 	return overlay;
 }
 
-function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: String): HTMLElement {
-	console.log("Initializing OnlinePong with game UUID:", gameuuid);
-	let socket = new WebSocket(`wss://${window.location.host}/websocket/${gameuuid}`);
+
+function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game, user1Inventory: Inventory, user2Inventory: Inventory): HTMLElement {
+	console.log("Initializing OnlinePong with game UUID:", game.uuid);
+	let socket = new WebSocket(`wss://${window.location.host}/websocket/${game.uuid}`);
 	let myPosition: 'left' | 'right' | null = null;
 	
 	socket.onopen = () => {
@@ -449,13 +511,11 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 	const onKeyDown = (e: KeyboardEvent) => {
 		if (!myPosition) return;
 
-		// Joueur gauche : seulement W/S
 		if (myPosition === 'left' && (e.key === 'w' || e.key === 's')) {
 			pressedKeys.add(e.key);
 			recomputeFromPressed();
 			e.preventDefault();
 		} 
-		// Joueur droite : seulement flèches
 		else if (myPosition === 'right' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
 			pressedKeys.add(e.key);
 			recomputeFromPressed();
@@ -504,7 +564,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 	}
 
 	const resolveBallPath = () => {
-		const raw = '/bar/default_ball.png';
+		const raw = user1Inventory.ball;
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBallSrc = resolveBallPath();
@@ -516,7 +576,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 	ballImg.onload = () => { ballImgLoaded = true; };
 
 	const resolveBarPath = () => {
-		const raw = '/bar/default_bar.png';
+		const raw = user1Inventory.bar;
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBarSrc = resolveBarPath();
@@ -528,7 +588,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 	leftBarImg.onload = () => { leftBarImgLoaded = true; };
 
 	const resolveRightBarPath = () => {
-		const raw = '/bar/default_bar.png';
+		const raw = user2Inventory.bar;
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentRightBarSrc = resolveRightBarPath();
@@ -543,7 +603,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 	canvas.width = 1400;
 	canvas.height = 800;
 
-	const bgUrl = '/bg/default_bar.png';
+	const bgUrl = user1Inventory.bg;
 	canvas.className = "border-2 w-[70vw] h-[80vh]";
 	canvas.style.backgroundImage = `url('${bgUrl}')`;
 	canvas.style.backgroundSize = "cover";
@@ -575,13 +635,8 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 				myPosition = msg.position;
 				console.log(`Position assignée: ${myPosition}`);
 				
-				// Mettre à jour les noms des joueurs selon la position
-				if (myPosition === 'left') {
-					user1.name = getUser()?.username || "Joueur 1";
-					user2.name = "En attente...";
-				} else if (myPosition === 'right') {
-					user2.name = getUser()?.username || "Joueur 2";
-				}
+				user1.name = game.player1;
+				user2.name = game.player2;
 				
 				score1Elem.textContent = `${user1.name}: ${user1.score}`;
 				score2Elem.textContent = `${user2.name}: ${user2.score}`;
@@ -610,7 +665,6 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 					score2Elem.textContent = `${user2.name}: ${user2.score}`;
 				}
 
-				// Mettre à jour le nom de l'adversaire si on le connaît
 				if (msg.opponentUsername && myPosition) {
 					if (myPosition === 'left') {
 						user2.name = msg.opponentUsername;
@@ -640,11 +694,8 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 	};
 
 	socket.onclose = () => {
-		
-
 		if (state?.state !== 'game_over') {
 			cleanup();
-			// Rediriger vers le menu si la connexion est perdue
 			setTimeout(() => {
 				navigateTo("/pong/online/menu");
 			}, 1000);
@@ -678,7 +729,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 			ctx.font = "24px system-ui";
 			ctx.textAlign = "center";
 			
-			if (!myPosition) {
+			if (!myPosition) { //! i18n
 				ctx.fillText("En attente d'un adversaire...", canvas.width/2, canvas.height/2);
 				ctx.fillText("Position: " + (myPosition || "Non assignée"), canvas.width/2, canvas.height/2 + 40);
 			} else {
@@ -691,7 +742,6 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 		const leftY = state.paddles?.leftY ?? canvas.height/2 - paddleHeight/2;
 		const rightY = state.paddles?.rightY ?? canvas.height/2 - paddleHeight/2;
 
-		// Dessiner la paddle gauche
 		if (leftBarImgLoaded) {
 			ctx.drawImage(leftBarImg, 10, leftY, paddleWidth, paddleHeight);
 		} else {
@@ -699,7 +749,6 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 			ctx.fillRect(10, leftY, paddleWidth, paddleHeight);
 		}
 
-		// Dessiner la paddle droite
 		if (rightBarImgLoaded) {
 			ctx.drawImage(rightBarImg, canvas.width - 20, rightY, paddleWidth, paddleHeight);
 		} else {
@@ -707,7 +756,6 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 			ctx.fillRect(canvas.width - 20, rightY, paddleWidth, paddleHeight);
 		}
 
-		// Dessiner la balle
 		const bx = state.ball?.x ?? canvas.width/2;
 		const by = state.ball?.y ?? canvas.height/2;
 		const br = state.ball?.radius ?? 20;
@@ -721,16 +769,15 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 			ctx.fill();
 		}
 
-		// Afficher les contrôles selon la position
 		ctx.fillStyle = "white";
 		ctx.font = "16px system-ui";
 		ctx.textAlign = "left";
 		
-		if (myPosition === 'left') {
-			ctx.fillText("Contrôles: W (haut) / S (bas)", 20, 30);
-		} else if (myPosition === 'right') {
-			ctx.fillText("Contrôles: ↑ (haut) / ↓ (bas)", canvas.width - 200, 30);
-		}
+		// if (myPosition === 'left') {
+		// 	ctx.fillText("Contrôles: W (haut) / S (bas)", 20, 30);
+		// } else if (myPosition === 'right') {
+		// 	ctx.fillText("Contrôles: ↑ (haut) / ↓ (bas)", canvas.width - 250, 30);
+		// }
 	}
 
 	function loop() {
@@ -743,86 +790,90 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 }
 
 export function PongOnlineGamePage(): HTMLElement {
+	let gameData : Game = {
+		uuid: "",
+		player1: user1.name,
+		player1_uuid: "",
+		player2: user2.name,
+		player2_uuid: "",
+		mode: "online",
+	}
+	
+	let user1Inventory: Inventory = {id: "err", username: "player1", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
+	let user2Inventory: Inventory = {id: "err", username: "player2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
 	
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "gap-2 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800"
-
+	
 	mainContainer.innerHTML = "";
-
-	const TitlePong = document.createElement("h1");
-	TitlePong.className = "absolute top-0 text-8xl tracking-widest text-green-400 neon-matrix w-full text-center";
-	TitlePong.textContent = "P O N G";
-	mainContainer.appendChild(TitlePong);
-
-	const ScorePong = document.createElement("div");
-	ScorePong.className = "w-[69vw] h-[100px] flex justify-between";
-
-	const Profile1 = document.createElement("div");
-	Profile1.className = "flex items-end gap-3"
-
-	const Avatar1 = document.createElement("img");
-	Avatar1.src = "/avatar/default_avatar.png";
-	Avatar1.className = "border-1 size-15 rounded-lg";
-	Profile1.appendChild(Avatar1);
-
-	console.log("player:", user1.name, "vs", user2.name);
 	
-	const Score1 = document.createElement("h1");
-	Score1.className = "text-3xl tracking-widest text-green-400 neon-matrix";
-	Score1.textContent = user1.name + ": " + user1.score
-	Profile1.appendChild(Score1);
+	const loadingContainer = document.createElement("div");
+    loadingContainer.className = "flex items-center justify-center";
+    loadingContainer.innerHTML = `<p>${t.login} ${t.online}...</p>`;
+    mainContainer.appendChild(loadingContainer);
 
-	const Profile2 = document.createElement("div");
-	Profile2.className = "flex items-end gap-3"
+	const gameuuid = getUuid();
 
-	const Avatar2 = document.createElement("img");
-	Avatar2.src = "/public/avatar/default_avatar.png";
-	Avatar2.className = "border-1 size-15 rounded-lg";
-	Profile2.appendChild(Avatar2);
+	async function Initializing() {
+		loadingContainer.remove();
+		mainContainer.innerHTML = ""
+		gameData = await getDataGame(gameuuid);
+		console.log("GAME DATA GAME PAGE: ", gameData);
 
-	const Score2 = document.createElement("h1");
-	Score2.className = "text-3xl tracking-widest text-green-400 neon-matrix";
-	Score2.textContent = user2.name + ": " + user2.score
-	Profile2.appendChild(Score2);
+		console.log("GAME DATA: ", gameData);
+		user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
+		user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
+		console.log("USERINVENTORY1: ", user1Inventory);
+		console.log("USERINVENTORY2: ", user2Inventory);
+		render();
+	}
 
-	ScorePong.appendChild(Profile1);
-	ScorePong.appendChild(Profile2);
+	function render(){
+		const TitlePong = document.createElement("h1");
+		TitlePong.className = "absolute top-0 text-8xl tracking-widest text-green-400 neon-matrix w-full text-center";
+		TitlePong.textContent = "P O N G";
+		mainContainer.appendChild(TitlePong);
 
-	mainContainer.appendChild(ScorePong);
+		const ScorePong = document.createElement("div");
+		ScorePong.className = "w-[69vw] h-[100px] flex justify-between";
 
-	console.log("Creating online game for players:", user1.name, "and", user2.name);
-	const token = localStorage.getItem("jwt") || "";
-	let gameId;
-	(async () => {
-		try {
-			const resp = await fetch('/game/game', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${token}`,
-				},
-				body: JSON.stringify({
-					player1: user1.name,
-					player2: user2.name,
-					player2_uuid: user2.uuid || null,
-					mode: "online"
-				}),
-			});
-			const data = await resp.json();
-			gameId = data.uuid;
-			gameuuid = gameId;
-		} catch (e) {
-			console.error("Erreur lors de la création du jeu :", e);
-			navigateTo("/pong/online/menu");
-			return;
-		}
-		console.log("GAME CREATED with ID:", gameId);
-		const canvas = OnlinePong(Score1, Score2, gameuuid);
+		const Profile1 = document.createElement("div");
+		Profile1.className = "flex items-end gap-3"
+
+		const Avatar1 = document.createElement("img");
+		Avatar1.src = user1Inventory.avatar;
+		Avatar1.className = "border-1 size-15 rounded-lg";
+		Profile1.appendChild(Avatar1);
+
+		console.log("player:", gameData.player1, "vs", gameData.player2);
+		
+		const Score1 = document.createElement("h1");
+		Score1.className = "text-3xl tracking-widest text-green-400 neon-matrix";
+		Score1.textContent = gameData.player1 + ": " + user1.score
+		Profile1.appendChild(Score1);
+
+		const Profile2 = document.createElement("div");
+		Profile2.className = "flex items-end gap-3"
+
+		const Avatar2 = document.createElement("img");
+		Avatar2.src = user2Inventory.avatar;
+		Avatar2.className = "border-1 size-15 rounded-lg";
+		Profile2.appendChild(Avatar2);
+
+		const Score2 = document.createElement("h1");
+		Score2.className = "text-3xl tracking-widest text-green-400 neon-matrix";
+		Score2.textContent = gameData.player2 + ": " + user2.score
+		Profile2.appendChild(Score2);
+
+		ScorePong.appendChild(Profile1);
+		ScorePong.appendChild(Profile2);
+
+		mainContainer.appendChild(ScorePong);
+
+		const canvas = OnlinePong(Score1, Score2, gameData, user1Inventory, user2Inventory);
 		mainContainer.appendChild(canvas);
-	
-		console.log("ONLINE PONG GAME PAGE RENDERED");
-	})();
+	}
+
+	Initializing();
 	return mainContainer;
 }
-
-onUserChange(u => { if (u) user1.name = u.username; });

@@ -96,9 +96,11 @@ const inventory = `
 
 const notif = `
     CREATE TABLE IF NOT EXISTS notification (
-        uuid TEXT PRIMARY KEY,
-        sender TEXT NOT NULL,
-        receiver TEXT NOT NULL,
+        prim_uuid TEXT PRIMARY KEY,
+        uuid TEXT,
+        sender_uuid TEXT,
+        receiver_uuid TEXT,
+        player_uuid TEXT,
         response INTEGER default 0,
         mode TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -906,10 +908,12 @@ app.post('/invit/:uuid', async(request, reply) => {
         reply.code(401).send({ error: 'Unauthorized'});
     }
     
-    const receiver_uuid  = request.params.uuid;
+    const prim_uuid = crypto.randomUUID()
+    
+    const receiver_uuid = request.params.uuid;
     const { uuid, mode } = request.body;
 
-    console.log("\nLOG UUID: ", request.body, "reciever_uuid: ", receiver_uuid, "sender_uuid: ", sender_uuid, "\n\n");
+    console.log("\nLOG UUID: ", request.body, "receiver_uuid: ", receiver_uuid, "sender_uuid: ", sender_uuid, "\n\n");
 
     const sender_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(sender_uuid);
     const receiver_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(receiver_uuid);
@@ -922,7 +926,7 @@ app.post('/invit/:uuid', async(request, reply) => {
         return reply.code(404).send({ error: 'User not found' });
     }
 
-    db.prepare('INSERT INTO notification (uuid, sender, receiver, mode) VALUES (?, ?, ?, ?)').run(uuid, sender_uuid, receiver_uuid, mode);
+    db.prepare('INSERT INTO notification (prim_uuid, uuid, sender_uuid, receiver_uuid, mode) VALUES (?, ?, ?, ?, ?)').run(prim_uuid, uuid, sender_uuid, receiver_uuid, mode);
 
     request.log.info({
         event: 'get-invit-uuid-infos_attempt'
@@ -931,9 +935,9 @@ app.post('/invit/:uuid', async(request, reply) => {
 });
 
 app.patch('/invit/:uuid', async(request, reply) => {
-    let reciever_uuid;
+    let receiver_uuid;
     try {
-        reciever_uuid = await checkToken(request);
+        receiver_uuid = await checkToken(request);
     } catch (err) {
         request.log.warn({
             event: 'patch-invit_attempt'
@@ -943,10 +947,11 @@ app.patch('/invit/:uuid', async(request, reply) => {
     
     const uuid  = request.params.uuid;
     const { response } = request.body;
-    console.log("📝 Données reçues - UUID:", uuid, "| Response:", response, "| Receiver UUID:", reciever_uuid);
+
+    console.log("📝 Données reçues - UUID:", uuid, "| Response:", response, "| Receiver UUID:", receiver_uuid);
 
     try {
-        const existingNotification = db.prepare('SELECT * FROM notification WHERE uuid = ? AND reciever_uuid = ?').get(uuid, reciever_uuid);
+        const existingNotification = db.prepare('SELECT * FROM notification WHERE uuid = ? AND receiver_uuid = ?').get(uuid, receiver_uuid);
         
         if (!existingNotification) {
             request.log.warn({
@@ -955,8 +960,10 @@ app.patch('/invit/:uuid', async(request, reply) => {
             return reply.code(404).send({ error: 'Notification not found' });
         }
 
+        db.prepare('UPDATE notification SET response = ? WHERE uuid = ? AND receiver_uuid = ?').run(response, uuid, receiver_uuid);
+
         const mode = db.prepare('SELECT mode FROM notification WHERE uuid = ?').get(uuid);
-        const user = db.prepare('SELECT username FROM user WHERE uuid = ?').get(reciever_uuid);
+        const user = db.prepare('SELECT username FROM user WHERE uuid = ?').get(receiver_uuid);
         
         if (response === 1) {
             try {
@@ -967,7 +974,7 @@ app.patch('/invit/:uuid', async(request, reply) => {
                         'x-internal-key': process.env.JWT_SECRET
                     },
                     body: JSON.stringify({ 
-                        reciever_uuid: reciever_uuid, 
+                        receiver_uuid: receiver_uuid, 
                         username: user.username, 
                         uuid: uuid 
                     })
@@ -1036,22 +1043,32 @@ app.get('/notifications', async(request, reply) => {
     }
 
     try {
+        const tableExists = db.prepare(`
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name='notification'
+        `).get();
+        
+        if (!tableExists) {
+            console.log('Table notification does not exist');
+            return reply.send({ notifications: [] });
+        }
+
         const notifications = db.prepare(`
             SELECT
                 sender_uuid,
-                reciever_uuid,
+                receiver_uuid,
                 uuid, 
                 response, 
                 mode
             FROM notification 
-            WHERE reciever_uuid = ?
+            WHERE receiver_uuid = ?
         `).all(player_uuid);
 
         request.log.info({
             event: 'get-notifications_attempt'
         }, 'Notifications retrieved successfully');
 
-        return reply.send({ notifications });
+        return reply.send({ notifications: notifications || [] });
     } catch (err) {
         request.log.error({
             error: {

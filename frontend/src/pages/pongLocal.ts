@@ -58,7 +58,34 @@ export function PongLocalMenuPage(): HTMLElement {
 
 	const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
 	playBtn.onclick = () => {
-		if (user2.name) navigateTo("/pong/local/game");
+		if (user2.name)
+		{
+			const token = localStorage.getItem("jwt") || "";
+			(async () => {
+			try {
+				const resp = await fetch('/game/game', {
+					method: 'POST',
+					headers: { 
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`
+					},
+					body: JSON.stringify({
+						player1: user1.name,
+						player2: user2.name,
+						mode: "local"
+					})
+				});
+				const data = await resp.json();
+				localStorage.setItem("game_uuid", data.uuid);
+				navigateTo("/pong/local/game");
+			} catch(e){
+				const old = playBtn.textContent
+				playBtn.textContent = t.error;
+				setTimeout(() => {playBtn.textContent = old}, 300);
+				return;
+			};
+			})();
+		}
 		else
 		{
 			username.classList.add("placeholder-red-700", "shake");
@@ -128,6 +155,7 @@ export function PongLocalMenuPage(): HTMLElement {
 	})
 	username.addEventListener(("input"), () => {
 		user2.name = username.value;
+		localStorage.setItem("username2", user2.name);
 	})
 	container3.appendChild(username);
 
@@ -141,7 +169,7 @@ export function PongLocalMenuPage(): HTMLElement {
 		
 		const bar = document.createElement("img");
 		bar.src = "/playbar/default_bar.png";
-		user2.paddle = "/bar/default_bar.png";
+		user2.paddle = "/playbar/default_bar.png";
 		bar.className = "m-auto h-full rounded-xl";
 		barContainer.appendChild(bar);
 	}
@@ -151,7 +179,6 @@ export function PongLocalMenuPage(): HTMLElement {
 
 let Bg_src = "/bg/default_bg.png";
 let Ball_src = "/ball/default_ball.png";
-let gameId: string | null = null;
 
 export interface User {
 	name: string;
@@ -257,7 +284,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	ballImg.onload = () => { ballImgLoaded = true; };
 
 	const resolveBarPath = () => {
-		const raw = user1.paddle.replace("/bar/", "/playbar/");
+		const raw = user1.paddle.replace("/playbar/", "/playbar/");
 		return raw.startsWith('/') ? raw : '/' + raw;
 	};
 	let currentBarSrc = resolveBarPath();
@@ -370,6 +397,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		if (user1.score === 5 || user2.score === 5) {
 			isGameOver = true;
 			(async () => {
+				const gameId = localStorage.getItem("game_uuid");
 				if (gameId) {
 					const token = localStorage.getItem("jwt") || "";
 					try {
@@ -538,28 +566,24 @@ export function PongLocalGamePage(): HTMLElement {
 
 	const token = localStorage.getItem("jwt") || "";
 	(async () => {
+		const gameId = localStorage.getItem("game_uuid") || "err";
 		try {
-			const resp = await fetch('/game/game', {
-				method: 'POST',
+			const resp = await fetch(`/game/game/${encodeURIComponent(gameId)}`, {
+				method: 'GET',
 				headers: { 
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify({
-					player1: user1.name,
-					player2: user2.name,
-					mode: "local"
-				})
 			});
 			const data = await resp.json();
-			gameId = data.uuid;
-			console.log("GAME CREATED with ID:", gameId);
-	} catch(e){
-		console.error("Erreur lors de la création du jeu :", e);
-		navigateTo("/pong/local/menu");
-		return;
-	};
+			console.log("DATA GAME:", data);
+			Score1.textContent = data.player1 + ": " + data.score1;
+			Score2.textContent = data.player2 + ": " + data.score2;
+		} catch(e){
+			return;
+		};
 	})();
+
 	return mainContainer;
 }
 

@@ -192,7 +192,7 @@ export function UserPage(): HTMLElement {
         barLabel.textContent = t.bar;
 
         const barImg = document.createElement("img");
-        barImg.src = "/bar/default_bar.png"; //! BAR USER LOOK
+        barImg.src = "/playbar/default_bar.png"; //! BAR USER LOOK
         barImg.alt = "bar";
         barImg.className = "h-6 sm:h-8 object-contain drop-shadow";
 
