@@ -891,13 +891,6 @@ app.get('/me', async(request, reply) => {
 })
 
 app.post('/invit/:uuid', async(request, reply) => {
-    // const key = request.headers['x-internal-key'];
-    // if (key !== process.env.JWT_SECRET) {
-    //     request.log.warn({
-    //         event: 'delete-user_attempt'
-    //     }, 'Delete User Unauthorized: invalid jwt token');
-    //     reply.code(401).send({ error: 'Unauthorized'});
-    // }
     let sender_uuid;
     try {
         sender_uuid = await checkToken(request);
@@ -915,14 +908,21 @@ app.post('/invit/:uuid', async(request, reply) => {
 
     console.log("\nLOG UUID: ", request.body, "receiver_uuid: ", receiver_uuid, "sender_uuid: ", sender_uuid, "\n\n");
 
+    const notif_exist = db.prepare(`SELECT * FROM notification WHERE receiver_uuid = ? AND sender_uuid = ? and response = 0`).get(receiver_uuid, sender_uuid);
+    if (notif_exist){
+        request.log.info({
+            event: 'post-invit-uuid already exist'
+        }, 'Post invit uuid Failed: invit already exist');
+        return;
+    }
+
     const sender_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(sender_uuid);
     const receiver_user = db.prepare(`SELECT * FROM user WHERE uuid = ?`).get(receiver_uuid);
 
-
     if (!receiver_user || !sender_user) {
         request.log.warn({
-            event: 'get-invit-uuid_attempt'
-        }, 'Get invit uuid Failed: User not found');
+            event: 'post-invit-uuid_attempt'
+        }, 'Post invit uuid Failed: User not found');
         return reply.code(404).send({ error: 'User not found' });
     }
 

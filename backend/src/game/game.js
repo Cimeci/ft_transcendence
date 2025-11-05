@@ -100,6 +100,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     const { gameId } = request.params;
     const { score1, score2, winner } = request.body;
 
+    console.log("DATA", score1, score2, winner);
     const data = db.prepare('SELECT player1_uuid, player2_uuid FROM game WHERE uuid = ?').get(gameId);
     if (!data) {
         request.log.warn({

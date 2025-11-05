@@ -64,7 +64,20 @@ class Game {
             clearTimeout(this.launchTimeout);
             this.launchTimeout = null;
         }
+        console.log("READYSTATE 1", this.clients[1].readyState);
         
+        console.log("READYSTATE 0", this.clients[0].readyState);
+
+        if (this.clients[0].readyState === 1){
+            console.log("SALUT===========");
+            this.score.left = 5;
+            this.score.right = 0;
+        }
+        else {
+            console.log("ANTOINe===========");
+            this.score.right = 5;
+            this.score.left = 0;
+        }
         // Informer tous les clients
         const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score, event: 'game_over' };
         this.clients.forEach((client) => {
@@ -253,7 +266,6 @@ app.register(async function (app) {
             game.players.right = socket;    
             game.clients.push(socket);
         
-            console.log("Resetting game state for all clients", game);
             // Démarrer le jeu quand les deux joueurs sont connectés
             setTimeout(() => {
                 game.resetBall();
@@ -278,7 +290,6 @@ app.register(async function (app) {
 		socket.on('message', async (message) => {
         try {
             const messageData = JSON.parse(message.toString());
-            console.log('Message reçu:', messageData);
 
             // Récupérer le username si fourni
             if (messageData.event === 'join' && messageData.username) {
@@ -331,14 +342,6 @@ app.register(async function (app) {
             } else if (playerPosition === 'right') {
                 game.players.right = null;
             }
-            
-            const gameState = { event: "game_over" }
-            game.clients.forEach((client) => {
-                if (client.readyState === websocket.OPEN) {
-                    console.log(`Joueur ${client} déconnecté`);
-                    client.send(JSON.stringify(gameState));
-                }                          
-            });
             // Réinitialiser le jeu si un joueur part
             game.finishGame();
         });
