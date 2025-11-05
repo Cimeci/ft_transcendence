@@ -25,6 +25,7 @@ export const user2: User = {
 	score: 0,
 };
 
+let name2: string
 let gameuuid: string;
 
 // interface GAME {
@@ -145,6 +146,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 				bar2.src = e.bar || "";
 				user2.name = e.username;
 				user2.uuid = e.id;
+				name2 = e.username;
 				// window.showInvite({
 				// 	username: e.username || "default",
 				// 	id: e.id.split("-")[0] || t.err_id,
@@ -365,7 +367,6 @@ export function PongOnlineOverlayPage(): HTMLElement {
 function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: String): HTMLElement {
 	console.log("Initializing OnlinePong with game UUID:", gameuuid);
 	let socket = new WebSocket(`wss://${window.location.host}/websocket/${gameuuid}`);
-	console.log("WebSocket URL:", socket);
 	let myPosition: 'left' | 'right' | null = null;
 	
 	socket.onopen = () => {
@@ -379,7 +380,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 		ball: { x: number; y: number; radius: number };
 		paddles: { leftY: number; rightY: number };
 		scores: { left: number; right: number };
-		state?: 'waiting' | 'playing' | 'game_over';
+		state?: 'waiting' | 'playing' | 'game_over' | 'finish';
 		winner?: 'left' | 'right';
 	};
 
@@ -560,6 +561,15 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 		try {
 			const msg = JSON.parse(ev.data);
 			
+			if (msg?.event === "game_over") {
+				console.log("NAME 1", user1.name);
+				console.log("NAME 2", user2.name);
+				user1.score = 5;
+				user2.score = 0;
+				setTimeout(() => {
+					navigateTo("/pong/online/game/overlay");
+				}, 2000);
+			}
 			// Recevoir la position assignée
 			if (msg.event === 'assigned') {
 				myPosition = msg.position;
@@ -591,8 +601,8 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 					},
 		  			state: msg.event === 'finish' ? 'game_over' : 'playing',
 		  			winner: msg.winner
-		  		};
-
+		  		};				
+				
 				if (state?.scores) {
 					user1.score = state.scores.left ?? 0;
 					user2.score = state.scores.right ?? 0;
@@ -612,7 +622,13 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 				}
 			}
 
-			if (state?.state === 'game_over') {
+			if (state?.state === 'game_over' || window.location.pathname.search('game') == -1 || socket.readyState !== WebSocket.OPEN) {
+				console.log("TEST", window.location.pathname)
+				if (window.location.pathname.search('game') == -1){
+					user1.score = 0;
+					user2.score = 5;
+					console.log("LA GAME S'EST ARRETEE PREMATUREMENT", window.location.pathname)
+				}
 				cleanup();
 				setTimeout(() => {
 					navigateTo("/pong/online/game/overlay");
@@ -624,6 +640,8 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, gameuuid: 
 	};
 
 	socket.onclose = () => {
+		
+
 		if (state?.state !== 'game_over') {
 			cleanup();
 			// Rediriger vers le menu si la connexion est perdue

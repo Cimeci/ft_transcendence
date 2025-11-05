@@ -156,9 +156,9 @@ app.patch('/set-up-game', async(request, reply) => {
         return reply.code(403).send({ error: 'Forbidden' })
     }
 
-    const { reciever_uuid, username, uuid } = request.body;
+    const { receiver_uuid, username, uuid } = request.body;
     try {
-        db.prepare('UPDATE game SET player2 = ?, player2_uuid = ? WHERE uuid = ?').run(username, reciever_uuid, uuid);
+        db.prepare('UPDATE game SET player2 = ?, player2_uuid = ? WHERE uuid = ?').run(username, receiver_uuid, uuid);
         request.log.info({
             event: 'patch-invit_attempt'
         }, 'Patch Invit Sucess: player2 added to game');

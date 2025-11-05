@@ -30,23 +30,8 @@ app.register(websocket);
 const paddleWidth = 10;
 const paddleHeight = 120;
 const speed = 8;
-
 let gameuuid = null;
-
-// let ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 5, speedY: 5 };
-// let leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
-// let rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
-// let ballRotation = 0;
-
-// let score = { left: 0, right: 0 };
-// let isGamerunning = false;
-// let launchTimeout; // <-- ajouté
 const BALL_SPIN_STEP = Math.PI / 6;
-
-// let players = {
-// 	left: null,
-// 	right: null,
-// };
 
 const games = {};
 
@@ -66,6 +51,27 @@ class Game {
         };
         this.clients = [];
         this.updateGameInterval = setInterval(this.updateGame.bind(this), 1000 / 60);
+    }
+
+    finishGame() {
+
+        this.ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 0, speedY: 0 };
+        this.leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
+        this.rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
+        this.isGamerunning = false;
+        
+        if (this.launchTimeout) {
+            clearTimeout(this.launchTimeout);
+            this.launchTimeout = null;
+        }
+        
+        // Informer tous les clients
+        const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score, event: 'game_over' };
+        this.clients.forEach((client) => {
+            if (client.readyState === 1) {
+                client.send(JSON.stringify(gameState));
+            }
+        });
     }
 
     resetGame() {
@@ -326,8 +332,15 @@ app.register(async function (app) {
                 game.players.right = null;
             }
             
+            const gameState = { event: "game_over" }
+            game.clients.forEach((client) => {
+                if (client.readyState === websocket.OPEN) {
+                    console.log(`Joueur ${client} déconnecté`);
+                    client.send(JSON.stringify(gameState));
+                }                          
+            });
             // Réinitialiser le jeu si un joueur part
-            game.resetGame();
+            game.finishGame();
         });
 
         socket.on('error', (error) => {
@@ -335,8 +348,6 @@ app.register(async function (app) {
         });
     });
 });
-
-// setInterval(updateGame, 1000 / 60);
 
 // Gestion des erreurs de connexion WebSocket
 // app.on('ws-error', (err, req) => {
