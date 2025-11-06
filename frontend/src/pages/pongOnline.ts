@@ -681,27 +681,28 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 					}
 				}
 				
-				(async () => {
-					const token = localStorage.getItem("jwt") || "";
-					try {
-						await fetch(`/game/update-game/${encodeURIComponent(game.uuid)}`, {
-							method: 'PATCH',
-							headers: { 
-								'Content-Type': 'application/json',
-								'Authorization': `Bearer ${token}`
-							},
-							body: JSON.stringify({
-								winner: user1.score === 5 ? game.player1 : game.player2,
-								score1: `${user1.score}`,
-								score2: `${user2.score}`
-							})
-						});
-					} catch(e){
-						console.error("Error updating the game :", e);
-						return;
-					}
-				})();
-
+				if (game.player1_uuid !== getUser()?.uuid) {
+					(async () => {
+						const token = localStorage.getItem("jwt") || "";
+						try {
+							await fetch(`/game/update-game/${encodeURIComponent(game.uuid)}`, {
+								method: 'PATCH',
+								headers: { 
+									'Content-Type': 'application/json',
+									'Authorization': `Bearer ${token}`
+								},
+								body: JSON.stringify({
+									winner: user1.score === 5 ? game.player1 : game.player2,
+									score1: `${user1.score}`,
+									score2: `${user2.score}`
+								})
+							});
+						} catch(e){
+							console.error("Error updating the game :", e);
+							return;
+						}
+					})();
+				}
 				cleanup();
 				setTimeout(() => {
 					navigateTo("/pong/online/game/overlay");
