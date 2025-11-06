@@ -346,10 +346,10 @@ async function createGame (player1_uuid = null, player2_uuid = null, tournament 
     const infoplay = {
         player1_uuid,
         player2_uuid,
-        tournament
+        tournament,
+        mode: 'online'
     };
 
-    console.log('Token dans createGame:', token);
     const res = await fetch('http://game:4000/game', {
         method: 'POST',
         headers: {

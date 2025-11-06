@@ -293,8 +293,10 @@ export function PongOnlineMenuPage(): HTMLElement {
 		const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
 		playBtn.onclick = () => {
 			console.log("Creating online game for players:", user1.name, "and", user2.name);
-			stopRefresh();
-			navigateTo(`/pong/online/game?uid=${encodeURIComponent(uuidGame)}`);
+			if ( user2Inventory.username !== "player2"){
+				stopRefresh();
+				navigateTo(`/pong/online/game?uid=${encodeURIComponent(uuidGame)}`);
+			}
 		}
 		container2.appendChild(playBtn);
 

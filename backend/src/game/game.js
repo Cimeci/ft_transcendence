@@ -100,7 +100,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     const { score1, score2, winner } = request.body;
 
     console.log("DATA", score1, score2, winner);
-    const data = db.prepare('SELECT player1_uuid, player2_uuid FROM game WHERE uuid = ?').get(gameId);
+    const data = db.prepare('SELECT player1_uuid, player2_uuid, mode FROM game WHERE uuid = ?').get(gameId);
     if (!data) {
         request.log.warn({
             event: 'update-game_attempt'
@@ -134,6 +134,28 @@ app.patch('/update-game/:gameId', async (request, reply) => {
         request.log.info({
             event: 'update-game_attempt'
         }, 'Update Game Sucess');
+
+        if (winner_uuid){
+            await fetch('http://user:4000/wallet', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-internal-key': process.env.JWT_SECRET
+                },
+                body: JSON.stringify({ uuid: winner_uuid, amount: 50 })
+            });
+            const loser_uuid = winner_uuid === data.player1_uuid ? data.player2_uuid : data.player1_uuid;
+            if (data.mode === "online") {
+                await fetch('http://user:4000/wallet', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-internal-key': process.env.JWT_SECRET
+                    },
+                    body: JSON.stringify({ uuid: loser_uuid, amount: 25 })
+                });
+            }
+        }
         reply.send(game);
     } catch (err) {
         request.log.error({
