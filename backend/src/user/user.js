@@ -4,6 +4,10 @@ import Database from 'better-sqlite3/lib/database.js';
 import dotenv from 'dotenv';
 import jwt from '@fastify/jwt'
 import crypto from 'crypto';
+import multipart from '@fastify/multipart';
+import path from 'path';
+import fs from 'fs';
+import { pipeline } from 'stream/promises';
 
 dotenv.config();
 
@@ -22,6 +26,12 @@ const loggerConfig = {
 }
 
 const app = fastify({ logger: loggerConfig });
+
+app.register(multipart, {
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5 MB
+    }
+});
 
 await app.register(fastifyMetrics, { endpoint: '/metrics' });
 
@@ -820,6 +830,111 @@ app.patch('/inventory-use', async(request, reply) => {
     reply.send('Inventory update')
 });
 
+app.get('/avatar/:filename', async (request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'update-avatar_attempt'
+        }, 'Update Avatar Unauthorized: invalid jwt token');
+        reply.code(401).send({ error: 'Unauthorized'});
+    }
+
+    const { filename } = request.params;
+    
+    try {
+        //recupere tout les avatars de l'utilisateur
+        const userAvatar = db.prepare('SELECT avatar FROM user WHERE uuid = ?').get(uuid);
+        if (!userAvatar || !userAvatar.avatar || !userAvatar.avatar.includes(filename)) {
+            request.log.warn({
+                event: 'update-avatar_attempt'
+            }, 'Update Avatar Failed: avatar not owned by user');
+            return reply.code(403).send({ error: 'You do not own this avatar' });
+        }
+        
+        // cree le chemin complet du fichier
+        const filePath = path.join(process.cwd(), 'upload', filename);
+
+        // verifie si le fichier existe
+        await fs.promises.access(filePath);
+
+        return reply.sendFile(filePath);
+    } catch (err) {
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'update-avatar_attempt'
+        }, 'Update Avatar Failed: file access error');
+        return reply.code(404).send({ error: 'Avatar not found' });
+    }
+});
+
+/** * * * * * * * * *
+** Add new avatar to inventory
+** envoyer le fichier
+* * * * * * * * * * **/
+app.patch('/new_avatar', async(request, reply) => {
+    let uuid = "4e21cba8-e651-4054-96f6-1a9c7a0416e2"; // temporaire
+    // try {
+    //     uuid = await checkToken(request);
+    // } catch (err) {
+    //     request.log.warn({
+    //         event: 'update-avatar_attempt'
+    //     }, 'Update Avatar Unauthorized: invalid jwt token');
+    //     reply.code(401).send({ error: 'Unauthorized'});
+    // }
+
+    const avatar = await request.file();
+
+    const goodType = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'];
+    if (!goodType.includes(avatar.mimetype)) {
+        request.log.warn({
+            event: 'update-avatar_attempt'
+        }, 'Update Avatar Failed: invalid file type');
+        return reply.code(400).send({ error: 'Invalid file type' });
+    }
+
+    const uploadDir = path.join(process.cwd(), 'upload');
+    const filePath = path.join(uploadDir, avatar.filename);
+    try {
+        await fs.promises.mkdir(uploadDir, { recursive: true });;
+        await pipeline(avatar.file, fs.createWriteStream(filePath));
+
+        const items = db.prepare('SELECT avatar FROM items WHERE user_uuid = ?').get(uuid);
+        const avatarList = JSON.parse(items.avatar);
+
+        const newAvatar = {
+            id: `/upload/${avatar.filename}`,
+            name: avatar.filename,
+            type: 'avatar',
+            price: 0,
+            usable: true
+        };
+
+        avatarList.push(newAvatar);
+        
+        const avatarJSON = JSON.stringify(avatarList);
+        db.prepare('UPDATE items set avatar = ? WHERE user_uuid = ?').run(avatarJSON, uuid);
+
+        request.log.info({
+            event: 'update-avatar_attempt'
+        }, 'Update Avatar Success');
+        reply.send('New avatar added to inventory')
+    } catch (err) {
+        console.error(err);
+        request.log.error({
+            error: {
+                message: err.message,
+                code: err.code
+            },
+            event: 'update-avatar_attempt'
+        }, 'Update Avatar Failed: file upload error');
+        return reply.code(500).send({ error: 'File upload error'});
+    }
+});
 
 app.get('/search', async(request, reply) => {
     const { search } = request.body;
