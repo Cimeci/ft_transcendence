@@ -431,7 +431,10 @@ export function UserPage(): HTMLElement {
                     vs.textContent = `vs ${game.player1}`;
                 const score = document.createElement("span");
                 score.className = "text-right text-white/70";
-                score.textContent = `${game.score1} - ${game.score2}`;
+                if (game.player1_uuid === uuid)
+                    score.textContent = `${game.score1} - ${game.score2}`;
+                else
+                    score.textContent = `${game.score2} - ${game.score1}`;
                 li.appendChild(vs);
                 li.appendChild(score);
                 List.appendChild(li);
