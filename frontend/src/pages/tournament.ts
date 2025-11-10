@@ -649,7 +649,7 @@ export function PongTournamentPageJoin(): HTMLElement {
             if (freshTournament && freshTournament.launch) {
                 console.log("Tournament launched, redirecting to game...", window.location.href);
                 stopRefresh();
-				navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+				navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
                 return true;
             }
         } catch (error) {
@@ -668,7 +668,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 
 				const isLaunched = await checkAndRedirectIfLaunched();
                 if (isLaunched) {
-					// navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+					// navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
                     return;
                 }
 
@@ -969,7 +969,7 @@ export function PongTournamentPageHost(): HTMLElement {
             if (currentTournament) {
 				if (currentTournament.launch)
 				{
-					navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+					navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
 					stopRefresh();
 					return;
 				}
@@ -1019,7 +1019,7 @@ export function PongTournamentPageHost(): HTMLElement {
                         }
                         if (currentTournament.launch) {
                             stopRefresh();
-                            navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+                            navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
                         }
                     }
                 }
@@ -1175,7 +1175,7 @@ export function PongTournamentPageHost(): HTMLElement {
 				if (ret && currentTournament.size === parsePlayer(currentTournament).length)
 				{
 					stopRefresh();
-					navigateTo(`/Tournament/game?uid=${currentTournament.uuid}`);
+					navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
 				}
 				else
 				{
@@ -1279,130 +1279,376 @@ export function PongTournamentPageHost(): HTMLElement {
 }
 
 export function PongTournamentPageCurrentGame(): HTMLElement {
-
-	let currentTournament: Tournament | undefined;
-	let refreshInterval: number | null = null;
+    let currentTournament: Tournament | undefined;
+    let refreshInterval: number | null = null;
+    let myNextMatch: any = null;
+    let tournamentStatus: any = null;
+    const myUuid = getUser()?.uuid;
 
     const mainContainer = document.createElement("div");
     mainContainer.className = "gap-5 z-[2000] min-h-screen w-full flex items-center flex-col justify-center bg-linear-to-br from-black via-green-900 to-black";
 
-	const loadingContainer = document.createElement("div");
+    const loadingContainer = document.createElement("div");
     loadingContainer.className = "flex items-center justify-center";
-    loadingContainer.innerHTML = "<p>Chargement du tournoi...</p>";
+    loadingContainer.innerHTML = `<p>${t.login} ${t.tournament}...</p>`;
     mainContainer.appendChild(loadingContainer);
 
-	async function initializeTournament() {
+    async function initializeTournament() {
         try {
+            await refreshTournamentData();
             currentTournament = await getCurrentTournament();
             console.log("CURRENT TOURNAMENT GAME: ", currentTournament);
-            if (typeof currentTournament !== undefined)
-            	await renderTournament();
+            
+            // Stocker l'UUID du tournoi actuel dans sessionStorage
+            if (currentTournament?.uuid) {
+                sessionStorage.setItem('currentTournamentUuid', currentTournament.uuid);
+            }
+            
+            if (currentTournament) {
+                await fetchTournamentStatus();
+                await fetchMyNextMatch();
+                await renderTournament();
+            } else {
+                loadingContainer.innerHTML = "<p>Tournoi non trouvé</p>";
+            }
         } catch (error) {
             console.error("Erreur lors du chargement du tournoi:", error);
             loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
         }
     }
 
-	async function renderTournament(){
+    async function fetchTournamentStatus() {
+        if (!currentTournament) return;
+        
+        const token = localStorage.getItem("jwt") || "";
+        try {
+            const resp = await fetch(`/tournament/tournament/${currentTournament.uuid}/status`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (resp.ok) {
+                tournamentStatus = await resp.json();
+                console.log("Tournament status:", tournamentStatus);
+            }
+        } catch (error) {
+            console.error("Error fetching status:", error);
+        }
+    }
+
+    async function fetchMyNextMatch() {
+        if (!currentTournament || !myUuid) return;
+        
+        const token = localStorage.getItem("jwt") || "";
+
+        try {
+            const resp = await fetch(`/tournament/tournament/${currentTournament.uuid}/next-match/${myUuid}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (resp.ok) {
+                const data = await resp.json();
+                myNextMatch = data.match;
+                console.log("My next match:", myNextMatch);
+            }
+        } catch (error) {
+            console.error("Error fetching next match:", error);
+        }
+    }
+
+    async function renderTournament() {
         loadingContainer.remove();
+        mainContainer.innerHTML = "";
 
-    	const Title = document.createElement("h1");
-    	Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
-    	Title.textContent = currentTournament?.name + " " + t.tournament;
+        // Title
+        const Title = document.createElement("h1");
+        Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
+        Title.textContent = currentTournament?.name + " " + t.tournament;
+        mainContainer.appendChild(Title);
 
-		if (currentTournament)
-		{
-		    const bracketContainer = document.createElement("div");
-		    bracketContainer.id = "bracket-container";
-		    bracketContainer.classList.add("mt-15", "pl-5");
-		    mainContainer.appendChild(bracketContainer);
-		
-		    await updateBracketDisplay(currentTournament, bracketContainer);
-		
-		    refreshInterval = setupBracketAutoRefresh(currentTournament.uuid, bracketContainer);
-		}
+        const contentContainer = document.createElement("div");
+        contentContainer.className = "w-full max-w-7xl px-4 flex flex-col gap-6 mt-20";
 
-		const BackToMenuOverlay = document.createElement("div");
-		BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+        // 🏆 Winner Banner (si le tournoi est terminé)
+        if (tournamentStatus?.tournament?.winner) {
+            const winnerBanner = document.createElement("div");
+            winnerBanner.className = "w-full p-6 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 rounded-xl text-center shadow-xl";
+            
+            const winnerText = document.createElement("h2");
+            winnerText.className = "text-4xl font-bold text-black";
+            winnerText.textContent = `🏆 ${t.winner}: ${(await getUidInventory(tournamentStatus.tournament.winner)).username}`;
+            winnerBanner.appendChild(winnerText);
+            
+            contentContainer.appendChild(winnerBanner);
+        }
 
-		const BackToMenuSure = document.createElement("div");
-		BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+        if (myNextMatch) {
+            const myMatchSection = document.createElement("div");
+            myMatchSection.className = "w-full p-6 glass-blur rounded-xl border-2 border-green-500";
 
-		const BackToMenuTitle = document.createElement("h1");
-		BackToMenuTitle.className = "text-5xl neon-matrix";
-		BackToMenuTitle.textContent = t.title_leave;
-		BackToMenuSure.appendChild(BackToMenuTitle);
+            const header = document.createElement("h2");
+            header.className = "text-3xl neon-matrix mb-4";
+            header.textContent = "🎮 " + (t.your_match || "Votre Prochain Match");
+            myMatchSection.appendChild(header);
 
-		const BackToMenuTxt = document.createElement("p");
-		BackToMenuTxt.className = "";
-		BackToMenuTxt.textContent = t.txt_leave;
-		BackToMenuSure.appendChild(BackToMenuTxt);
+            const matchCard = document.createElement("div");
+            matchCard.className = "bg-black/40 p-6 rounded-xl flex flex-col gap-4";
 
-		const actions = document.createElement("div");
-		actions.className = "flex gap-4 justify-center";
+            // Round info
+            const roundInfo = document.createElement("p");
+            roundInfo.className = "text-xl text-green-400";
+            roundInfo.textContent = `Round ${myNextMatch.round || 1}`;
+            matchCard.appendChild(roundInfo);
 
-		const CancelBtn = document.createElement("button");
-		CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-		CancelBtn.textContent = t.cancel;
-		CancelBtn.onclick = () => {
-			BackToMenuOverlay.classList.add("hidden")
-		};
-		actions.appendChild(CancelBtn);
+            // Players info
+            const playersInfo = document.createElement("div");
+            playersInfo.className = "text-lg text-gray-300";
+            
+            const player1Name = myNextMatch.player1 || "Joueur 1";
+            const player2Name = myNextMatch.player2 || "Joueur 2";
+            
+            playersInfo.innerHTML = `
+                <p class="font-bold text-2xl">${player1Name} <span class="text-green-400">vs</span> ${player2Name}</p>
+            `;
+            matchCard.appendChild(playersInfo);
 
-		const ConfirmBtn = document.createElement("button");
-		ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
-		ConfirmBtn.textContent = t.back;
-		ConfirmBtn.onclick = () => {
-			stopRefresh();
-			mainContainer.classList.add("fade-out");
-			setTimeout(() => {navigateTo("/Tournament/menu");}, 1000);
-		};
-		actions.appendChild(ConfirmBtn);
+            // Status
+            const statusText = document.createElement("p");
+            statusText.className = "text-lg font-semibold";
+            
+            if (myNextMatch.status === 'ready') {
+                statusText.className += " text-green-400";
+                statusText.textContent = "✅ Match prêt ! Vous pouvez jouer maintenant.";
+                
+                // Play button (seulement si ready et que le game_uuid existe)
+                if (myNextMatch.game_uuid) {
+                    const playBtn = document.createElement("button");
+                    playBtn.className = "w-full py-4 bg-green-600 hover:bg-green-700 rounded-xl text-2xl font-bold transition-all duration-300 hover:scale-105 shadow-lg animate-pulse";
+                    playBtn.textContent = "▶️ " + (t.play || "Jouer Maintenant");
+                    playBtn.onclick = () => {
+                        console.log("🎮 Starting game, stopping refresh...");
+                        stopRefresh(); // Arrêter le refresh avant de naviguer
+                        cleanupAllIntervals(); // Nettoyer TOUS les intervals
+                        
+                        // Stocker l'UUID du tournoi pour la redirection après la game
+                        if (currentTournament?.uuid) {
+                            sessionStorage.setItem('currentTournamentUuid', currentTournament.uuid);
+                        }
+                        
+                        setTimeout(() => {
+                            navigateTo(`/pong/online/game?uid=${myNextMatch.game_uuid}`);
+                        }, 100);
+                    };
+                    matchCard.appendChild(playBtn);
+                }
+            } else if (myNextMatch.status === 'waiting') {
+                statusText.className += " text-yellow-400";
+                statusText.textContent = "⏳ En attente... Le match précédent doit d'abord se terminer.";
+            } else if (myNextMatch.status === 'playing') {
+                statusText.className += " text-blue-400";
+                statusText.textContent = "🎮 Match en cours !";
+                
+                // Play button pour rejoindre le match en cours
+                if (myNextMatch.game_uuid) {
+                    const joinBtn = document.createElement("button");
+                    joinBtn.className = "w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-2xl font-bold transition-all duration-300 hover:scale-105 shadow-lg";
+                    joinBtn.textContent = "🔗 Rejoindre le Match";
+                    joinBtn.onclick = () => {
+                        console.log("🎮 Joining game, stopping refresh...");
+                        stopRefresh(); // Arrêter le refresh avant de naviguer
+                        cleanupAllIntervals(); // Nettoyer TOUS les intervals
+                        
+                        // Stocker l'UUID du tournoi pour la redirection après la game
+                        if (currentTournament?.uuid) {
+                            sessionStorage.setItem('currentTournamentUuid', currentTournament.uuid);
+                        }
+                        
+                        setTimeout(() => {
+                            navigateTo(`/pong/online/game?uid=${myNextMatch.game_uuid}`);
+                        }, 100);
+                    };
+                    matchCard.appendChild(joinBtn);
+                }
+            }
+            
+            matchCard.appendChild(statusText);
+            myMatchSection.appendChild(matchCard);
+            contentContainer.appendChild(myMatchSection);
+        } else if (!tournamentStatus?.tournament?.winner) {
+            // Aucun match disponible
+            const waitingSection = document.createElement("div");
+            waitingSection.className = "w-full p-6 glass-blur rounded-xl border-2 border-gray-500";
 
-		BackToMenuSure.appendChild(actions);
-		BackToMenuOverlay.appendChild(BackToMenuSure);
-		mainContainer.appendChild(BackToMenuOverlay);
+            const header = document.createElement("h2");
+            header.className = "text-2xl neon-matrix mb-4";
+            header.textContent = "⏸️ En attente";
+            waitingSection.appendChild(header);
 
-		const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
-		BackToMenuBtn.className = "absolute bottom-2 right-2";
-		BackToMenuBtn.addEventListener("click", (e) => {
-			e.preventDefault();
-			BackToMenuOverlay.classList.remove("hidden");
-		})
-    	mainContainer.appendChild(BackToMenuBtn);
+            const waitingText = document.createElement("p");
+            waitingText.className = "text-lg text-gray-400";
+            waitingText.textContent = "Votre prochain match n'est pas encore disponible. Les matchs précédents doivent d'abord se terminer.";
+            waitingSection.appendChild(waitingText);
 
-		BackToMenuOverlay.addEventListener("click", (e) => {
-  			if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
-		});
+            contentContainer.appendChild(waitingSection);
+        }
 
-		const onEsc = (e: KeyboardEvent) => {
-  			if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
-		};
-		document.addEventListener("keydown", onEsc);
-	}
+        // 📊 Progress Section
+        if (tournamentStatus) {
+            const progressSection = document.createElement("div");
+            progressSection.className = "w-full p-6 glass-blur rounded-xl";
 
-	function startRefresh() {
-	    stopRefresh();
-	    refreshInterval = setupManagedInterval(async () => {
-	        await refreshTournamentData(currentTournament?.uuid);
-	        await initializeTournament();
-	    }, 5000);
-	}
+            const progressHeader = document.createElement("h2");
+            progressHeader.className = "text-2xl neon-matrix mb-4";
+            progressHeader.textContent = "📊 " + (t.tournament_progress || "Progression du Tournoi");
+            progressSection.appendChild(progressHeader);
 
-	function stopRefresh() {
-	    if (refreshInterval) {
-	        window.clearInterval(refreshInterval);
-	        refreshIntervals.delete(refreshInterval);
-	        refreshInterval = null;
-	    }
-	}
+            // Calculate progress
+            const allMatches = Object.values(tournamentStatus.rounds || {}).flat() as any[];
+            const totalMatches = allMatches.length;
+            const completedMatches = allMatches.filter(m => m.status === 'completed').length;
+            const progress = totalMatches > 0 ? (completedMatches / totalMatches) * 100 : 0;
 
-	mainContainer.addEventListener('DOMNodeRemoved', () => {
-	    stopRefresh();
-	});
+            // Progress bar
+            const progressBar = document.createElement("div");
+            progressBar.className = "w-full h-8 bg-black/40 rounded-full overflow-hidden mb-4";
+            const progressFill = document.createElement("div");
+            progressFill.className = "h-full bg-gradient-to-r from-green-600 to-green-400 transition-all duration-500";
+            progressFill.style.width = `${progress}%`;
+            progressBar.appendChild(progressFill);
+            progressSection.appendChild(progressBar);
 
-	initializeTournament();
-	startRefresh();
+            // Stats
+            const stats = document.createElement("div");
+            stats.className = "flex justify-between text-lg";
+            stats.innerHTML = `
+                <span>Round ${tournamentStatus.currentRound}/${tournamentStatus.totalRounds}</span>
+                <span>${completedMatches}/${totalMatches} matchs terminés</span>
+            `;
+            progressSection.appendChild(stats);
 
-    return (mainContainer);
+            contentContainer.appendChild(progressSection);
+        }
+
+        // 🎯 Bracket (votre système existant)
+        if (currentTournament) {
+            const bracketContainer = document.createElement("div");
+            bracketContainer.id = "bracket-container";
+            bracketContainer.className = "mt-6 pl-5 w-full glass-blur p-4 rounded-xl";
+            
+            const bracketTitle = document.createElement("h2");
+            bracketTitle.className = "text-2xl neon-matrix mb-4";
+            bracketTitle.textContent = "🏆 Bracket du Tournoi";
+            bracketContainer.appendChild(bracketTitle);
+            
+            const bracket = await createTournamentBracket(currentTournament);
+            bracketContainer.appendChild(bracket);
+            contentContainer.appendChild(bracketContainer);
+        }
+
+        mainContainer.appendChild(contentContainer);
+
+        // Back button modal (votre code existant)
+        const BackToMenuOverlay = document.createElement("div");
+        BackToMenuOverlay.className = "fixed inset-0 z-[2000] hidden bg-black/60 flex items-center justify-center p-4";
+
+        const BackToMenuSure = document.createElement("div");
+        BackToMenuSure.className = "w-[100vw] text-center gap-6 justify-center items-center rounded-xl p-8 flex flex-col";
+
+        const BackToMenuTitle = document.createElement("h1");
+        BackToMenuTitle.className = "text-5xl neon-matrix";
+        BackToMenuTitle.textContent = t.title_leave || "Quitter le Tournoi ?";
+        BackToMenuSure.appendChild(BackToMenuTitle);
+
+        const BackToMenuTxt = document.createElement("p");
+        BackToMenuTxt.textContent = t.txt_leave || "Êtes-vous sûr de vouloir quitter ?";
+        BackToMenuSure.appendChild(BackToMenuTxt);
+
+        const actions = document.createElement("div");
+        actions.className = "flex gap-4 justify-center";
+
+        const CancelBtn = document.createElement("button");
+        CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
+        CancelBtn.textContent = t.cancel || "Annuler";
+        CancelBtn.onclick = () => BackToMenuOverlay.classList.add("hidden");
+        actions.appendChild(CancelBtn);
+
+        const ConfirmBtn = document.createElement("button");
+        ConfirmBtn.className = "px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-700 hover:scale-110 transition-all duration-300";
+        ConfirmBtn.textContent = t.back;
+        ConfirmBtn.onclick = () => {
+            stopRefresh();
+            sessionStorage.removeItem('currentTournamentUuid'); // Nettoyer le sessionStorage
+            mainContainer.classList.add("fade-out");
+            setTimeout(() => navigateTo("/Tournament/menu"), 1000);
+        };
+        actions.appendChild(ConfirmBtn);
+
+        BackToMenuSure.appendChild(actions);
+        BackToMenuOverlay.appendChild(BackToMenuSure);
+        mainContainer.appendChild(BackToMenuOverlay);
+
+        const BackToMenuBtn = CreateWrappedButton(mainContainer, t.back, "null", 1);
+        BackToMenuBtn.className = "absolute bottom-2 right-2";
+        BackToMenuBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            BackToMenuOverlay.classList.remove("hidden");
+        });
+        mainContainer.appendChild(BackToMenuBtn);
+
+        BackToMenuOverlay.addEventListener("click", (e) => {
+            if (e.target === BackToMenuOverlay) BackToMenuOverlay.classList.add("hidden");
+        });
+
+        const onEsc = (e: KeyboardEvent) => {
+            if (e.key === "Escape") BackToMenuOverlay.classList.add("hidden");
+        };
+        document.addEventListener("keydown", onEsc);
+    }
+
+    function startRefresh() {
+        stopRefresh();
+        refreshInterval = setupManagedInterval(async () => {
+            // ⚠️ NE PAS RAFRAÎCHIR si on n'est pas sur la page du tournoi
+            if (window.location.pathname !== '/Tournament/gameplay') {
+                console.log("Not on tournament page, stopping refresh");
+                stopRefresh();
+                return;
+            }
+
+            console.log("Refreshing tournament game data...");
+            const previousStatus = JSON.stringify(tournamentStatus);
+            const previousMatch = JSON.stringify(myNextMatch);
+            
+            await refreshTournamentData(currentTournament?.uuid);
+            await fetchTournamentStatus();
+            await fetchMyNextMatch();
+            
+            // Re-render seulement si quelque chose a changé
+            const statusChanged = previousStatus !== JSON.stringify(tournamentStatus);
+            const matchChanged = previousMatch !== JSON.stringify(myNextMatch);
+            
+            if (statusChanged || matchChanged) {
+                console.log("Changes detected, re-rendering...");
+                await renderTournament();
+            }
+        }, 5000); // Refresh toutes les 5 secondes (augmenté pour moins de charge)
+    }
+
+    function stopRefresh() {
+        if (refreshInterval) {
+            window.clearInterval(refreshInterval);
+            refreshIntervals.delete(refreshInterval);
+            refreshInterval = null;
+        }
+    }
+
+    mainContainer.addEventListener('DOMNodeRemoved', () => {
+        stopRefresh();
+    });
+
+    initializeTournament();
+    startRefresh();
+
+    return mainContainer;
 }

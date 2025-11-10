@@ -180,6 +180,72 @@ function PopUpImportAvatar(avatar_img: string): HTMLElement{
 	return overlay;
 }
 
+function PopUpActiveA2F(currentStatus: number): HTMLElement {
+    const close = () => {
+        document.removeEventListener("keydown", onEsc);
+        overlay.remove();
+    };
+    const onEsc = (e: KeyboardEvent) => {
+        if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onEsc);
+
+    const overlay = document.createElement("div");
+    overlay.className = "fixed inset-0 z-[2000] gap-3 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4";
+
+    const modal = document.createElement("div");
+    modal.className = "w-full max-w-md glass-blur text-white rounded-xl p-6";
+    overlay.appendChild(modal);
+
+    const title = document.createElement("h2");
+    title.textContent = t.twoFA;
+    title.className = "text-xl md:text-2xl mb-4";
+    modal.appendChild(title);
+
+    const isEnabled = currentStatus === 1;
+    const message = document.createElement("p");
+    message.className = "mb-4 text-sm md:text-base";
+    message.textContent = isEnabled ? t.twoFA_confirm_disable : t.twoFA_confirm_enable;
+    modal.appendChild(message);
+
+    const actions = document.createElement("div");
+    actions.className = "flex justify-end gap-3";
+    modal.appendChild(actions);
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg border border-white/40 hover:bg-white/10 focus:scale-105 hover:scale-105 transition-all duration-200";
+    cancelBtn.textContent = t.cancel;
+    cancelBtn.onclick = close;
+    actions.appendChild(cancelBtn);
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 focus:scale-105 hover:scale-105 transition-all duration-200";
+    confirmBtn.textContent = isEnabled ? t.disablea2f : t.enablea2f;
+    confirmBtn.onclick = async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Loading...";
+        try {
+            const response = await togglea2f(!isEnabled);
+            if (response.success) {
+                await ensureUser(true);
+                close();
+            } else {
+                alert(response.error || "Error toggling a2f");
+            }
+        } catch (err: any) {
+            alert(err.message || "Error toggling a2f");
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = isEnabled ? t.disablea2f : t.enablea2f;
+        }
+    };
+    actions.appendChild(confirmBtn);
+
+    return overlay;
+}
+
 function PopUpChangeInformation( title: string, maininfo: string, newinfo: string, confnewinfo: string, value: string, onConfirm?: (newValue: string, oldValue?: string) => void ): HTMLElement {
 	const overlay = document.createElement("div");
 	overlay.className = "fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4";
@@ -274,18 +340,33 @@ async function updateProfileInfo(partial: { email?: string; username?: string; a
   	await ensureUser(true);
 }
 
-async function updatePassword(oldPassword: string, newPassword: string) {
-  	const token = localStorage.getItem('jwt');
-  	if (!token) throw new Error('Not authenticated');
-  	const resp = await fetch('/auth/update-password', {
-  	  	method: 'PATCH',
-  	  	headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-  	  	body: JSON.stringify({ oldPassword, newPassword })
-  	});
-  	if (!resp.ok) {
-  	  	const data = await resp.json().catch(() => ({}));
-  	  	throw new Error(data?.error || 'Password update failed');
-  	}
+// async function updatePassword(oldPassword: string, newPassword: string) {
+//   	const token = localStorage.getItem('jwt');
+//   	if (!token) throw new Error('Not authenticated');
+//   	const resp = await fetch('/auth/update-password', {
+//   	  	method: 'PATCH',
+//   	  	headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+//   	  	body: JSON.stringify({ oldPassword, newPassword })
+//   	});
+//   	if (!resp.ok) {
+//   	  	const data = await resp.json().catch(() => ({}));
+//   	  	throw new Error(data?.error || 'Password update failed');
+//   	}
+// }
+
+async function togglea2f(enable: boolean) {
+	const token = localStorage.getItem('jwt');
+	if (!token) throw new Error('Not authenticated');
+	const resp = await fetch('/auth/toggle-a2f', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+		body: JSON.stringify({ enable })
+	});
+	if (!resp.ok) {
+		const data = await resp.json().catch(() => ({}));
+		throw new Error(data?.error || 'a2f toggle failed');
+	}
+	return await resp.json();
 }
 
 function CreateFlagSection(lang: string, IconPath: string, code:string): HTMLButtonElement {
@@ -498,6 +579,44 @@ export function SettingsPage(): HTMLElement {
 
 	changeavatarSection.appendChild(ChangeavatarBtn);
 	changeInfoSection.appendChild(changeavatarSection);
+
+	// a2f //
+
+	const changeA2FSection = document.createElement("div");
+	changeA2FSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+
+	const A2Fimg = document.createElement("img");
+	A2Fimg.className = "hidden sm:flex";
+	changeA2FSection.appendChild(A2Fimg);
+	const A2FContent = document.createElement("p");
+	const isa2fEnabled = (getUser()?.is_a2f || 0) === 1;
+	A2FContent.textContent = isa2fEnabled ? t.twoFA_status_enabled : t.twoFA_status_disabled;
+	A2FContent.className = "truncate text-auto md:text-xl w-full p-1"
+	changeA2FSection.appendChild(A2FContent);
+
+	const ChangeA2FBtn = document.createElement("button");
+	ChangeA2FBtn.type = "button";
+	ChangeA2FBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+	ChangeA2FBtn.addEventListener(("click"), () => {
+		const overlay = PopUpActiveA2F(getUser()?.is_a2f || 0);
+		mainContainer.appendChild(overlay);
+	});
+
+ 	const ChangeA2FBtnImg = document.createElement("img");
+ 	ChangeA2FBtnImg.src = "/icons/pen-line.svg";
+ 	ChangeA2FBtnImg.alt = "Edit";
+	ChangeA2FBtnImg.className = "w-9/10"
+ 	ChangeA2FBtn.appendChild(ChangeA2FBtnImg);
+
+	changeA2FSection.appendChild(ChangeA2FBtn);
+	changeInfoSection.appendChild(changeA2FSection);
+
+	// Update a2f status when user changes
+	onUserChange(u => { 
+		const status = (u?.is_a2f || 0) === 1;
+		A2FContent.textContent = status ? t.twoFA_status_enabled : t.twoFA_status_disabled;
+		A2Fimg.src = status ? "/icons/shield-check.svg":"/icons/shield-off.svg" ;
+	});
 
 	settingsContainer.appendChild(langSettingsSection);
 	settingsContainer.appendChild(CreateLine());

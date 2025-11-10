@@ -4,6 +4,7 @@ export interface User {
 	email: string;
 	avatar: string | null;
 	is_online: number;
+	is_a2f?: number;
 	games?: string | null;
 	game_win?: number;
 	game_ratio?: number;
@@ -43,6 +44,7 @@ export async function ensureUser(force = false): Promise<User | null> {
 	loading = (async () => {
 		try {
 			const res = await fetch('/user/me', { headers: { Authorization: `Bearer ${token}` } });
+			console.log("RES: ",res);
 			if (!res.ok) cachedUser = null;
 			else {
 				const data = await res.json();
@@ -53,6 +55,7 @@ export async function ensureUser(force = false): Promise<User | null> {
 		} finally {
 			loading = null;
 			notify();
+			console.log("GETUSER: ", cachedUser); 
 			return cachedUser;
 		}
 	})();
