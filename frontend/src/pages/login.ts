@@ -1,8 +1,195 @@
 import '../style.css';
 import { navigateTo } from '../routes';
-import { translations } from '../i18n';
 import { t, createLangSection } from './settings';
 import { ensureUser } from '../linkUser';
+import { getUser } from '../linkUser';
+
+export function TwoFAPage(): HTMLElement {
+	const root = document.createElement('div');
+	root.className = 'z-2000 min-h-screen w-full flex items-center justify-center bg-linear-to-bl from-green-800 via-black to-green-800';
+
+	const container = document.createElement('div');
+	container.className = 'flex flex-col items-center justify-center border-2 w-[30rem] p-12 gap-8 bg-black/60 rounded-xl';
+
+	const title = document.createElement('h2');
+	title.className = 'text-4xl font-bold text-green-400 text-center';
+	title.textContent = t.twoFA;
+	container.appendChild(title);
+
+	const desc = document.createElement('p');
+	desc.className = 'text-center text-white/80 text-lg';
+	desc.textContent = t.twoFA_code_sent;
+	container.appendChild(desc);
+
+	const codeInput = document.createElement('input');
+	codeInput.className = 'text-xl border-2 border-green-500 rounded px-4 py-3 w-full duration-300 transition-all focus:scale-103 focus:border-green-400 text-center tracking-widest';
+	codeInput.placeholder = t.enter_code;
+	codeInput.type = 'text';
+	codeInput.maxLength = 6;
+	codeInput.inputMode = 'numeric';
+	codeInput.focus();
+	container.appendChild(codeInput);
+
+	const buttonContainer = document.createElement('div');
+	buttonContainer.className = 'flex gap-4 w-full';
+
+	// Bouton Vérifier
+	const verifyBtn = document.createElement('button');
+	verifyBtn.className = 'flex-1 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-lg font-semibold duration-300 transition-all hover:scale-105 focus:scale-105';
+	verifyBtn.textContent = t.verify;
+	verifyBtn.addEventListener('click', async () => {
+		await verify2FA(codeInput.value, container, root);
+	});
+
+	const backBtn = document.createElement('button');
+	backBtn.className = 'flex-1 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-lg font-semibold duration-300 transition-all hover:scale-105 focus:scale-105';
+	backBtn.textContent = t.back;
+	backBtn.addEventListener('click', () => {
+		localStorage.removeItem('jwt');
+		navigateTo('/login');
+	});
+
+	codeInput.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter' && codeInput.value.length === 6) {
+			verify2FA(codeInput.value, container, root);
+		}
+	});
+
+	// Message d'erreur
+	const errorMsg = document.createElement('p');
+	errorMsg.className = 'text-red-400 text-center text-sm hidden';
+
+	buttonContainer.appendChild(verifyBtn);
+	buttonContainer.appendChild(backBtn);
+	container.appendChild(errorMsg);
+	container.appendChild(buttonContainer);
+
+	root.appendChild(container);
+
+	// Stocker la référence pour les erreurs
+	(root as any).codeInput = codeInput;
+	(root as any).errorMsg = errorMsg;
+
+	return root;
+}
+
+async function verify2FA(code: string, container: HTMLElement, root: HTMLElement) {
+	if (!code || code.length !== 6) {
+		const errorMsg = (root as any).errorMsg;
+		errorMsg.textContent = 'Code invalide (6 chiffres requis)';
+		errorMsg.classList.remove('hidden');
+		setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+		return;
+	}
+
+	try {
+		const token = localStorage.getItem('jwt');
+		if (!token) {
+			throw new Error('Token not found');
+		}
+
+		const response = await fetch('/auth/verify-2fa', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${token}`
+			},
+			body: JSON.stringify({ code })
+		});
+
+		const data = await response.json();
+
+		if (!response.ok) {
+			const errorMsg = (root as any).errorMsg;
+			errorMsg.textContent = data.error || t.twoFA_code_invalid;
+			errorMsg.classList.remove('hidden');
+			(root as any).codeInput.value = '';
+			return;
+		}
+
+		// Code valide, rediriger vers home
+		await ensureUser(true);
+		navigateTo('/home');
+
+	} catch (error: any) {
+		const errorMsg = (root as any).errorMsg;
+		errorMsg.textContent = error.message || 'Erreur de vérification';
+		errorMsg.classList.remove('hidden');
+		console.error('2FA verification error:', error);
+	}
+}
+
+async function login(InputMail: HTMLInputElement, InputPassword: HTMLInputElement, EyePassword: HTMLImageElement) {
+	if (InputMail.value == '' || InputPassword.value == '' || InputPassword.value.length < 8) {
+		if (InputMail.value == '') {
+			InputMail.value = '';
+			InputMail.placeholder = t.empty_input;
+			InputMail.classList.add('placeholder:text-red-500');
+			InputMail.classList.add('shake');
+		}
+
+		if (InputPassword.value == '') {
+			InputPassword.value = '';
+			InputPassword.placeholder = t.empty_input;
+			InputPassword.classList.add('placeholder:text-red-500');
+			InputPassword.classList.add('shake');
+			EyePassword.classList.add('shake');
+		}
+
+		if (InputPassword.value.length < 8 && InputPassword.value.length > 0) {
+			InputPassword.value = '';
+			InputPassword.placeholder = t.insufficient_length;
+			InputPassword.classList.add('placeholder:text-red-500');
+			InputPassword.classList.add('shake');
+			EyePassword.classList.add('shake');
+		}
+
+		setTimeout(() => InputMail.value = InputMail.value, 800);
+		setTimeout(() => InputMail.placeholder = t.username, 800);
+		setTimeout(() => InputMail.classList.remove('placeholder:text-red-500'), 800);
+		setTimeout(() => InputMail.classList.remove('shake'), 800);
+		
+		setTimeout(() => InputPassword.value = InputPassword.value, 800);
+		setTimeout(() => InputPassword.placeholder = t.password, 800);
+		setTimeout(() => InputPassword.classList.remove('placeholder:text-red-500'), 800);
+		setTimeout(() => InputPassword.classList.remove('shake'), 800);
+		setTimeout(() => EyePassword.classList.remove('shake'), 800);
+
+	} else {
+		try {
+			const resp = await fetch('/auth/login', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ email: InputMail.value.trim(), password: InputPassword.value })
+			});
+			const data = await resp.json();
+			if (!resp.ok) throw new Error(data?.error || 'Login failed');
+			console.log('jwt:', data.jwtToken);
+			localStorage.setItem('jwt', data.jwtToken);
+
+			// ✅ NOUVEAU: Vérifier si 2FA est requis
+			if (data.requires2FA) {
+				// 2FA activé → afficher page de vérification
+				const app = document.getElementById('app');
+				if (app) {
+					app.innerHTML = '';
+					app.appendChild(TwoFAPage());
+				}
+			} else {
+				// 2FA désactivé → aller à home
+				navigateTo('/home');
+			}
+		} catch (e: any) {
+			InputPassword.value = '';
+			InputPassword.placeholder = e.message || 'Login failed';
+			InputPassword.classList.add('placeholder:text-red-500','shake');
+			setTimeout(() => {
+				InputPassword.placeholder = t.password;
+				InputPassword.classList.remove('placeholder:text-red-500','shake');
+			}, 800);
+		}
+	}
+}
 
 export function OAuthCallbackPage(): HTMLElement {
 	const root = document.createElement('div');
@@ -10,8 +197,9 @@ export function OAuthCallbackPage(): HTMLElement {
 	root.textContent = 'Connexion...';
 
 	const params = new URLSearchParams(location.search);
-	const token = (params.get('token'))?.split("|")[0];
-	console.log(token);
+	const token = params.get('token');
+	const requires2FA = params.get('requires2FA') === 'true';
+	console.log('Token:', token, 'Requires2FA:', requires2FA);
 	const error = params.get('error');
 
 	const showError = (msg: string) => {
@@ -35,15 +223,43 @@ export function OAuthCallbackPage(): HTMLElement {
 	};
 
 	if (error) {
-		const msg = error === 'no_email_from_github' ? 'GitHub did not provide an email for this account.' : 'OAuth error.';
+		const msg = error === 'no_email_from_github'
+			? 'GitHub did not provide an email for this account.'
+			: error === '2fa_email_failed'
+			? 'Failed to send 2FA code. Please try again.'
+			: 'OAuth error.';
 		showError(msg);
 		return root;
 	}
 
 	if (token) {
 		localStorage.setItem('jwt', token);
+
+		// Si requires2FA est présent dans l'URL, afficher directement la page 2FA
+		if (requires2FA) {
+			console.log('2FA required, showing 2FA page');
+			root.innerHTML = '';  // Effacer le texte "Connexion..."
+			root.appendChild(TwoFAPage());
+			return root;
+		}
+
 		ensureUser(true)
-			.then(() => navigateTo('/home'))
+			.then(() => {
+				const user = getUser();
+
+				// ✅ NOUVEAU: Vérifier si 2FA est activé
+				if (user && user.is_a2f === 1) {
+					// 2FA activé → afficher page de vérification
+					const app = document.getElementById('app');
+					if (app) {
+						app.innerHTML = '';
+						app.appendChild(TwoFAPage());
+					}
+				} else {
+					// 2FA désactivé → aller à home
+					navigateTo('/home');
+				}
+			})
 			.catch(() => {
 				showError('Error: unable to fetch profile');
 			});
@@ -52,67 +268,6 @@ export function OAuthCallbackPage(): HTMLElement {
 		console.error('OAuth callback: token introuvable dans URL');
 	}
 	return root;
-}
-
-async function login(InputMail: HTMLInputElement, InputPassword: HTMLInputElement, EyePassword: HTMLImageElement, ) {
-	if (InputMail.value == '' || InputPassword.value == '' || InputPassword.value.length < 8) {
-				if (InputMail.value == '') {
-		InputMail.value = '';
-		InputMail.placeholder = t.empty_input;
-		InputMail.classList.add('placeholder:text-red-500');
-		InputMail.classList.add('shake');
-	}
-
-	if (InputPassword.value == '') {
-		InputPassword.value = '';
-		InputPassword.placeholder = t.empty_input;
-		InputPassword.classList.add('placeholder:text-red-500');
-		InputPassword.classList.add('shake');
-		EyePassword.classList.add('shake');
-	}
-
-	if (InputPassword.value.length < 8 && InputPassword.value.length > 0) {
-		InputPassword.value = '';
-		InputPassword.placeholder = t.insufficient_length;
-		InputPassword.classList.add('placeholder:text-red-500');
-		InputPassword.classList.add('shake');
-		EyePassword.classList.add('shake');
-	}
-
-	setTimeout(() => InputMail.value = InputMail.value, 800);
-	setTimeout(() => InputMail.placeholder = t.username, 800);
-	setTimeout(() => InputMail.classList.remove('placeholder:text-red-500'), 800);
-	setTimeout(() => InputMail.classList.remove('shake'), 800);
-		
-	setTimeout(() => InputPassword.value = InputPassword.value, 800);
-	setTimeout(() => InputPassword.placeholder = t.password, 800);
-	setTimeout(() => InputPassword.classList.remove('placeholder:text-red-500'), 800);
-	setTimeout(() => InputPassword.classList.remove('shake'), 800);
-	setTimeout(() => EyePassword.classList.remove('shake'), 800);
-
-	} else {
-		try {
-			const resp = await fetch('/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email: InputMail.value.trim(), password: InputPassword.value })
-			});
-			const data = await resp.json();
-			if (!resp.ok) throw new Error(data?.error || 'Login failed');
-			console.log('jwt:', data.jwtToken);
-			localStorage.setItem('jwt', data.jwtToken);
-			await ensureUser(true);
-			navigateTo('/home');
-		} catch (e: any) {
-			InputPassword.value = '';
-			InputPassword.placeholder = e.message || 'Login failed';
-			InputPassword.classList.add('placeholder:text-red-500','shake');
-			setTimeout(() => {
-				InputPassword.placeholder = t.password;
-				InputPassword.classList.remove('placeholder:text-red-500','shake');
-			}, 800);
-		}
-	}
 }
 
 export function LoginPage(): HTMLElement {

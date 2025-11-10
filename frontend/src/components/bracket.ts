@@ -1,10 +1,13 @@
 import { translations } from "../i18n";
-import { getCurrentLang, t } from "../pages/settings";
+import { getCurrentLang } from "../pages/settings";
 import { getPlayerNames, parsePlayer, type Tournament } from "../pages/tournament";
+
 
 export async function createTournamentBracket(Tournament: Tournament): Promise<HTMLElement> {
     let players: string[] = [];
     let wrapper: HTMLElement = document.createElement('div');
+    let matches: any[] = [];
+    let playerUuidToName: Map<string, string> = new Map();
 
     async function getPlayers() {
         const playerArray = parsePlayer(Tournament!);
@@ -12,9 +15,36 @@ export async function createTournamentBracket(Tournament: Tournament): Promise<H
         if (Array.isArray(playerArray) && playerArray.length > 0) {
             playerUuids = playerArray.map(p => p.uuid);
         }
+        
+        // Récupérer les matches du tournoi
+        try {
+            const gameData = typeof Tournament.game === 'string' 
+                ? JSON.parse(Tournament.game) 
+                : Tournament.game;
+            matches = Array.isArray(gameData) ? gameData : [];
+            console.log("MATCHES FROM TOURNAMENT:", matches);
+            
+            // Ajouter tous les UUIDs des joueurs présents dans les matches (y compris les winners)
+            const allPlayerUuids = new Set(playerUuids);
+            matches.forEach(match => {
+                if (match.player1_uuid) allPlayerUuids.add(match.player1_uuid);
+                if (match.player2_uuid) allPlayerUuids.add(match.player2_uuid);
+                if (match.winner_uuid) allPlayerUuids.add(match.winner_uuid);
+            });
+            playerUuids = Array.from(allPlayerUuids);
+        } catch (e) {
+            console.error("Error parsing tournament matches:", e);
+            matches = [];
+        }
+        
         if (playerUuids.length > 0) {
             players = await getPlayerNames(playerUuids);
+            // Créer un mapping uuid -> nom
+            for (let i = 0; i < playerUuids.length; i++) {
+                playerUuidToName.set(playerUuids[i], players[i]);
+            }
         }
+        
         render();
     }
 
@@ -110,18 +140,71 @@ export async function createTournamentBracket(Tournament: Tournament): Promise<H
                     svg.appendChild(t1);
                     svg.appendChild(t2);
                 } else {
-                    const label = isFinalRound ? `${translations[getCurrentLang()].final} R${r + 1} - M${j + 1}` : `R${r + 1} - M${j + 1}`;
-                    const t = svgEl('text', {
-                        x: String(x + COL_W / 2),
-                        y: String(yCenter),
-                        fill: isFinalRound ? '#ca8a04' : '#004d1a',
-                        'font-size': '12',
-                        'font-family': 'system-ui, sans-serif',
-                        'text-anchor': 'middle',
-                        'font-weight': isFinalRound ? '700' : 'normal'
-                    }) as SVGTextElement;
-                    t.textContent = label;
-                    svg.appendChild(t);
+                    // Trouver le match correspondant dans les données du tournoi
+                    const match = matches.find(m => m.round === r + 1 && m.match_number === j);
+                    
+                    if (match) {
+                        // Récupérer les noms des joueurs
+                        const player1Name = match.player1_uuid ? playerUuidToName.get(match.player1_uuid) : null;
+                        const player2Name = match.player2_uuid ? playerUuidToName.get(match.player2_uuid) : null;
+                        
+                        // Texte pour player 1
+                        const t1 = svgEl('text', {
+                            x: String(x + COL_W / 2),
+                            y: String(yCenter - 10),
+                            fill: match.status === 'completed' ? '#666' : '#004d1a',
+                            'font-size': '11',
+                            'font-family': 'system-ui, sans-serif',
+                            'text-anchor': 'middle',
+                            'font-weight': (match.winner_uuid && match.winner_uuid === match.player1_uuid) ? '700' : 'normal'
+                        }) as SVGTextElement;
+                        t1.textContent = player1Name 
+                            ? (player1Name.length > 16 ? player1Name.substring(0, 13) + '...' : player1Name) 
+                            : '???';
+                        
+                        // Texte pour player 2
+                        const t2 = svgEl('text', {
+                            x: String(x + COL_W / 2),
+                            y: String(yCenter + 10),
+                            fill: match.status === 'completed' ? '#666' : '#004d1a',
+                            'font-size': '11',
+                            'font-family': 'system-ui, sans-serif',
+                            'text-anchor': 'middle',
+                            'font-weight': (match.winner_uuid && match.winner_uuid === match.player2_uuid) ? '700' : 'normal'
+                        }) as SVGTextElement;
+                        t2.textContent = player2Name 
+                            ? (player2Name.length > 16 ? player2Name.substring(0, 13) + '...' : player2Name) 
+                            : '???';
+                        
+                        svg.appendChild(t1);
+                        svg.appendChild(t2);
+                        
+                        // Badge de statut si le match est en cours ou complété
+                        if (match.status === 'ready' || match.status === 'playing') {
+                            const statusBadge = svgEl('circle', {
+                                cx: String(x + COL_W - 15),
+                                cy: String(yCenter - MATCH_H / 2 + 15),
+                                r: '5',
+                                fill: match.status === 'ready' ? '#22c55e' : '#3b82f6',
+                                class: 'animate-pulse'
+                            });
+                            svg.appendChild(statusBadge);
+                        }
+                    } else {
+                        // Fallback: afficher le label si pas de match trouvé
+                        const label = isFinalRound ? `${translations[getCurrentLang()].final}` : `R${r + 1} - M${j + 1}`;
+                        const t = svgEl('text', {
+                            x: String(x + COL_W / 2),
+                            y: String(yCenter),
+                            fill: isFinalRound ? '#ca8a04' : '#999',
+                            'font-size': '12',
+                            'font-family': 'system-ui, sans-serif',
+                            'text-anchor': 'middle',
+                            'font-weight': isFinalRound ? '700' : 'normal'
+                        }) as SVGTextElement;
+                        t.textContent = label;
+                        svg.appendChild(t);
+                    }
                 }
 
                 if (r < rounds - 1) {
@@ -190,21 +273,6 @@ function svgEl<K extends keyof SVGElementTagNameMap>(
   const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
   return el as SVGElementTagNameMap[K];
-}
-
-
-// retourne un texte
-function svgText(x: number, y: number, text: string): SVGTextElement {
-	const TEXT_COLOR = '#004d1a';
-  	const t = svgEl('text', {
-		x: String(x),
-		y: String(y),
-		fill: `${TEXT_COLOR}`,
-		'font-size': '12',
-		'font-family': 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif'
-  	}) as SVGTextElement;
-  	t.textContent = text;
-  	return t;
 }
 
 // Complète la liste de joueurs au prochain multiple de 2 avec des "byes"

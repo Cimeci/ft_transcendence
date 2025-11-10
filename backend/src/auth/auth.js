@@ -49,7 +49,7 @@ const user = `
         email TEXT UNIQUE NOT NULL,
         password TEXT,
         avatar TEXT,
-        twofa_enabled INTEGER DEFAULT 1,
+        twofa_enabled INTEGER DEFAULT 0,
         twofa_code TEXT,
         twofa_expiry DATETIME
     );
@@ -167,22 +167,30 @@ app.post('/login', async (request, reply) => {
             return reply.code(401).send({ error: 'Invalid identifier or password'});
         }
 
-        // const is2FAEnabled = user.twofa_enabled === 1;
-        // if (is2FAEnabled) {
-        //     const code = createCode(user.uuid);
+        // Vérifier si 2FA est activé
+        const isa2fEnabled = user.twofa_enabled === 1;
+        if (isa2fEnabled) {
+            const code = createCode(user.uuid);
 
-        //     const emailResult = await send2FACode(email, code);
-        //     if (!emailResult.success) {
-        //         request.log.error({
-        //             event: 'login_attempt',
-        //             user: { email },
-        //             error: emailResult.error
-        //         }, 'Login failed: unable to send 2FA code');
-        //         return reply.code(500).send({ error: 'Unable to send 2FA code' });
-        //     }
-            
-        //     return reply.send({ uuid: user.uuid });
-        // }
+            const emailResult = await senda2fCode(email, code);
+            if (!emailResult.success) {
+                request.log.error({
+                    event: 'login_attempt',
+                    user: { email },
+                    error: emailResult.error
+                }, 'Login failed: unable to send a2f code');
+                return reply.code(500).send({ error: 'Unable to send a2f code' });
+            }
+
+            const tempToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email });
+
+            request.log.info({
+                event: 'login_attempt',
+                user: { email }
+            }, '2FA code sent, awaiting verification');
+
+            return reply.send({ jwtToken: tempToken, requires2FA: true });
+        }
 
         const info = { online: 1, uuid: user.uuid }
         const response = await fetch('http://user:4000/online', {
@@ -221,27 +229,43 @@ app.post('/login', async (request, reply) => {
 });
 
 app.post('/verify-2fa', async (request, reply) => {
-    const { uuid, code } = request.body;
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'verify-2fa_attempt'
+        }, 'Verify 2FA Unauthorized: invalid jwt token');
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const { code } = request.body;
+
+    if (!code || code.length !== 6 || !/^\d+$/.test(code)) {
+        request.log.warn({
+            event: 'verify-2fa_attempt'
+        }, 'Verify 2FA Failed: Invalid code format');
+        return reply.code(400).send({ error: 'Invalid code format (6 digits required)' });
+    }
     
     try {
         const user = db.prepare('SELECT * FROM user WHERE uuid = ?').get(uuid);
         if (!user) {
             request.log.warn({
-                event: '2fa_verification_attempt',
+                event: 'a2f_verification_attempt',
                 user: { uuid }
-            }, '2FA verification failed: user not found');
+            }, 'a2f verification failed: user not found');
             return reply.code(401).send({ error: 'Invalid user' });
         }
         
         if (user.twofa_code !== code || new Date() > new Date(user.twofa_expiry)) {
             request.log.warn({
-                event: '2fa_verification_attempt',
+                event: 'a2f_verification_attempt',
                 user: { uuid }
-            }, '2FA verification failed: invalid or expired code');
-            return reply.code(401).send({ error: 'Invalid or expired 2FA code' });
+            }, 'a2f verification failed: invalid or expired code');
+            return reply.code(401).send({ error: 'Invalid or expired a2f code' });
         }
 
-        // Réinitialiser le code 2FA après une vérification réussie
+        // Réinitialiser le code a2f après une vérification réussie
         db.prepare('UPDATE user SET twofa_code = NULL, twofa_expiry = NULL WHERE uuid = ?').run(uuid);
 
         const info = { online: 1, uuid: user.uuid }
@@ -260,9 +284,9 @@ app.post('/verify-2fa', async (request, reply) => {
         const { jwtToken, refreshToken } = await generateTokens(uuid, user.username, user.email);
 
         request.log.info({
-            event: '2fa_verification_attempt',
+            event: 'a2f_verification_attempt',
             user: { uuid }
-        }, '2FA verification success');
+        }, 'a2f verification success');
 
         console.log(jwtToken, refreshToken);
         reply.send({ jwtToken, refreshToken });
@@ -273,9 +297,123 @@ app.post('/verify-2fa', async (request, reply) => {
                 code: err.code
             },
             user: { uuid },
-            event: '2fa_verification_attempt'
-        }, '2FA verification failed with error');
+            event: 'a2f_verification_attempt'
+        }, 'a2f verification failed with error');
         reply.code(500).send({ error: 'Internal Server Error' });
+    }
+});
+
+app.patch('/toggle-a2f', async (request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'toggle_a2f_attempt',
+            error: err.message
+        }, 'a2f toggle failed: unauthorized');
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const { enable } = request.body;
+
+    if (typeof enable !== 'boolean') {
+        request.log.warn({
+            event: 'toggle_a2f_attempt',
+            user: { uuid },
+            error: 'Invalid enable parameter'
+        }, 'a2f toggle failed: invalid parameter');
+        return reply.code(400).send({ error: 'Invalid request' });
+    }
+
+    try {
+        const user = db.prepare('SELECT twofa_enabled FROM user WHERE uuid = ?').get(uuid);
+        if (!user) {
+            request.log.warn({
+                event: 'toggle_a2f_attempt',
+                user: { uuid }
+            }, 'a2f toggle failed: user not found');
+            return reply.code(404).send({ error: 'User not found' });
+        }
+
+        // Définir twofa_enabled à 0 ou 1 (0 = désactivé, 1 = activé)
+        const newStatus = enable ? 1 : 0;
+        
+        db.prepare('UPDATE user SET twofa_enabled = ? WHERE uuid = ?').run(newStatus, uuid);
+
+        // Mettre à jour la cache utilisateur via le service user
+        const updateResponse = await fetch('http://user:4000/update-a2f-status', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-internal-key': process.env.JWT_SECRET
+            },
+            body: JSON.stringify({ uuid, is_a2f: newStatus })
+        });
+
+        if (!updateResponse.ok) {
+            request.log.warn({
+                event: 'toggle_a2f_attempt',
+                user: { uuid },
+                error: 'Failed to update user service'
+            }, 'a2f toggle failed: user service error');
+            throw new Error('Failed to update user service');
+        }
+
+        request.log.info({
+            event: 'toggle_a2f_attempt',
+            user: { uuid },
+            action: enable ? 'enable' : 'disable'
+        }, 'a2f toggled successfully');
+
+        reply.send({ 
+            success: true, 
+            enabled: enable,
+            message: enable ? 'a2f enabled successfully' : 'a2f disabled successfully'
+        });
+    } catch (err) {
+        request.log.error({
+            event: 'toggle_a2f_attempt',
+            user: { uuid },
+            error: err.message
+        }, 'a2f toggle failed');
+        reply.code(500).send({ error: 'Failed to toggle a2f' });
+    }
+});
+
+app.get('/a2f-status', async (request, reply) => {
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'check_a2f_status_attempt',
+            error: err.message
+        }, 'a2f status check failed: unauthorized');
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    try {
+        const user = db.prepare('SELECT twofa_enabled FROM user WHERE uuid = ?').get(uuid);
+        if (!user) {
+            request.log.warn({
+                event: 'check_a2f_status_attempt',
+                user: { uuid }
+            }, 'a2f status check failed: user not found');
+            return reply.code(404).send({ error: 'User not found' });
+        }
+
+        reply.send({
+            enabled: user.twofa_enabled === 1,
+            status: user.twofa_enabled
+        });
+    } catch (err) {
+        request.log.error({
+            event: 'check_a2f_status_attempt',
+            user: { uuid },
+            error: err.message
+        }, 'Failed to check a2f status');
+        reply.code(500).send({ error: 'Failed to check a2f status' });
     }
 });
 
@@ -298,12 +436,12 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-async function send2FACode(email, code) {
+async function senda2fCode(email, code) {
     const mailOptions = {
         from: `"${process.env.APP_NAME}" <${process.env.SMTP_USER}>`,
         to: email,
-        subject: 'Your 2FA Code',
-        text: `Your 2FA code is: ${code}. It will expire in 10 minutes.`
+        subject: 'Your a2f Code',
+        text: `Your a2f code is: ${code}. It will expire in 10 minutes.`
     };
 
     try {
@@ -459,11 +597,37 @@ app.get('/google/callback', async(request, reply) => {
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
         if (user) {
+            // Vérifier si 2FA est activé
+            const isa2fEnabled = user.twofa_enabled === 1;
+            if (isa2fEnabled) {
+                const code = createCode(user.uuid);
+
+                const emailResult = await senda2fCode(email, code);
+                if (!emailResult.success) {
+                    request.log.error({
+                        event: 'google_oauth_attempt',
+                        user: { email },
+                        error: emailResult.error
+                    }, 'Google OAuth failed: unable to send 2fa code');
+                    return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('2fa_email_failed')}`);
+                }
+
+                // Générer un JWT temporaire pour la vérification 2FA
+                const tempToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email });
+
+                request.log.info({
+                    event: 'google_oauth_attempt',
+                    user: { email }
+                }, 'Google OAuth 2FA code sent, awaiting verification');
+
+                return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(tempToken)}&requires2FA=true`);
+            }
+
             ({jwtToken, refreshToken} = await generateTokens(user.uuid, user.username, user.email));
             console.log({jwtToken: jwtToken})
             //jwtToken = await app.jwt.sign({ userId: user.uuid });
             const info = { online: 1, uuid: user.uuid }
-           
+
             const response = await fetch('http://user:4000/online', {
             method: 'PATCH',
             headers: {
@@ -506,7 +670,7 @@ app.get('/google/callback', async(request, reply) => {
         }
         // reply.send({ message: 'logged in successfully', token: jwtToken, refreshToken });
         console.log(jwtToken);
-        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}|refreshToken=${refreshToken}`);
+        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}&refreshToken=${encodeURIComponent(refreshToken)}`);
     } catch (err) {
         request.log.error({
             event: 'google_oauth_attempt',
@@ -601,13 +765,39 @@ app.get('/github/callback', async function (request, reply) {
 
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(emailPrimary);
-        let jwtToken; 
+        let jwtToken;
         let refreshToken;
 
         if (user) {
+            // Vérifier si 2FA est activé
+            const isa2fEnabled = user.twofa_enabled === 1;
+            if (isa2fEnabled) {
+                const code = createCode(user.uuid);
+
+                const emailResult = await senda2fCode(emailPrimary, code);
+                if (!emailResult.success) {
+                    request.log.error({
+                        event: 'github_oauth_attempt',
+                        user: { email: emailPrimary },
+                        error: emailResult.error
+                    }, 'GitHub OAuth failed: unable to send 2fa code');
+                    return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('2fa_email_failed')}`);
+                }
+
+                // Générer un JWT temporaire pour la vérification 2FA
+                const tempToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email });
+
+                request.log.info({
+                    event: 'github_oauth_attempt',
+                    user: { email: emailPrimary }
+                }, 'GitHub OAuth 2FA code sent, awaiting verification');
+
+                return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(tempToken)}&requires2FA=true`);
+            }
+
             ({jwtToken, refreshToken  }= await generateTokens(user.uuid, user.username, user.email));
             //jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
-            
+
             const info = { online: 1, uuid: user.uuid }
             const response = await fetch('http://user:4000/online', {
                 method: 'PATCH',
@@ -652,7 +842,7 @@ app.get('/github/callback', async function (request, reply) {
 
         }
         //reply.send({ access_token: token.access_token, jwtToken, refreshToken });
-        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}|refreshToken=${refreshToken}`);
+        return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}&refreshToken=${encodeURIComponent(refreshToken)}`);
      } catch (err) {
         request.log.error({
             event: 'github_oauth_attempt',

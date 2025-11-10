@@ -51,7 +51,8 @@ const user = `
         password TEXT,
         avatar TEXT,
         wallet INTEGER DEFAULT 10000,
-        is_online INTERGER
+        is_online INTEGER,
+        is_a2f INTEGER DEFAULT 0
     );
 `
 
@@ -971,7 +972,7 @@ app.get('/me', async(request, reply) => {
         request.log.warn({
             event: 'get-user-infos_attempt'
         }, 'Get User Infos Unauthorized: invalid jwt token');
-        reply.code(401).send({ error: 'Unauthorized'});
+        return reply.code(401).send({ error: 'Unauthorized'});
     }
 
     const user = db.prepare(`
@@ -981,6 +982,7 @@ app.get('/me', async(request, reply) => {
             u.email,
             u.avatar,
             u.is_online,
+            u.is_a2f,
             u.wallet,
             h.games,
             h.game_win,
@@ -989,7 +991,7 @@ app.get('/me', async(request, reply) => {
             h.tournament_win,
             h.tournament_ratio
         FROM user u
-        JOIN historic h ON u.uuid = h.user_uuid
+        LEFT JOIN historic h ON u.uuid = h.user_uuid
         WHERE u.uuid = ?`).get(uuid);
 
     if (!user) {
@@ -1205,6 +1207,7 @@ app.get('/:uuid', async(request, reply) => {
         u.email,
         u.avatar,
         u.is_online,
+        u.is_a2f,
         u.wallet,
         h.games,
         h.game_win,
@@ -1221,7 +1224,7 @@ app.get('/:uuid', async(request, reply) => {
         i.paddle,
         i.avatar
     FROM user u
-    JOIN historic h ON u.uuid = h.user_uuid
+    LEFT JOIN historic h ON u.uuid = h.user_uuid
     JOIN items i ON u.uuid = i.user_uuid
     WHERE u.uuid = ?`).get(uuid);
 
@@ -1323,6 +1326,62 @@ app.post('/jwt-test', async(request, reply) => {
             event: 'jwt-test_attempt'
         }, 'JWT Test Failed: Invalid or expired token');
         return reply.status(401).send({ error: 'Invalid or expired token' });
+    }
+});
+
+app.patch('/update-a2f-status', async (request, reply) => {
+    const { uuid, is_a2f } = request.body;
+    const internalKey = request.headers['x-internal-key'];
+
+    // Vérifier la clé interne
+    if (internalKey !== process.env.JWT_SECRET) {
+        request.log.warn({
+            event: 'update_a2f_status_attempt',
+            error: 'Invalid internal key'
+        }, 'Update a2f status failed: unauthorized');
+        return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    if (!uuid || is_a2f === undefined) {
+        request.log.warn({
+            event: 'update_a2f_status_attempt',
+            error: 'Missing required fields'
+        }, 'Update a2f status failed: invalid request');
+        return reply.code(400).send({ error: 'Missing required fields' });
+    }
+
+    try {
+        const user = db.prepare('SELECT * FROM user WHERE uuid = ?').get(uuid);
+        if (!user) {    
+            request.log.warn({
+                event: 'update_a2f_status_attempt',
+                user: { uuid },
+                error: 'User not found'
+            }, 'Update a2f status failed: user not found');
+            return reply.code(404).send({ error: 'User not found' });
+        }
+
+        // Mettre à jour le statut a2f dans la table user
+        db.prepare('UPDATE user SET is_a2f = ? WHERE uuid = ?').run(is_a2f, uuid);
+
+        request.log.info({
+            event: 'update_a2f_status_attempt',
+            user: { uuid },
+            new_status: is_a2f
+        }, 'a2f status updated successfully');
+
+        reply.send({
+            success: true,
+            message: 'a2f status updated',
+            is_a2f: is_a2f
+        });
+    } catch (err) {
+        request.log.error({
+            event: 'update_a2f_status_attempt',
+            user: { uuid },
+            error: err.message
+        }, 'Failed to update a2f status');
+        reply.code(500).send({ error: 'Failed to update a2f status' });
     }
 });
 

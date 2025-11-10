@@ -52,8 +52,10 @@ class Game {
         this.updateGameInterval = setInterval(this.updateGame.bind(this), 1000 / 60);
     }
 
-    finishGame() {
-
+    // Méthode appelée quand un joueur abandonne définitivement (pas pour déconnexion temporaire)
+    abandonGame(abandoningPlayer) {
+        console.log(`Joueur ${abandoningPlayer} a abandonné la partie`);
+        
         this.ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 0, speedY: 0 };
         this.leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
         this.rightPaddle = { x: 1400 - 20, y: 800 / 2 - paddleHeight / 2 };
@@ -63,22 +65,25 @@ class Game {
             clearTimeout(this.launchTimeout);
             this.launchTimeout = null;
         }
-        console.log("READYSTATE 1", this.clients[1].readyState);
-        
-        console.log("READYSTATE 0", this.clients[0].readyState);
 
-        if (this.clients[0].readyState === 1){
-            console.log("SALUT===========");
+        // Donner la victoire à l'autre joueur
+        if (abandoningPlayer === 'left') {
+            this.score.right = 5;
+            this.score.left = 0;
+        } else {
             this.score.left = 5;
             this.score.right = 0;
         }
-        else {
-            console.log("ANTOINe===========");
-            this.score.right = 5;
-            this.score.left = 0;
-        }
+        
         // Informer tous les clients
-        const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score, event: 'game_over' };
+        const gameState = { 
+            ball: this.ball, 
+            leftPaddle: this.leftPaddle, 
+            rightPaddle: this.rightPaddle, 
+            score: this.score, 
+            event: 'game_over',
+            reason: 'abandon'
+        };
         this.clients.forEach((client) => {
             if (client.readyState === 1) {
                 client.send(JSON.stringify(gameState));
@@ -255,22 +260,46 @@ app.register(async function (app) {
 		let playerPosition = null;
         let playerUsername = "Player";
         
-        // Assigner une position au joueur
+        // Assigner une position au joueur (avec support de reconnexion)
         if (!game.players.left) {
             playerPosition = 'left';
             game.players.left = socket;
             game.clients.push(socket);
+            console.log('Nouveau joueur LEFT connecté');
         } else if (!game.players.right) {
             playerPosition = 'right';
             game.players.right = socket;    
             game.clients.push(socket);
+            console.log('Nouveau joueur RIGHT connecté');
         
             // Démarrer le jeu quand les deux joueurs sont connectés
             setTimeout(() => {
                 game.resetBall();
             }, 1000);
+        } else if (game.players.left === null) {
+            // Reconnexion du joueur LEFT
+            playerPosition = 'left';
+            game.players.left = socket;
+            game.clients.push(socket);
+            console.log('Joueur LEFT reconnecté');
+            
+            // Reprendre le jeu si l'autre joueur est toujours là
+            if (game.players.right && game.players.right.readyState === 1) {
+                game.isGamerunning = true;
+            }
+        } else if (game.players.right === null) {
+            // Reconnexion du joueur RIGHT
+            playerPosition = 'right';
+            game.players.right = socket;
+            game.clients.push(socket);
+            console.log('Joueur RIGHT reconnecté');
+            
+            // Reprendre le jeu si l'autre joueur est toujours là
+            if (game.players.left && game.players.left.readyState === 1) {
+                game.isGamerunning = true;
+            }
         } else {
-            // Sala pleine
+            // Salle pleine ET les deux joueurs sont connectés
             socket.send(JSON.stringify({ event: 'error', message: 'Game full' }));
             socket.close();
             return;
@@ -335,14 +364,35 @@ app.register(async function (app) {
         socket.on('close', () => {
             console.log(`Joueur ${playerPosition} déconnecté`);
             
-            // Libérer la position
-            if (playerPosition === 'left') {
-                game.players.left = null;
-            } else if (playerPosition === 'right') {
-                game.players.right = null;
-            }
-            // Réinitialiser le jeu si un joueur part
-            game.finishGame();
+            // Ne pas libérer immédiatement - donner 5 secondes pour reconnexion
+            setTimeout(() => {
+                // Vérifier si toujours déconnecté après 5 secondes
+                if ((playerPosition === 'left' && game.players.left === socket) ||
+                    (playerPosition === 'right' && game.players.right === socket)) {
+                    
+                    console.log(`Joueur ${playerPosition} définitivement déconnecté après timeout`);
+                    
+                    // Libérer la position
+                    if (playerPosition === 'left') {
+                        game.players.left = null;
+                    } else if (playerPosition === 'right') {
+                        game.players.right = null;
+                    }
+                    
+                    // ⚠️ NE PAS appeler finishGame() pour les tournois
+                    // Laisser la partie en pause pour permettre la reconnexion
+                    game.isGamerunning = false;
+                    
+                    // Informer l'autre joueur
+                    const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
+                    if (otherPlayer && otherPlayer.readyState === 1) {
+                        otherPlayer.send(JSON.stringify({
+                            event: 'opponent_disconnected',
+                            message: 'Votre adversaire s\'est déconnecté'
+                        }));
+                    }
+                }
+            }, 5000);
         });
 
         socket.on('error', (error) => {

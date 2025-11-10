@@ -1,5 +1,6 @@
 import { translations } from '../i18n';
 import { getUser, onUserChange, ensureUser } from '../linkUser';
+import { getUserInventory } from './inventory';
 
 export const t = translations[getCurrentLang()];
 
@@ -96,6 +97,129 @@ export function createLangSection(): HTMLElement {
 	return langSection;
 }
 
+function PopUpImportAvatar(avatar_img: string): HTMLElement{
+    const close = () => {
+      document.removeEventListener("keydown", onEsc);
+      overlay.remove();
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onEsc);
+
+	const overlay = document.createElement("div");
+    overlay.className = "fixed inset-0 z-[2000] gap-3 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4";
+
+	const avatar_container = document.createElement("div");
+    avatar_container.className = "w-1/4 p-3 lex items-center justify-center border-white border-2 rounded-xl";
+	overlay.appendChild(avatar_container);
+
+	const avatar = document.createElement("img");
+    avatar.className = "w-full h-full rounded-xl";
+	avatar.src = avatar_img;
+	avatar_container.appendChild(avatar);
+
+	const btn_change = document.createElement("button");
+	btn_change.className = "glass-blur px-3 py-2 w-1/5 hover:scale-110 duration-300 transition-all cursor-pointer";
+	btn_change.textContent = t.change || "change" //!i18n;
+	btn_change.addEventListener(('click'), async () => {
+		const jwt = localStorage.getItem("jwt");
+		if (!jwt)
+			return ;
+		try {
+			const resp = await fetch(``, {
+            	method: "", //!
+            	headers: {
+            	    'Authorization': `Bearer ${jwt}`,
+            	}
+        	});
+			
+			if (resp.ok)
+			{
+				
+			}
+		} catch (e) {
+			console.log("Error Avatar: ", e);
+		}
+	})
+	overlay.appendChild(btn_change);
+
+	const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg border border-white/40 hover:bg-white/10 focus:scale-105 hover:scale-105 transition-all duration-200";
+    cancelBtn.textContent = t.cancel;
+    cancelBtn.onclick = close;
+    overlay.appendChild(cancelBtn);
+
+	return overlay;
+}
+
+function PopUpActiveA2F(currentStatus: number): HTMLElement {
+    const close = () => {
+        document.removeEventListener("keydown", onEsc);
+        overlay.remove();
+    };
+    const onEsc = (e: KeyboardEvent) => {
+        if (e.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onEsc);
+
+    const overlay = document.createElement("div");
+    overlay.className = "fixed inset-0 z-[2000] gap-3 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4";
+
+    const modal = document.createElement("div");
+    modal.className = "w-full max-w-md glass-blur text-white rounded-xl p-6";
+    overlay.appendChild(modal);
+
+    const title = document.createElement("h2");
+    title.textContent = t.twoFA;
+    title.className = "text-xl md:text-2xl mb-4";
+    modal.appendChild(title);
+
+    const isEnabled = currentStatus === 1;
+    const message = document.createElement("p");
+    message.className = "mb-4 text-sm md:text-base";
+    message.textContent = isEnabled ? t.twoFA_confirm_disable : t.twoFA_confirm_enable;
+    modal.appendChild(message);
+
+    const actions = document.createElement("div");
+    actions.className = "flex justify-end gap-3";
+    modal.appendChild(actions);
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg border border-white/40 hover:bg-white/10 focus:scale-105 hover:scale-105 transition-all duration-200";
+    cancelBtn.textContent = t.cancel;
+    cancelBtn.onclick = close;
+    actions.appendChild(cancelBtn);
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 focus:scale-105 hover:scale-105 transition-all duration-200";
+    confirmBtn.textContent = isEnabled ? t.disablea2f : t.enablea2f;
+    confirmBtn.onclick = async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Loading...";
+        try {
+            const response = await togglea2f(!isEnabled);
+            if (response.success) {
+                await ensureUser(true);
+                close();
+            } else {
+                alert(response.error || "Error toggling a2f");
+            }
+        } catch (err: any) {
+            alert(err.message || "Error toggling a2f");
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = isEnabled ? t.disablea2f : t.enablea2f;
+        }
+    };
+    actions.appendChild(confirmBtn);
+
+    return overlay;
+}
+
 function PopUpChangeInformation( title: string, maininfo: string, newinfo: string, confnewinfo: string, value: string, onConfirm?: (newValue: string, oldValue?: string) => void ): HTMLElement {
     const overlay = document.createElement("div");
     overlay.className = "fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4";
@@ -190,18 +314,33 @@ async function updateProfileInfo(partial: { email?: string; username?: string; a
   	await ensureUser(true);
 }
 
-async function updatePassword(oldPassword: string, newPassword: string) {
-  	const token = localStorage.getItem('jwt');
-  	if (!token) throw new Error('Not authenticated');
-  	const resp = await fetch('/auth/update-password', {
-  	  	method: 'PATCH',
-  	  	headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-  	  	body: JSON.stringify({ oldPassword, newPassword })
-  	});
-  	if (!resp.ok) {
-  	  	const data = await resp.json().catch(() => ({}));
-  	  	throw new Error(data?.error || 'Password update failed');
-  	}
+// async function updatePassword(oldPassword: string, newPassword: string) {
+//   	const token = localStorage.getItem('jwt');
+//   	if (!token) throw new Error('Not authenticated');
+//   	const resp = await fetch('/auth/update-password', {
+//   	  	method: 'PATCH',
+//   	  	headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+//   	  	body: JSON.stringify({ oldPassword, newPassword })
+//   	});
+//   	if (!resp.ok) {
+//   	  	const data = await resp.json().catch(() => ({}));
+//   	  	throw new Error(data?.error || 'Password update failed');
+//   	}
+// }
+
+async function togglea2f(enable: boolean) {
+	const token = localStorage.getItem('jwt');
+	if (!token) throw new Error('Not authenticated');
+	const resp = await fetch('/auth/toggle-a2f', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+		body: JSON.stringify({ enable })
+	});
+	if (!resp.ok) {
+		const data = await resp.json().catch(() => ({}));
+		throw new Error(data?.error || 'a2f toggle failed');
+	}
+	return await resp.json();
 }
 
 function CreateFlagSection(lang: string, IconPath: string, code:string): HTMLButtonElement {
@@ -333,44 +472,125 @@ export function SettingsPage(): HTMLElement {
 
 	// PASSWORD //
 
-	const changePasswordSection = document.createElement("div");
-	changePasswordSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+	// const changePasswordSection = document.createElement("div");
+	// changePasswordSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
 
-	const Passwordimg = document.createElement("img");
-	Passwordimg.className = "hidden sm:flex";
-	Passwordimg.src = "/icons/key-round.svg";
-	changePasswordSection.appendChild(Passwordimg);
+	// const Passwordimg = document.createElement("img");
+	// Passwordimg.className = "hidden sm:flex";
+	// Passwordimg.src = "/icons/key-round.svg";
+	// changePasswordSection.appendChild(Passwordimg);
 
-	const PasswordContent = document.createElement("p");
-	PasswordContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
-	const maskPassword = (v: string) => "•".repeat(v.length);
-	PasswordContent.textContent = maskPassword(getUser()?.password || password); //!password user pas forcer present, a voir pour modif ou non !! 
-	changePasswordSection.appendChild(PasswordContent);
+	// const PasswordContent = document.createElement("p");
+	// PasswordContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
+	// const maskPassword = (v: string) => "•".repeat(v.length);
+	// PasswordContent.textContent = maskPassword(getUser()?.password || password); //!password user pas forcer present, a voir pour modif ou non !! 
+	// changePasswordSection.appendChild(PasswordContent);
 
-	const ChangePasswordBtn = document.createElement("button");
-	ChangePasswordBtn.type = "button";
-	ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
-	ChangePasswordBtn.addEventListener(("click"), () => {
-		const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, "", async (newVal, oldVal) => {
-			try {
-				await updatePassword(oldVal || '', newVal);
-				password = newVal;
-				PasswordContent.textContent = maskPassword(password);
-			} catch (e: any) {
-				alert(e.message || 'Password update failed');
-			}
-		});
+	// const ChangePasswordBtn = document.createElement("button");
+	// ChangePasswordBtn.type = "button";
+	// ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+	// ChangePasswordBtn.addEventListener(("click"), () => {
+	// 	const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, "", async (newVal, oldVal) => {
+	// 		try {
+	// 			await updatePassword(oldVal || '', newVal);
+	// 			password = newVal;
+	// 			PasswordContent.textContent = maskPassword(password);
+	// 		} catch (e: any) {
+	// 			alert(e.message || 'Password update failed');
+	// 		}
+	// 	});
+	// 	mainContainer.appendChild(overlay);
+	// });
+
+	// const ChangePasswordBtnImg = document.createElement("img");
+	// ChangePasswordBtnImg.src = "/icons/pen-line.svg";
+	// ChangePasswordBtnImg.alt = "Edit";
+	// ChangePasswordBtnImg.className = "w-9/10"
+	// ChangePasswordBtn.appendChild(ChangePasswordBtnImg);
+
+	// changePasswordSection.appendChild(ChangePasswordBtn);
+	// changeInfoSection.appendChild(changePasswordSection);
+
+	// avatar //
+
+	const changeavatarSection = document.createElement("div");
+	changeavatarSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+
+	const avatarimg = document.createElement("img");
+	avatarimg.className = "hidden sm:flex";
+	avatarimg.src = "/icons/user.svg";
+	changeavatarSection.appendChild(avatarimg);
+
+	const avatarContent = document.createElement("p");
+	avatarContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
+	avatarContent.textContent = "Loading...";
+	
+	getUserInventory().then(inventory => {
+		if (inventory?.avatar_use?.[0]?.id) {
+			avatarContent.textContent = inventory.avatar_use[0].id;
+		} else {
+			avatarContent.textContent = "No avatar";
+		}
+	}).catch(() => {
+		avatarContent.textContent = "Error loading avatar";
+	});
+	
+	changeavatarSection.appendChild(avatarContent);
+
+	const ChangeavatarBtn = document.createElement("button");
+	ChangeavatarBtn.type = "button";
+	ChangeavatarBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+	ChangeavatarBtn.addEventListener(("click"), () => {
+		const overlay = PopUpImportAvatar(avatarContent.textContent);
 		mainContainer.appendChild(overlay);
 	});
 
-	const ChangePasswordBtnImg = document.createElement("img");
-	ChangePasswordBtnImg.src = "/icons/pen-line.svg";
-	ChangePasswordBtnImg.alt = "Edit";
-	ChangePasswordBtnImg.className = "w-9/10"
-	ChangePasswordBtn.appendChild(ChangePasswordBtnImg);
+	const ChangeavatarBtnImg = document.createElement("img");
+	ChangeavatarBtnImg.src = "/icons/pen-line.svg";
+	ChangeavatarBtnImg.alt = "Edit";
+	ChangeavatarBtnImg.className = "w-9/10"
+	ChangeavatarBtn.appendChild(ChangeavatarBtnImg);
 
-	changePasswordSection.appendChild(ChangePasswordBtn);
-	changeInfoSection.appendChild(changePasswordSection);
+	changeavatarSection.appendChild(ChangeavatarBtn);
+	changeInfoSection.appendChild(changeavatarSection);
+
+	// a2f //
+
+	const changeA2FSection = document.createElement("div");
+	changeA2FSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+
+	const A2Fimg = document.createElement("img");
+	A2Fimg.className = "hidden sm:flex";
+	changeA2FSection.appendChild(A2Fimg);
+	const A2FContent = document.createElement("p");
+	const isa2fEnabled = (getUser()?.is_a2f || 0) === 1;
+	A2FContent.textContent = isa2fEnabled ? t.twoFA_status_enabled : t.twoFA_status_disabled;
+	A2FContent.className = "truncate text-auto md:text-xl w-full p-1"
+	changeA2FSection.appendChild(A2FContent);
+
+	const ChangeA2FBtn = document.createElement("button");
+	ChangeA2FBtn.type = "button";
+	ChangeA2FBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+	ChangeA2FBtn.addEventListener(("click"), () => {
+		const overlay = PopUpActiveA2F(getUser()?.is_a2f || 0);
+		mainContainer.appendChild(overlay);
+	});
+
+ 	const ChangeA2FBtnImg = document.createElement("img");
+ 	ChangeA2FBtnImg.src = "/icons/pen-line.svg";
+ 	ChangeA2FBtnImg.alt = "Edit";
+	ChangeA2FBtnImg.className = "w-9/10"
+ 	ChangeA2FBtn.appendChild(ChangeA2FBtnImg);
+
+	changeA2FSection.appendChild(ChangeA2FBtn);
+	changeInfoSection.appendChild(changeA2FSection);
+
+	// Update a2f status when user changes
+	onUserChange(u => { 
+		const status = (u?.is_a2f || 0) === 1;
+		A2FContent.textContent = status ? t.twoFA_status_enabled : t.twoFA_status_disabled;
+		A2Fimg.src = status ? "/icons/shield-check.svg":"/icons/shield-off.svg" ;
+	});
 
 	settingsContainer.appendChild(langSettingsSection);
 	settingsContainer.appendChild(CreateLine());
@@ -381,4 +601,3 @@ export function SettingsPage(): HTMLElement {
 
 	return mainContainer;
 }
-

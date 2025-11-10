@@ -45,26 +45,43 @@ interface Inventory {
 }
 
 export async function getDataGame(uuidGame: string){
-	try {
-		const token = localStorage.getItem("jwt") || "";
-		const resp = await fetch(`/game/game/${encodeURIComponent(uuidGame)}`, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`,
-			},
-		});
-		console.log("RESP GET DATA", resp);
-		if (resp.ok)
-		{
-			const data = await resp.json();
-			console.log("GET DATA GAME: ", data);
-			return data;
-		}
-	} catch (e) {
-		console.error("Erreur lors de la recuperation de data game :", e);
-	}
-	return {};
+    try {
+        const token = localStorage.getItem("jwt") || "";
+        const resp = await fetch(`/game/game/${encodeURIComponent(uuidGame)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        
+        if (resp.ok) {
+            const data = await resp.json();
+            
+            if ((!data.player1 || data.player1 === 'player1') && data.player1_uuid) {
+                try {
+                    const inv1 = await getUidInventory(data.player1_uuid);
+                    data.player1 = inv1?.username || 'Player 1';
+                } catch (e) {
+                    console.error('Error fetching player 1 name:', e);
+                }
+            }
+            
+            if ((!data.player2 || data.player2 === 'player2') && data.player2_uuid) {
+                try {
+                    const inv2 = await getUidInventory(data.player2_uuid);
+                    data.player2 = inv2?.username || 'Player 2';
+                } catch (e) {
+                    console.error('Error fetching player 2 name:', e);
+                }
+            }
+            
+            return data;
+        }
+    } catch (e) {
+        console.error("Erreur lors de la récupération des données du game:", e);
+    }
+    return {};
 }
 
 export function PongOnlineMenuPage(): HTMLElement {
@@ -91,16 +108,12 @@ export function PongOnlineMenuPage(): HTMLElement {
 		const gameData = await getDataGame(uuidGame);
 
 		console.log("GAME DATA: ", gameData);
-		if (gameData && gameData.player1_uuid !== getUser()?.uuid)
-		{
-			user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
-			user2Inventory = (await getUidInventory(getUser()?.uuid || "err")) as Inventory;
-		}
-		else
-		{
-			user1Inventory = (await getUidInventory((getUser()?.uuid || "err"))) as Inventory;
-			if (gameData.player2_uuid)
-				user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
+		if (gameData.player1_uuid && gameData.player2_uuid) {
+		    user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
+		    user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
+		} else {
+		    user1Inventory = {id: "", username: "Player 1", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png", bg: "/bg/default_bg.png"};
+		    user2Inventory = {id: "", username: "Player 2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png", bg: "/bg/default_bg.png"};
 		}
 		console.log("USERINVENTORY1: ", user1Inventory);
 		console.log("USERINVENTORY2: ", user2Inventory);
@@ -404,17 +417,32 @@ export function PongOnlineOverlayPage(): HTMLElement {
 
 	const BackBtn = document.createElement("button");
 	BackBtn.className = "relative z-10 inline-flex items-center justify-center whitespace-nowrap leading-none w-fit h-fit cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
-	BackBtn.textContent = t.back_to_menu;
 	BackBtn.tabIndex = 0;
 
-	BackBtn.addEventListener('click', () => {
-		overlay.classList.add("fade-out");
-		setTimeout(() => {
-			user1.score = 0;
-			user2.score = 0;
-			navigateTo("/pong/menu");
-		}, 1000);
-	});
+	// Vérifier si on vient d'un tournoi en regardant l'URL précédente ou sessionStorage
+	const tournamentUuid = sessionStorage.getItem('currentTournamentUuid');
+	
+	if (tournamentUuid) {
+		BackBtn.textContent = "Retour au Tournoi";
+		BackBtn.addEventListener('click', () => {
+			overlay.classList.add("fade-out");
+			setTimeout(() => {
+				user1.score = 0;
+				user2.score = 0;
+				navigateTo(`/Tournament/gameplay?uid=${tournamentUuid}`);
+			}, 1000);
+		});
+	} else {
+		BackBtn.textContent = t.back_to_menu;
+		BackBtn.addEventListener('click', () => {
+			overlay.classList.add("fade-out");
+			setTimeout(() => {
+				user1.score = 0;
+				user2.score = 0;
+				navigateTo("/pong/menu");
+			}, 1000);
+		});
+	}
 
 	BackBtnWrapper.appendChild(BackBtn);
 	BackContainer.appendChild(BackBtnWrapper);
@@ -630,8 +658,8 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 				myPosition = msg.position;
 				console.log(`Position assignée: ${myPosition}`);
 				
-				user1.name = game.player1;
-				user2.name = game.player2;
+				user1.name = user1Inventory?.username || game.player1 || "Player 1";
+				user2.name = user2Inventory?.username || game.player2 || "Player 2";
 				
 				score1Elem.textContent = `${user1.name}: ${user1.score}`;
 				score2Elem.textContent = `${user2.name}: ${user2.score}`;
@@ -718,9 +746,19 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 	socket.onclose = () => {
 		if (state?.state !== 'game_over') {
 			cleanup();
-			setTimeout(() => {
-				navigateTo("/pong/online/menu");
-			}, 1000);
+			
+			// Si c'est un match de tournoi, retourner à la page du tournoi
+			if (game.tournament) {
+				console.log("Tournament game, redirecting to tournament page...");
+				setTimeout(() => {
+					navigateTo(`/Tournament/gameplay?uid=${game.tournament}`);
+				}, 1000);
+			} else {
+				// Sinon, retourner au menu pong online classique
+				setTimeout(() => {
+					navigateTo("/pong/online/menu");
+				}, 1000);
+			}
 		}
 	};
 
@@ -843,8 +881,15 @@ export function PongOnlineGamePage(): HTMLElement {
 		console.log("GAME DATA GAME PAGE: ", gameData);
 
 		console.log("GAME DATA: ", gameData);
+		// const currentUserUuid = getUser()?.uuid;
+		// const isPlayer1 = currentUserUuid === gameData.player1_uuid;
+		// if (isPlayer1){
 		user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
 		user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
+		// } else {
+			// user1Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
+			// user2Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
+		// }
 		console.log("USERINVENTORY1: ", user1Inventory);
 		console.log("USERINVENTORY2: ", user2Inventory);
 		render();
@@ -871,7 +916,7 @@ export function PongOnlineGamePage(): HTMLElement {
 		
 		const Score1 = document.createElement("h1");
 		Score1.className = "text-3xl tracking-widest text-green-400 neon-matrix";
-		Score1.textContent = gameData.player1 + ": " + user1.score
+		Score1.textContent = (user1Inventory?.username || gameData.player1 || "Player 1") + ": " + user1.score
 		Profile1.appendChild(Score1);
 
 		const Profile2 = document.createElement("div");
@@ -884,7 +929,7 @@ export function PongOnlineGamePage(): HTMLElement {
 
 		const Score2 = document.createElement("h1");
 		Score2.className = "text-3xl tracking-widest text-green-400 neon-matrix";
-		Score2.textContent = gameData.player2 + ": " + user2.score
+		Score2.textContent = (user2Inventory?.username || gameData.player2 || "Player 2") + ": " + user2.score
 		Profile2.appendChild(Score2);
 
 		ScorePong.appendChild(Profile1);
