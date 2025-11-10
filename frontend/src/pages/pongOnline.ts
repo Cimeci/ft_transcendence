@@ -4,6 +4,7 @@ import { getUser } from "../linkUser";
 import { t } from "./settings";
 import type { Friend } from "./friends";
 import { getUuid } from './tournament';
+import { GetData } from './user';
 
 export const gameHistory: string[] = [];
 
@@ -861,6 +862,7 @@ export function PongOnlineGamePage(): HTMLElement {
 	
 	let user1Inventory: Inventory = {id: "err", username: "player1", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
 	let user2Inventory: Inventory = {id: "err", username: "player2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
+
 	
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "gap-2 z-2000 h-full min-h-screen w-full flex flex-col items-center justify-center bg-linear-to-t from-green-500 via-black to-green-800"
@@ -881,15 +883,11 @@ export function PongOnlineGamePage(): HTMLElement {
 		console.log("GAME DATA GAME PAGE: ", gameData);
 
 		console.log("GAME DATA: ", gameData);
-		// const currentUserUuid = getUser()?.uuid;
-		// const isPlayer1 = currentUserUuid === gameData.player1_uuid;
-		// if (isPlayer1){
 		user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
+		user1Inventory.username = (await GetData(gameData.player1_uuid)).username_tournament;
 		user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
-		// } else {
-			// user1Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
-			// user2Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
-		// }
+		user2Inventory.username = (await GetData(gameData.player2_uuid)).username_tournament;
+
 		console.log("USERINVENTORY1: ", user1Inventory);
 		console.log("USERINVENTORY2: ", user2Inventory);
 		render();

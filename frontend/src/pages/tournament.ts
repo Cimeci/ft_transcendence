@@ -88,7 +88,7 @@ export async function getDataUuidTournament(uuid: string){
         });
         
         if (!resp.ok) {
-            console.error("Erreur lors de la récupération des tournois :", resp.status, resp.statusText);
+            console.error("Error fetching tournaments:", resp.status, resp.statusText);
             return null;
         }
 		const data: Tournament = await resp.json();
@@ -116,7 +116,7 @@ async function GetTournamentList() {
         });
      
         if (!resp.ok) {
-            console.error("Erreur lors de la récupération des tournois :", resp.status, resp.statusText);
+            console.error("Error fetching tournaments:", resp.status, resp.statusText);
             return null;
         }
 
@@ -178,13 +178,13 @@ export async function getCurrentTournament(): Promise<Tournament | undefined> {
         console.log("TOURNAMENTLIST :", updatedList);
         
         if (!uuid) {
-            console.error("Aucun UUID trouvé dans l'URL");
+            console.error("No UUID found in URL");
             return undefined;
         }
         
         const tournament = tournamentList.find(t => t.uuid === uuid);
         if (!tournament) {
-            console.warn("Tournoi non trouvé avec l'UUID:", uuid);
+            console.warn("Tournament not found with UUID:", uuid);
             const directData = await getDataUuidTournament(uuid);
             if (directData) {
                 tournamentList.push(directData);
@@ -195,7 +195,7 @@ export async function getCurrentTournament(): Promise<Tournament | undefined> {
         console.log("TOURNAMENT FIND: ", tournament);
         return tournament;
     } catch (error) {
-        console.error("Erreur dans getCurrentTournament:", error);
+        console.error("Error in getCurrentTournament:", error);
         return undefined;
     }
 }
@@ -206,17 +206,18 @@ export async function getPlayerNames(uuids: string[]): Promise<string[]> {
             uuids.map(async (uuid) => {
                 try {
                     const userData = await GetData(uuid);
-                    return userData?.username || `Player ${uuid.slice(0, 8)}`;
+                    // Privilégier username_tournament pour les tournois
+                    return userData?.username_tournament || userData?.username || `Player ${uuid.slice(0, 8)}`;
                 } catch (error) {
-                    console.error(`Erreur lors de la récupération de l'utilisateur ${uuid}:`, error);
+                    console.error(`Error fetching user ${uuid}:`, error);
                     return `Player ${uuid.slice(0, 8)}`;
                 }
             })
         );
         return names;
     } catch (error) {
-        console.error("Erreur dans getPlayerNames:", error);
-        // Fallback: retourner les UUID si erreur
+        console.error("Error in getPlayerNames:", error);
+        // Fallback: return UUID if error
         return uuids.map(uuid => `Player ${uuid.slice(0, 8)}`);
     }
 }
@@ -257,7 +258,7 @@ export function parsePlayer(tournament: Tournament): Players[] {
             playerArray = playersData;
         }
     } catch (error) {
-        console.error("Erreur lors du parsing des joueurs:", error);
+        console.error("Error parsing players:", error);
         playerArray = [];
     }
 
@@ -678,12 +679,12 @@ export function PongTournamentPageJoin(): HTMLElement {
 				mainContainer.innerHTML = "";
                 await renderTournament();
 			} else {
-                loadingContainer.innerHTML = "<p>Tournoi non trouvé</p>";
+                loadingContainer.innerHTML = `<p>${t.error}</p>`;
             }
 			
         } catch (error) {
-            console.error("Erreur lors du chargement du tournoi:", error);
-            loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
+            console.error("Error loading tournament:", error);
+            loadingContainer.innerHTML = `<p>${t.error}</p>`;
         }
     }
 
@@ -957,7 +958,7 @@ export function PongTournamentPageHost(): HTMLElement {
 
 	const loadingContainer = document.createElement("div");
     loadingContainer.className = "flex items-center justify-center";
-    loadingContainer.innerHTML = "<p>Chargement du tournoi...</p>";
+    loadingContainer.innerHTML = `<p>${t.login} ${t.tournament}...</p>`;
     mainContainer.appendChild(loadingContainer);
 
 	async function initializeTournament() {
@@ -979,11 +980,11 @@ export function PongTournamentPageHost(): HTMLElement {
                 	await renderTournament();
 				}
             } else {
-                loadingContainer.innerHTML = "<p>Tournoi non trouvé</p>";
+                loadingContainer.innerHTML = `<p>${t.error}</p>`;
             }
         } catch (error) {
-            console.error("Erreur lors du chargement du tournoi:", error);
-            loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
+            console.error("Error loading tournament:", error);
+            loadingContainer.innerHTML = `<p>${t.error}</p>`;
         }
     }
 
@@ -1299,7 +1300,6 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             currentTournament = await getCurrentTournament();
             console.log("CURRENT TOURNAMENT GAME: ", currentTournament);
             
-            // Stocker l'UUID du tournoi actuel dans sessionStorage
             if (currentTournament?.uuid) {
                 sessionStorage.setItem('currentTournamentUuid', currentTournament.uuid);
             }
@@ -1309,11 +1309,11 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
                 await fetchMyNextMatch();
                 await renderTournament();
             } else {
-                loadingContainer.innerHTML = "<p>Tournoi non trouvé</p>";
+                loadingContainer.innerHTML = `<p>${t.error}</p>`;
             }
         } catch (error) {
-            console.error("Erreur lors du chargement du tournoi:", error);
-            loadingContainer.innerHTML = "<p>Erreur lors du chargement du tournoi</p>";
+            console.error("Error loading tournament:", error);
+            loadingContainer.innerHTML = `<p>${t.error}</p>`;
         }
     }
 
@@ -1377,7 +1377,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             
             const winnerText = document.createElement("h2");
             winnerText.className = "text-4xl font-bold text-black";
-            winnerText.textContent = `🏆 ${t.winner}: ${(await getUidInventory(tournamentStatus.tournament.winner)).username}`;
+            winnerText.textContent = `🏆 ${t.winner}: ${(await GetData(tournamentStatus.tournament.winner)).username_tournament}`;
             winnerBanner.appendChild(winnerText);
             
             contentContainer.appendChild(winnerBanner);
@@ -1389,27 +1389,27 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
             const header = document.createElement("h2");
             header.className = "text-3xl neon-matrix mb-4";
-            header.textContent = "🎮 " + (t.your_match || "Votre Prochain Match");
+            header.textContent = "🎮 " + t.your_match;
             myMatchSection.appendChild(header);
 
             const matchCard = document.createElement("div");
             matchCard.className = "bg-black/40 p-6 rounded-xl flex flex-col gap-4";
 
             // Round info
-            const roundInfo = document.createElement("p");
-            roundInfo.className = "text-xl text-green-400";
-            roundInfo.textContent = `Round ${myNextMatch.round || 1}`;
-            matchCard.appendChild(roundInfo);
+            // const roundInfo = document.createElement("p");
+            // roundInfo.className = "text-xl text-green-400";
+            // roundInfo.textContent = `Round ${myNextMatch.round || 1}`;
+            // matchCard.appendChild(roundInfo);
 
             // Players info
             const playersInfo = document.createElement("div");
             playersInfo.className = "text-lg text-gray-300";
             
-            const player1Name = myNextMatch.player1 || "Joueur 1";
-            const player2Name = myNextMatch.player2 || "Joueur 2";
+            const player1Name = myNextMatch.player1 || t.username1;
+            const player2Name = myNextMatch.player2 || t.username2;
             
             playersInfo.innerHTML = `
-                <p class="font-bold text-2xl">${player1Name} <span class="text-green-400">vs</span> ${player2Name}</p>
+                <p class="font-bold text-2xl">${player1Name} <span class="text-green-400">${t.vs}</span> ${player2Name}</p>
             `;
             matchCard.appendChild(playersInfo);
 
@@ -1419,13 +1419,13 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             
             if (myNextMatch.status === 'ready') {
                 statusText.className += " text-green-400";
-                statusText.textContent = "✅ Match prêt ! Vous pouvez jouer maintenant.";
+                statusText.textContent = `✅ ${t.game_ready} ${t.you_can_play_now}.`;
                 
                 // Play button (seulement si ready et que le game_uuid existe)
                 if (myNextMatch.game_uuid) {
                     const playBtn = document.createElement("button");
                     playBtn.className = "w-full py-4 bg-green-600 hover:bg-green-700 rounded-xl text-2xl font-bold transition-all duration-300 hover:scale-105 shadow-lg animate-pulse";
-                    playBtn.textContent = "▶️ " + (t.play || "Jouer Maintenant");
+                    playBtn.textContent = "▶️ " + t.play;
                     playBtn.onclick = () => {
                         console.log("🎮 Starting game, stopping refresh...");
                         stopRefresh(); // Arrêter le refresh avant de naviguer
@@ -1444,16 +1444,16 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
                 }
             } else if (myNextMatch.status === 'waiting') {
                 statusText.className += " text-yellow-400";
-                statusText.textContent = "⏳ En attente... Le match précédent doit d'abord se terminer.";
+                statusText.textContent = `⏳ ${t.waiting_previous_match}`;
             } else if (myNextMatch.status === 'playing') {
                 statusText.className += " text-blue-400";
-                statusText.textContent = "🎮 Match en cours !";
+                statusText.textContent = `🎮 ${t.match_in_progress}!`;
                 
                 // Play button pour rejoindre le match en cours
                 if (myNextMatch.game_uuid) {
                     const joinBtn = document.createElement("button");
                     joinBtn.className = "w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-2xl font-bold transition-all duration-300 hover:scale-105 shadow-lg";
-                    joinBtn.textContent = "🔗 Rejoindre le Match";
+                    joinBtn.textContent = `🔗 ${t.join_match}`;
                     joinBtn.onclick = () => {
                         console.log("🎮 Joining game, stopping refresh...");
                         stopRefresh(); // Arrêter le refresh avant de naviguer
@@ -1482,18 +1482,17 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
             const header = document.createElement("h2");
             header.className = "text-2xl neon-matrix mb-4";
-            header.textContent = "⏸️ En attente";
+            header.textContent = `⏸️ ${t.waiting}`;
             waitingSection.appendChild(header);
 
             const waitingText = document.createElement("p");
             waitingText.className = "text-lg text-gray-400";
-            waitingText.textContent = "Votre prochain match n'est pas encore disponible. Les matchs précédents doivent d'abord se terminer.";
+            waitingText.textContent = t.waiting_previous_match;
             waitingSection.appendChild(waitingText);
 
             contentContainer.appendChild(waitingSection);
         }
 
-        // 📊 Progress Section
         if (tournamentStatus) {
             const progressSection = document.createElement("div");
             progressSection.className = "w-full p-6 glass-blur rounded-xl";
@@ -1521,10 +1520,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             // Stats
             const stats = document.createElement("div");
             stats.className = "flex justify-between text-lg";
-            stats.innerHTML = `
-                <span>Round ${tournamentStatus.currentRound}/${tournamentStatus.totalRounds}</span>
-                <span>${completedMatches}/${totalMatches} matchs terminés</span>
-            `;
+            stats.innerHTML = `<span>${completedMatches}/${totalMatches} ${t.completed}</span>`;
             progressSection.appendChild(stats);
 
             contentContainer.appendChild(progressSection);
@@ -1538,7 +1534,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             
             const bracketTitle = document.createElement("h2");
             bracketTitle.className = "text-2xl neon-matrix mb-4";
-            bracketTitle.textContent = "🏆 Bracket du Tournoi";
+            bracketTitle.textContent = `🏆 ${t.tournament}`;
             bracketContainer.appendChild(bracketTitle);
             
             const bracket = await createTournamentBracket(currentTournament);
@@ -1557,11 +1553,11 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
         const BackToMenuTitle = document.createElement("h1");
         BackToMenuTitle.className = "text-5xl neon-matrix";
-        BackToMenuTitle.textContent = t.title_leave || "Quitter le Tournoi ?";
+        BackToMenuTitle.textContent = t.title_leave_tournament;
         BackToMenuSure.appendChild(BackToMenuTitle);
 
         const BackToMenuTxt = document.createElement("p");
-        BackToMenuTxt.textContent = t.txt_leave || "Êtes-vous sûr de vouloir quitter ?";
+        BackToMenuTxt.textContent = t.txt_leave_tournament;
         BackToMenuSure.appendChild(BackToMenuTxt);
 
         const actions = document.createElement("div");
@@ -1569,7 +1565,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
 
         const CancelBtn = document.createElement("button");
         CancelBtn.className = "px-4 py-2 rounded-xl border border-gray-300 hover:scale-110 transition-all duration-300";
-        CancelBtn.textContent = t.cancel || "Annuler";
+        CancelBtn.textContent = t.cancel;
         CancelBtn.onclick = () => BackToMenuOverlay.classList.add("hidden");
         actions.appendChild(CancelBtn);
 

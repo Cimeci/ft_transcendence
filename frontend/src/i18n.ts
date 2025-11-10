@@ -2,6 +2,7 @@ export const translations = {
 	fr: {
 		error: "Erreur",
 		// Settings
+		change: "Modifier",
 		email: "Mail",
 		changeEmail: "Modifier le mail",
 		currentEmail: "Mail actuel",
@@ -13,6 +14,8 @@ export const translations = {
         confirmNewPassword : "Confirmer le nouveau mot de passe",
 		changeName: "Modifier le pseudonyme",
 		newName: "Nouveau Pseudonyme",
+		changeusername_tournament: "Modifier le nom de tournoi",
+		newusername_tournament: "Nouveau nom de tournoi",
 		// Login
 		login: "Connexion",
 		username: "Pseudonyme",
@@ -144,6 +147,7 @@ export const translations = {
 	en: {
 		error: "Error",
 		// Settings
+		change: "Change",
 		email: "Email",
 		changeEmail: "Change email",
 		currentEmail: "Current email",
@@ -155,6 +159,8 @@ export const translations = {
 		confirmNewPassword: "Confirm new password",
 		changeName: "Change username",
 		newName: "New username",
+		changeusername_tournament: "Change tournament name",
+		newusername_tournament: "New tournament name",
 		// Login
 		login: "Login",
 		username: "Username",
@@ -286,6 +292,7 @@ export const translations = {
 	es: {
 		// Settings
 		error: "Error",
+		change: "Cambiar",
 		email: "Correo electrónico",
 		changeEmail: "Cambio del correo electrónico",
 		currentEmail: "Correo electrónico actual",
@@ -297,6 +304,8 @@ export const translations = {
         confirmNewPassword: "Confirmar nueva contraseña",
 		changeName: "Cambiar nombre de usuario",
         newName: "Nuevo nombre de usuario",
+		changeusername_tournament: "Cambiar nombre de torneo",
+		newusername_tournament: "Nuevo nombre de torneo",
 		// Login
 		login: "Iniciar sesión",
 		username: "Seudónimo",

@@ -5,7 +5,6 @@ import { getUserInventory } from './inventory';
 export const t = translations[getCurrentLang()];
 
 let email:string = "ilan@42angouleme.fr";
-let password:string = "1234";
 
 export function getCurrentLang(): 'fr' | 'en' | 'es' {
 	return (localStorage.getItem('lang') as 'fr' | 'en' | 'es') || 'en';
@@ -325,7 +324,7 @@ function PopUpChangeInformation( title: string, maininfo: string, newinfo: strin
 	return overlay;
 }
 
-async function updateProfileInfo(partial: { email?: string; username?: string; avatar?: string }) {
+async function updateProfileInfo(partial: { email?: string; username?: string; username_tournament?: string, avatar?: string }) {
   	const token = localStorage.getItem('jwt');
   	if (!token) throw new Error('Not authenticated');
   	const resp = await fetch('/user/update-info', {
@@ -339,20 +338,6 @@ async function updateProfileInfo(partial: { email?: string; username?: string; a
   	}
   	await ensureUser(true);
 }
-
-// async function updatePassword(oldPassword: string, newPassword: string) {
-//   	const token = localStorage.getItem('jwt');
-//   	if (!token) throw new Error('Not authenticated');
-//   	const resp = await fetch('/auth/update-password', {
-//   	  	method: 'PATCH',
-//   	  	headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-//   	  	body: JSON.stringify({ oldPassword, newPassword })
-//   	});
-//   	if (!resp.ok) {
-//   	  	const data = await resp.json().catch(() => ({}));
-//   	  	throw new Error(data?.error || 'Password update failed');
-//   	}
-// }
 
 async function togglea2f(enable: boolean) {
 	const token = localStorage.getItem('jwt');
@@ -416,7 +401,7 @@ export function SettingsPage(): HTMLElement {
 	langSettingsSection.appendChild(CreateFlagSection("Español", "/icons/Spain.svg", "es"));
 
 	const changeInfoSection = document.createElement("div");
-	changeInfoSection.className = "mt-5 rounded-xl flex flex-col items-center justify-between w-9/10 sm:w-2/3 gap-15";
+	changeInfoSection.className = "mt-5 rounded-xl flex flex-col items-center justify-between w-9/10 sm:w-2/3 gap-10";
 
 	// NAME //
 
@@ -440,7 +425,7 @@ export function SettingsPage(): HTMLElement {
 		const overlay = PopUpChangeInformation(t.changeName, "", t.newName, "", getUser()?.username || "default", async (newVal) => {
 			try {
 				await updateProfileInfo({ username: newVal });
-				NameContent.textContent = getUser()?.username || newVal;
+				// Le listener onUserChange mettra à jour automatiquement NameContent
 			} catch (e: any) {
 				alert(e.message || 'Update failed');
 			}
@@ -456,6 +441,45 @@ export function SettingsPage(): HTMLElement {
 
 	changeNameSection.appendChild(ChangeNameBtn);
 	changeInfoSection.appendChild(changeNameSection);
+
+	// USERNAME_TOURNAMENT //
+
+	const changeUsername_tournamentSection = document.createElement("div");
+	changeUsername_tournamentSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+
+	const username_tournamentimg = document.createElement("img");
+	username_tournamentimg.className = "focus hidden sm:flex";
+	username_tournamentimg.src = "/icons/user-star.svg";
+	changeUsername_tournamentSection.appendChild(username_tournamentimg);
+
+	const username_tournamentContent = document.createElement("p");
+	username_tournamentContent.textContent = getUser()?.username_tournament || "default1";
+	username_tournamentContent.className = "truncate text-auto md:text-xl w-full p-1"
+	changeUsername_tournamentSection.appendChild(username_tournamentContent);
+
+	const Changeusername_tournamentBtn = document.createElement("button");
+	Changeusername_tournamentBtn.type = "button";
+	Changeusername_tournamentBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+	Changeusername_tournamentBtn.addEventListener(("click"), () => {
+		const overlay = PopUpChangeInformation(t.changeusername_tournament, "", t.newusername_tournament, "", getUser()?.username_tournament || "default", async (newVal) => {
+			try {
+				await updateProfileInfo({ username_tournament: newVal });
+				// Le listener onUserChange mettra à jour automatiquement username_tournamentContent
+			} catch (e: any) {
+				alert(e.message || 'Update failed');
+			}
+		});
+		mainContainer.appendChild(overlay);
+	});
+
+	const Changeusername_tournamentBtnImg = document.createElement("img");
+	Changeusername_tournamentBtnImg.src = "/icons/pen-line.svg";
+	Changeusername_tournamentBtnImg.alt = "Edit";
+	Changeusername_tournamentBtnImg.className = "w-9/10"
+	Changeusername_tournamentBtn.appendChild(Changeusername_tournamentBtnImg);
+
+	changeUsername_tournamentSection.appendChild(Changeusername_tournamentBtn);
+	changeInfoSection.appendChild(changeUsername_tournamentSection);
 
 	// MAIL //
 
@@ -479,7 +503,7 @@ export function SettingsPage(): HTMLElement {
 		const overlay = PopUpChangeInformation(t.changeEmail, t.currentEmail, t.newEmail, t.confirmNewEmail, getUser()?.email || email, async (newVal) => {
 			try {
 				await updateProfileInfo({ email: newVal });
-				MailContent.textContent = getUser()?.email || t.error;
+				// Le listener onUserChange mettra à jour automatiquement MailContent
 			} catch (e: any) {
 				alert(e.message || 'Update failed');
 			}
@@ -495,47 +519,6 @@ export function SettingsPage(): HTMLElement {
 
 	changeMailSection.appendChild(ChangeMailBtn);
 	changeInfoSection.appendChild(changeMailSection);
-
-	// PASSWORD //
-
-	// const changePasswordSection = document.createElement("div");
-	// changePasswordSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
-
-	// const Passwordimg = document.createElement("img");
-	// Passwordimg.className = "hidden sm:flex";
-	// Passwordimg.src = "/icons/key-round.svg";
-	// changePasswordSection.appendChild(Passwordimg);
-
-	// const PasswordContent = document.createElement("p");
-	// PasswordContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
-	// const maskPassword = (v: string) => "•".repeat(v.length);
-	// PasswordContent.textContent = maskPassword(getUser()?.password || password); //!password user pas forcer present, a voir pour modif ou non !! 
-	// changePasswordSection.appendChild(PasswordContent);
-
-	// const ChangePasswordBtn = document.createElement("button");
-	// ChangePasswordBtn.type = "button";
-	// ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
-	// ChangePasswordBtn.addEventListener(("click"), () => {
-	// 	const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, "", async (newVal, oldVal) => {
-	// 		try {
-	// 			await updatePassword(oldVal || '', newVal);
-	// 			password = newVal;
-	// 			PasswordContent.textContent = maskPassword(password);
-	// 		} catch (e: any) {
-	// 			alert(e.message || 'Password update failed');
-	// 		}
-	// 	});
-	// 	mainContainer.appendChild(overlay);
-	// });
-
-	// const ChangePasswordBtnImg = document.createElement("img");
-	// ChangePasswordBtnImg.src = "/icons/pen-line.svg";
-	// ChangePasswordBtnImg.alt = "Edit";
-	// ChangePasswordBtnImg.className = "w-9/10"
-	// ChangePasswordBtn.appendChild(ChangePasswordBtnImg);
-
-	// changePasswordSection.appendChild(ChangePasswordBtn);
-	// changeInfoSection.appendChild(changePasswordSection);
 
 	// avatar //
 
@@ -624,6 +607,8 @@ export function SettingsPage(): HTMLElement {
 	mainContainer.appendChild(settingsContainer);
 
 	onUserChange(u => { NameContent.textContent = u?.username || "default"; });
+	onUserChange(u => { username_tournamentContent.textContent = u?.username_tournament || "default"; });
+	onUserChange(u => { MailContent.textContent = u?.email || t.error; });
 
 	return mainContainer;
 }
