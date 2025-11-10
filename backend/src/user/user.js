@@ -251,14 +251,14 @@ app.patch('/update-info', async(request, reply) => {
     const { email, username, avatar, username_tournament } = request.body;
     let uuid
     try{
-        uuid = checkToken(request);
+        uuid = await checkToken(request);
     } catch (err) {
         request.log.warn({
             event: 'update-info_attempt'
         }, 'Update user info Unauthorized: invalid jwt token');
-        reply.code(401).send({ error: 'Unauthorized' });
+        return reply.code(401).send({ error: 'Unauthorized' });
     }
-    if (!email && !username && !avatar){
+    if (!email && !username && !avatar && !username_tournament){
         request.log.warn({
             event: 'update-info_attempt'
         }, 'Update user info Failed: nothing to change');
@@ -997,6 +997,7 @@ app.get('/me', async(request, reply) => {
         SELECT
             u.uuid,
             u.username,
+            u.username_tournament,
             u.email,
             u.avatar,
             u.is_online,
@@ -1097,20 +1098,25 @@ app.patch('/invit/:uuid', async(request, reply) => {
         db.prepare('UPDATE notification SET response = ? WHERE uuid = ? AND receiver_uuid = ?').run(response, uuid, receiver_uuid);
 
         const mode = db.prepare('SELECT mode FROM notification WHERE uuid = ?').get(uuid);
-        const user = db.prepare('SELECT username FROM user WHERE uuid = ?').get(receiver_uuid);
-        
+        const user = db.prepare('SELECT username, username_tournament FROM user WHERE uuid = ?').get(receiver_uuid);
+
         if (response === 1) {
             try {
+                // Utiliser username_tournament pour les modes tournament, sinon username classique
+                const usernameToUse = (mode && mode.mode === 'tournament')
+                    ? (user.username_tournament || user.username)
+                    : user.username;
+
                 const gameResponse = await fetch('http://game:4000/set-up-game', {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         'x-internal-key': process.env.JWT_SECRET
                     },
-                    body: JSON.stringify({ 
-                        receiver_uuid: receiver_uuid, 
-                        username: user.username, 
-                        uuid: uuid 
+                    body: JSON.stringify({
+                        receiver_uuid: receiver_uuid,
+                        username: usernameToUse,
+                        uuid: uuid
                     })
                 });
                 if (!gameResponse.ok) {
@@ -1222,6 +1228,7 @@ app.get('/:uuid', async(request, reply) => {
     SELECT
         u.uuid,
         u.username,
+        u.username_tournament,
         u.email,
         u.avatar,
         u.is_online,

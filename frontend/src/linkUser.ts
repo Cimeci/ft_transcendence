@@ -1,6 +1,7 @@
 export interface User {
 	uuid: string;
 	username: string;
+	username_tournament: string;
 	email: string;
 	avatar: string | null;
 	is_online: number;

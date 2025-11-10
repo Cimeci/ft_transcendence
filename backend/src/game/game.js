@@ -123,7 +123,7 @@ app.post('/tournament-game', async (request, reply) => {
             return reply.send({ uuid: gameExists.uuid});
         }
 
-        db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode || 'online', tournament, null);
+        db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode || 'online', tournament, null, Date.now(), Date.now());
 
         request.log.info({
             event: 'new-tournament-game_attempt'
@@ -155,8 +155,15 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     }
     let winner_uuid = score1 == 5 ? data.player1_uuid : data.player2_uuid || null;
     console.log("🏆 Winner UUID:", winner_uuid, "Is Tournament:", !!data.tournament);
-    
+
     try {
+        // Mettre à jour le jeu dans la DB
+        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
+
+        const game = db.prepare('SELECT * FROM game WHERE uuid = ?').get(gameId);
+        console.log("💾 Game updated in DB. Tournament:", game.tournament, "Winner:", game.winner);
+
+        // 🎯 Si c'est un match de tournoi ET qu'il y a un gagnant, notifier le service tournament
         if (game.tournament && winner_uuid) {
             console.log("🎮 Notifying tournament service...");
             await notifyTournamentMatchComplete(game);

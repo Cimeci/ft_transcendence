@@ -471,9 +471,9 @@ async function createGameForMatch(match, tournamentUuid, token = null) {
         }
 
         const gameData = {
-            player1: player1Data?.username || 'Player 1',
+            player1: player1Data?.username_tournament || 'Player 1',
             player1_uuid: match.player1_uuid,
-            player2: player2Data?.username || 'Player 2',
+            player2: player2Data?.username_tournament || 'Player 2',
             player2_uuid: match.player2_uuid,
             mode: 'online',
             tournament: tournamentUuid
@@ -496,7 +496,7 @@ async function createGameForMatch(match, tournamentUuid, token = null) {
         }
 
         const { uuid: gameUuid } = await res.json();
-        console.log(`✅ Game created for tournament match: ${gameUuid} (${player1Data?.username} vs ${player2Data?.username})`);
+        console.log(`✅ Game created for tournament match: ${gameUuid} (${player1Data?.username_tournament} vs ${player2Data?.username_tournament})`);
         return gameUuid;
     } catch (error) {
         console.error('Error creating game for match:', error);
@@ -516,6 +516,10 @@ async function getUserDataInternal(userUuid) {
 
         if (userResp.ok) {
             const userData = await userResp.json();
+            // Privilégier username_tournament pour les tournois
+            if (userData.user && userData.user.username_tournament) {
+                userData.user.username = userData.user.username_tournament;
+            }
             return userData.user;
         }
         return null;
@@ -537,6 +541,10 @@ async function getUserData(userUuid, token) {
 
         if (resp.ok) {
             const data = await resp.json();
+            // Privilégier username_tournament pour les tournois
+            if (data.user && data.user.username_tournament) {
+                data.user.username = data.user.username_tournament;
+            }
             return data.user;
         }
         return null;
@@ -596,8 +604,8 @@ async function launchNextMatchAutomatically(tournamentUuid) {
         const player1Data = await getUserDataInternal(nextMatch.player1_uuid);
         const player2Data = await getUserDataInternal(nextMatch.player2_uuid);
         
-        nextMatch.player1 = player1Data?.username || 'Player 1';
-        nextMatch.player2 = player2Data?.username || 'Player 2';
+        nextMatch.player1 = player1Data?.username_tournament || 'Player 1';
+        nextMatch.player2 = player2Data?.username_tournament || 'Player 2';
         
         // Créer le game pour ce match
         const gameUuid = await createGameForMatch(nextMatch, tournamentUuid, null);
@@ -649,7 +657,7 @@ app.patch('/tournament/:uuid/match/:match_uuid/complete', async (request, reply)
         const completedMatch = matches.find(m => m.uuid === match_uuid);
         
         if (!completedMatch) {
-            console.error(`❌ Match not found. Looking for match UUID: ${match_uuid}`);
+            console.error(`Match not found. Looking for match UUID: ${match_uuid}`);
             console.error('Available matches:', matches.map(m => ({ uuid: m.uuid, game_uuid: m.game_uuid, round: m.round })));
             request.log.warn({
                 event: 'complete-match_attempt'
@@ -661,36 +669,35 @@ app.patch('/tournament/:uuid/match/:match_uuid/complete', async (request, reply)
         completedMatch.status = 'completed';
         completedMatch.winner_uuid = winner_uuid;
 
-        console.log(`✅ Match ${completedMatch.uuid} (Round ${completedMatch.round}, Match #${completedMatch.match_number}) completed. Winner: ${winner_uuid}`);
-        console.log(`   Next match index: ${completedMatch.next_match_index}`);
+        console.log(`Match ${completedMatch.uuid} (Round ${completedMatch.round}, Match #${completedMatch.match_number}) completed. Winner: ${winner_uuid}`);
+        console.log(`Next match index: ${completedMatch.next_match_index}`);
 
         // Si ce n'est pas la finale, préparer le prochain round
         if (completedMatch.next_match_index !== null && completedMatch.next_match_index < matches.length) {
             const nextMatch = matches[completedMatch.next_match_index];
             
-            console.log(`   Assigning winner to next match: ${nextMatch.uuid} (Round ${nextMatch.round}, Match #${nextMatch.match_number})`);
-            console.log(`   Current state: player1=${nextMatch.player1_uuid || 'null'}, player2=${nextMatch.player2_uuid || 'null'}`);
+            console.log(`Assigning winner to next match: ${nextMatch.uuid} (Round ${nextMatch.round}, Match #${nextMatch.match_number})`);
+            console.log(`Current state: player1=${nextMatch.player1_uuid || 'null'}, player2=${nextMatch.player2_uuid || 'null'}`);
             
             // 🔧 CORRECTION: Récupérer le nom du gagnant avant de l'assigner
             const winnerData = await getUserDataInternal(winner_uuid);
-            const winnerName = winnerData?.username || 'Player';
+            const winnerName = winnerData?.username_tournament || 'Player';
             
             if (!nextMatch.player1_uuid) {
                 nextMatch.player1_uuid = winner_uuid;
-                nextMatch.player1 = winnerName; // ✅ AJOUT DU NOM
-                nextMatch.status = 'waiting'; // En attente du deuxième joueur
-                console.log(`  → Winner ${winnerName} (${winner_uuid}) assigned to next match as player1`);
+                nextMatch.player1 = winnerName;
+                nextMatch.status = 'waiting';
+                console.log(`Winner ${winnerName} (${winner_uuid}) assigned to next match as player1`);
             } else if (!nextMatch.player2_uuid) {
                 nextMatch.player2_uuid = winner_uuid;
-                nextMatch.player2 = winnerName; // ✅ AJOUT DU NOM
-                nextMatch.status = 'waiting'; // Les deux joueurs sont maintenant assignés
-                console.log(`  → Winner ${winnerName} (${winner_uuid}) assigned to next match as player2`);
-                console.log(`  → Next match ${nextMatch.uuid} now has both players, status: waiting (ready to auto-launch)`);
+                nextMatch.player2 = winnerName;
+                nextMatch.status = 'waiting';
+                console.log(`Winner ${winnerName} (${winner_uuid}) assigned to next match as player2`);
+                console.log(`Next match ${nextMatch.uuid} now has both players, status: waiting (ready to auto-launch)`);
             } else {
-                console.warn(`  ⚠️ Both player slots already filled in next match ${nextMatch.uuid}!`);
+                console.warn(`Both player slots already filled in next match ${nextMatch.uuid}!`);
             }
         } else {
-            // C'est la finale qui vient de se terminer
             console.log(`🏆 Tournament completed! Winner: ${winner_uuid}`);
             db.prepare('UPDATE tournament SET status = ?, winner = ? WHERE uuid = ?')
                 .run('completed', winner_uuid, uuid);
@@ -702,14 +709,12 @@ app.patch('/tournament/:uuid/match/:match_uuid/complete', async (request, reply)
         const allRoundComplete = roundMatches.every(m => m.status === 'completed');
 
         if (allRoundComplete) {
-            console.log(`✅ Round ${currentRound} completed!`);
+            console.log(`Round ${currentRound} completed!`);
         }
 
-        // Mettre à jour les matchs
         db.prepare('UPDATE tournament SET game = ? WHERE uuid = ?')
             .run(JSON.stringify(matches), uuid);
 
-        // 🚀 Auto-lancer le prochain match automatiquement
         await launchNextMatchAutomatically(uuid);
 
         request.log.info({
@@ -752,7 +757,6 @@ app.get('/tournament/:uuid/next-match/:player_uuid', async (request, reply) => {
         const matches = JSON.parse(tournament.game);
         const players = JSON.parse(tournament.players);
         
-        // Vérifier que le joueur est dans le tournoi
         if (!players.some(p => p.uuid === player_uuid)) {
             request.log.warn({
                 event: 'get-next-match_attempt'
@@ -760,15 +764,8 @@ app.get('/tournament/:uuid/next-match/:player_uuid', async (request, reply) => {
             return reply.code(403).send({ error: 'Player not in tournament' });
         }
 
-        // Trouver le prochain match du joueur
-        // Priorité 1: Match 'ready' (avec game_uuid, prêt à jouer)
-        // Priorité 2: Match 'playing' (en cours)
-        // Priorité 3: Match 'waiting' (pas encore lancé)
         for (const match of matches.sort((a, b) => a.round - b.round)) {
-            // Vérifier si ce joueur est dans ce match
             if (match.player1_uuid === player_uuid || match.player2_uuid === player_uuid) {
-                
-                // Si le match a un game_uuid, récupérer les infos complètes
                 if (match.game_uuid) {
                     try {
                         const gameResp = await fetch(`http://game:4000/game/${match.game_uuid}`, {
@@ -780,8 +777,6 @@ app.get('/tournament/:uuid/next-match/:player_uuid', async (request, reply) => {
                         
                         if (gameResp.ok) {
                             const gameData = await gameResp.json();
-                            
-                            // Match pas encore terminé
                             if (!gameData.winner) {
                                 request.log.info({
                                     event: 'get-next-match_attempt'
@@ -802,7 +797,6 @@ app.get('/tournament/:uuid/next-match/:player_uuid', async (request, reply) => {
                         console.error(`Error fetching game ${match.game_uuid}:`, e);
                     }
                 }
-                // Sinon, match en attente
                 else if (match.status === 'waiting' && match.player1_uuid && match.player2_uuid) {
                     request.log.info({
                         event: 'get-next-match_attempt'
@@ -879,15 +873,15 @@ app.get('/tournament/:uuid/status', async (request, reply) => {
                 try {
                     if (match.player1_uuid && !match.player1) {
                         const player1Data = await getUserDataInternal(match.player1_uuid);
-                        matchData.player1 = player1Data?.username || 'Player 1';
+                        matchData.player1 = player1Data?.username_tournament || 'Player 1';
                     }
                     if (match.player2_uuid && !match.player2) {
                         const player2Data = await getUserDataInternal(match.player2_uuid);
-                        matchData.player2 = player2Data?.username || 'Player 2';
+                        matchData.player2 = player2Data?.username_tournament || 'Player 2';
                     }
                     if (match.winner_uuid) {
                         const winnerData = await getUserDataInternal(match.winner_uuid);
-                        matchData.winner = winnerData?.username || 'Winner';
+                        matchData.winner = winnerData?.username_tournament || 'Winner';
                     }
                 } catch (e) {
                     console.error('Error enriching match data:', e);
