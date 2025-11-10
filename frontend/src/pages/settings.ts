@@ -536,9 +536,9 @@ export function SettingsPage(): HTMLElement {
 	
 	let avatar_id = '/avatar/default_avatar.png';
 	getUserInventory().then(inventory => {
-		if (inventory?.avatar_use?.[0]?.id) {
+		if (inventory?.avatar_use?.[0]) {
 			avatarContent.textContent = inventory.avatar_use[0].name;
-			avatar_id = inventory.avatar_use[0].name;
+			avatar_id = inventory.avatar_use[0].id;
 		} else {
 			avatarContent.textContent = "No avatar";
 		}
