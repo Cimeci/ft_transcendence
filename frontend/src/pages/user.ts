@@ -425,18 +425,25 @@ export function UserPage(): HTMLElement {
                 li.className = "grid grid-cols-[1fr_auto] gap-4 items-center py-2 px-2 text-white/90";
                 const vs = document.createElement("span");
                 vs.className = "truncate min-w-0";
+                const br = document.createElement("br");
+                const date = document.createElement("span");
+                date.className = "text-xs text-white/50";
+                console.log("GAME:", game);
                 if (game.player1_uuid === uuid)
-                    vs.textContent = `vs ${game.player2}`;
+                    vs.textContent = `${game.player1} vs ${game.player2}`;
                 else
-                    vs.textContent = `vs ${game.player1}`;
+                    vs.textContent = `${game.player2} vs ${game.player1}`;
                 const score = document.createElement("span");
                 score.className = "text-right text-white/70";
                 if (game.player1_uuid === uuid)
                     score.textContent = `${game.score1} - ${game.score2}`;
                 else
                     score.textContent = `${game.score2} - ${game.score1}`;
+                date.textContent = `${game.updated_at}`;
                 li.appendChild(vs);
                 li.appendChild(score);
+                li.appendChild(br);
+                li.appendChild(date);
                 List.appendChild(li);
             });
         }

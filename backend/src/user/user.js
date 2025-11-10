@@ -54,6 +54,7 @@ const user = `
     CREATE TABLE IF NOT EXISTS user (
         uuid TEXT PRIMARY KEY,
         username TEXT NOT NULL,
+        username_tournament TEXT,
         email TEXT NOT NULL,
         password TEXT,
         avatar TEXT,
@@ -207,7 +208,7 @@ app.post('/insert', async(request, reply) => {
     const { uuid, username, email, hash, avatar } = request.body;
     console.log(request.body);
     try{
-        db.prepare('INSERT INTO user (uuid, username, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?)').run(uuid, username, email, hash, avatar || null, 1);
+        db.prepare('INSERT INTO user (uuid, username, username_tournament, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, username, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
         db.prepare('INSERT INTO historic (uuid, user_uuid, games, tournament, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(historic_uuid, uuid, null, null, Date.now(), Date.now());
         creationInventory(uuid);
@@ -246,7 +247,7 @@ app.patch('/online', async(request, reply) => {
 })
 
 app.patch('/update-info', async(request, reply) => {
-    const { email, username, avatar } = request.body;
+    const { email, username, avatar, username_tournament } = request.body;
     let uuid
     try{
         uuid = checkToken(request);
@@ -287,6 +288,10 @@ app.patch('/update-info', async(request, reply) => {
     }
     if (username){
         db.prepare('UPDATE user set username = ? WHERE uuid = ?').run(username, uuid);
+    }
+
+    if (username_tournament){
+        db.prepare('UPDATE user set username_tournament = ? WHERE uuid = ?').run(username_tournament, uuid);
     }
 
     if (avatar)
