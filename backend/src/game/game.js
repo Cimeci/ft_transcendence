@@ -43,7 +43,9 @@ const game = `
         score2 INTEGER DEFAULT 0,
         mode TEXT,
         tournament TEXT,
-        winner TEXT
+        winner TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 `
 db.exec(game);
@@ -66,7 +68,7 @@ app.post('/game', async (request, reply) => {
     const uuid = crypto.randomUUID();
     try {
         if (mode === "local"){
-            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null);
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null, Date.now(), Date.now());
             console.log("local game created");}
         else{
             const gameExists = db.prepare('SELECT * FROM game WHERE (player1_uuid = ? AND player2_uuid = ? OR player1_uuid = ? AND player2_uuid = ?) AND winner IS NULL').get(player1_uuid, player2_uuid, player2_uuid, player1_uuid);
@@ -77,7 +79,7 @@ app.post('/game', async (request, reply) => {
                 return reply.send({ uuid: gameExists.uuid});
             };
             //db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
-            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null, Date.now(), Date.now());
         }
         request.log.info({
             event: 'new-game_attempt'
@@ -109,7 +111,7 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     }
     let winner_uuid = score1 == 5 ? data.player1_uuid : data.player2_uuid || null;
     try {
-        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
+        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
 
         // faire les matchs dans l'ordre avec ce code
         const game = db.prepare('SELECT * FROM game WHERE uuid = ?').get(gameId);
@@ -117,9 +119,9 @@ app.patch('/update-game/:gameId', async (request, reply) => {
             const nextGame = db.prepare('SELECT * FROM game WHERE tournament = ? AND (player1 IS NULL OR player2 IS NULL) LIMIT 1').get(game.tournament);
             if (nextGame){
                 if (nextGame.player1 === null)
-                    db.prepare('UPDATE game SET player1 = ? WHERE uuid = ?').run(winner, nextGame.uuid);
+                    db.prepare('UPDATE game SET player1 = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?').run(winner, nextGame.uuid);
                 else
-                    db.prepare('UPDATE game SET player2 = ? WHERE uuid = ?').run(winner, nextGame.uuid);
+                    db.prepare('UPDATE game SET player2 = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?').run(winner, nextGame.uuid);
             }
         }
 
@@ -180,7 +182,7 @@ app.patch('/set-up-game', async(request, reply) => {
 
     const { receiver_uuid, username, uuid } = request.body;
     try {
-        db.prepare('UPDATE game SET player2 = ?, player2_uuid = ? WHERE uuid = ?').run(username, receiver_uuid, uuid);
+        db.prepare('UPDATE game SET player2 = ?, player2_uuid = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?').run(username, receiver_uuid, uuid);
         request.log.info({
             event: 'patch-invit_attempt'
         }, 'Patch Invit Sucess: player2 added to game');
