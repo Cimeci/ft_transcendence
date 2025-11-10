@@ -8,6 +8,8 @@ import multipart from '@fastify/multipart';
 import path from 'path';
 import fs from 'fs';
 import { pipeline } from 'stream/promises';
+import fastifyStatic from '@fastify/static';
+
 
 dotenv.config();
 
@@ -31,6 +33,11 @@ app.register(multipart, {
     limits: {
         fileSize: 5 * 1024 * 1024 // 5 MB
     }
+});
+
+await app.register(fastifyStatic, {
+    root: path.join(process.cwd(), 'upload'),
+    prefix: '/uploads/'
 });
 
 await app.register(fastifyMetrics, { endpoint: '/metrics' });
@@ -877,18 +884,18 @@ app.get('/avatar/:filename', async (request, reply) => {
 ** envoyer le fichier
 * * * * * * * * * * **/
 app.patch('/new_avatar', async(request, reply) => {
-    let uuid = "4e21cba8-e651-4054-96f6-1a9c7a0416e2"; // temporaire
-    // try {
-    //     uuid = await checkToken(request);
-    // } catch (err) {
-    //     request.log.warn({
-    //         event: 'update-avatar_attempt'
-    //     }, 'Update Avatar Unauthorized: invalid jwt token');
-    //     reply.code(401).send({ error: 'Unauthorized'});
-    // }
+    let uuid;
+    try {
+        uuid = await checkToken(request);
+    } catch (err) {
+        request.log.warn({
+            event: 'update-avatar_attempt'
+        }, 'Update Avatar Unauthorized: invalid jwt token');
+        return reply.code(401).send({ error: 'Unauthorized'});
+    }
 
     const avatar = await request.file();
-
+    console.log("avatar ->", avatar)
     const goodType = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'];
     if (!goodType.includes(avatar.mimetype)) {
         request.log.warn({
@@ -907,7 +914,7 @@ app.patch('/new_avatar', async(request, reply) => {
         const avatarList = JSON.parse(items.avatar);
 
         const newAvatar = {
-            id: `/upload/${avatar.filename}`,
+            id: `/uploads/${avatar.filename}`,
             name: avatar.filename,
             type: 'avatar',
             price: 0,
@@ -919,10 +926,16 @@ app.patch('/new_avatar', async(request, reply) => {
         const avatarJSON = JSON.stringify(avatarList);
         db.prepare('UPDATE items set avatar = ? WHERE user_uuid = ?').run(avatarJSON, uuid);
 
+        const avatarUseJSON = JSON.stringify([{ id: newAvatar.id, name: newAvatar.name }]);
+        db.prepare('UPDATE items set avatar_use = ? WHERE user_uuid = ?').run(avatarUseJSON, uuid);
+
         request.log.info({
             event: 'update-avatar_attempt'
         }, 'Update Avatar Success');
-        reply.send('New avatar added to inventory')
+        reply.code(200).send({
+            success: true,
+            avatar: `/uploads/${avatar.filename}`
+        });
     } catch (err) {
         console.error(err);
         request.log.error({

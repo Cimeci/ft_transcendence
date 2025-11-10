@@ -1,5 +1,6 @@
 import { translations } from '../i18n';
 import { getUser, onUserChange, ensureUser } from '../linkUser';
+import { getUserInventory } from './inventory';
 
 export const t = translations[getCurrentLang()];
 
@@ -96,83 +97,166 @@ export function createLangSection(): HTMLElement {
 	return langSection;
 }
 
+function PopUpImportAvatar(avatar_img: string): HTMLElement{
+	const close = () => {
+	  document.removeEventListener("keydown", onEsc);
+	  overlay.remove();
+	};
+	const onEsc = (e: KeyboardEvent) => {
+	  if (e.key === "Escape") close();
+	};
+	document.addEventListener("keydown", onEsc);
+
+	const overlay = document.createElement("div");
+	overlay.className = "fixed inset-0 z-[2000] gap-3 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4";
+
+	const avatar_container = document.createElement("div");
+	avatar_container.className = "w-1/4 p-3 lex items-center justify-center border-white border-2 rounded-xl";
+	overlay.appendChild(avatar_container);
+
+	const avatar = document.createElement("img");
+	avatar.className = "w-full h-full rounded-xl";
+	avatar.src = avatar_img;
+	avatar_container.appendChild(avatar);
+
+	const fileInput = document.createElement("input");
+	fileInput.type = "file";
+	fileInput.accept = "image/png, image/jpeg, image/jpg, image/gif";
+	fileInput.className = "hidden";
+	avatar_container.appendChild(fileInput);
+
+	const btn_change = document.createElement("button");
+	btn_change.className = "glass-blur px-3 py-2 w-1/5 hover:scale-110 duration-300 transition-all cursor-pointer";
+	btn_change.textContent = t.change || "Change";
+
+	btn_change.addEventListener("click", () => fileInput.click());
+	overlay.appendChild(btn_change);
+
+	fileInput.addEventListener("change", async () => {
+		const file = fileInput.files?.[0];
+		if (!file) return;
+
+		const jwt = localStorage.getItem("jwt");
+		if (!jwt) return alert("You must be logged in.");
+
+		const formData = new FormData();
+		formData.append("avatar", file);
+
+		try {
+			const resp = await fetch(`/user/new_avatar`, {
+				method: "PATCH",
+				headers: {
+					Authorization: `Bearer ${jwt}`,
+				},
+				body: formData,
+			});
+
+			if (resp.ok) {
+				const data = await resp.json();
+				const avatarUrl = data.avatar + `?t=${Date.now()}`;
+				document.querySelectorAll(".user-avatar").forEach(el => {
+					(el as HTMLImageElement).src = avatarUrl;
+				});
+				alert("Avatar updated successfully!")
+				close();
+				window.location.reload();
+			} else {
+				const err = await resp.json();
+				alert(err.error || "Upload failed");
+			}
+		} catch (e) {
+			console.error("Error uploading avatar:", e);
+			alert("Error uploading avatar");
+		}
+	});
+
+	const cancelBtn = document.createElement("button");
+	cancelBtn.type = "button";
+	cancelBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg border border-white/40 hover:bg-white/10 focus:scale-105 hover:scale-105 transition-all duration-200";
+	cancelBtn.textContent = t.cancel;
+	cancelBtn.onclick = close;
+	overlay.appendChild(cancelBtn);
+
+	return overlay;
+}
+
 function PopUpChangeInformation( title: string, maininfo: string, newinfo: string, confnewinfo: string, value: string, onConfirm?: (newValue: string, oldValue?: string) => void ): HTMLElement {
-    const overlay = document.createElement("div");
-    overlay.className = "fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4";
+	const overlay = document.createElement("div");
+	overlay.className = "fixed inset-0 z-[2000] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4";
 
-    const close = () => {
-      document.removeEventListener("keydown", onEsc);
-      overlay.remove();
-    };
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("keydown", onEsc);
+	const close = () => {
+	  document.removeEventListener("keydown", onEsc);
+	  overlay.remove();
+	};
+	const onEsc = (e: KeyboardEvent) => {
+	  if (e.key === "Escape") close();
+	};
+	document.addEventListener("keydown", onEsc);
 
-    const modal = document.createElement("div");
-    modal.className = "w-full max-w-md glass-blur text-white rounded-xl p-6";
-    overlay.appendChild(modal);
+	const modal = document.createElement("div");
+	modal.className = "w-full max-w-md glass-blur text-white rounded-xl p-6";
+	overlay.appendChild(modal);
 
-    const Title = document.createElement("h2");
-    Title.textContent = title;
-    Title.className = "text-xl md:text-2xl mb-4";
-    modal.appendChild(Title);
+	const Title = document.createElement("h2");
+	Title.textContent = title;
+	Title.className = "text-xl md:text-2xl mb-4";
+	modal.appendChild(Title);
 
-    const InfoContainer = document.createElement("div");
-    InfoContainer.className = "flex flex-col gap-3";
-    modal.appendChild(InfoContainer);
+	const InfoContainer = document.createElement("div");
+	InfoContainer.className = "flex flex-col gap-3";
+	modal.appendChild(InfoContainer);
 
-    const Info = document.createElement("input");
-    Info.placeholder = maininfo;
-    Info.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
-    Info.maxLength = 30;
+	const Info = document.createElement("input");
+	Info.placeholder = maininfo;
+	Info.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
+	Info.maxLength = 30;
 	if (maininfo)
 		InfoContainer.appendChild(Info);
 
-    const NewInfo = document.createElement("input");
-    NewInfo.placeholder = newinfo;
-    NewInfo.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
-    NewInfo.maxLength = 30;
-    InfoContainer.appendChild(NewInfo);
+	const NewInfo = document.createElement("input");
+	NewInfo.placeholder = newinfo;
+	NewInfo.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
+	NewInfo.maxLength = 30;
+	InfoContainer.appendChild(NewInfo);
 
-    const ConfirmNewInfo = document.createElement("input");
-    ConfirmNewInfo.placeholder = confnewinfo;
-    ConfirmNewInfo.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
-    ConfirmNewInfo.maxLength = 30;
+	const ConfirmNewInfo = document.createElement("input");
+	ConfirmNewInfo.placeholder = confnewinfo;
+	ConfirmNewInfo.className = "text-lg md:text-xl rounded-lg border border-white/70 bg-transparent px-3 py-2 focus:scale-102 hover:scale-101 transition-all duration-200";
+	ConfirmNewInfo.maxLength = 30;
 	if (confnewinfo)
-    	InfoContainer.appendChild(ConfirmNewInfo);
+		InfoContainer.appendChild(ConfirmNewInfo);
 
 
-    const actions = document.createElement("div");
-    actions.className = "mt-5 flex justify-end gap-3";
-    modal.appendChild(actions);
+	const actions = document.createElement("div");
+	actions.className = "mt-5 flex justify-end gap-3";
+	modal.appendChild(actions);
 
-    const cancelBtn = document.createElement("button");
-    cancelBtn.type = "button";
-    cancelBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg border border-white/40 hover:bg-white/10 focus:scale-105 hover:scale-105 transition-all duration-200";
-    cancelBtn.textContent = t.cancel;
-    cancelBtn.onclick = close;
-    actions.appendChild(cancelBtn);
+	const cancelBtn = document.createElement("button");
+	cancelBtn.type = "button";
+	cancelBtn.className = "text-xs md:text-base px-4 py-2 rounded-lg border border-white/40 hover:bg-white/10 focus:scale-105 hover:scale-105 transition-all duration-200";
+	cancelBtn.textContent = t.cancel;
+	cancelBtn.onclick = close;
+	actions.appendChild(cancelBtn);
 
-    const BtnConfirm = document.createElement("button");
-    BtnConfirm.type = "button";
-    BtnConfirm.className = "text-xs md:text-base px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 focus:scale-105 hover:scale-105 transition-all duration-200";
-    BtnConfirm.textContent = title;
-    actions.appendChild(BtnConfirm);
+	const BtnConfirm = document.createElement("button");
+	BtnConfirm.type = "button";
+	BtnConfirm.className = "text-xs md:text-base px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 focus:scale-105 hover:scale-105 transition-all duration-200";
+	BtnConfirm.textContent = title;
+	actions.appendChild(BtnConfirm);
 
-    BtnConfirm.addEventListener("click", () => {
-        let hasErr = false;
-        if (maininfo && value && Info.value !== value) { hasErr = true; Info.classList.add("shake", "placeholder:text-red-500"); }
-        if (confnewinfo && newinfo && NewInfo.value !== ConfirmNewInfo.value) { hasErr = true; NewInfo.classList.add("shake","placeholder:text-red-500"); ConfirmNewInfo.classList.add("shake","placeholder:text-red-500"); }
-       	if (!hasErr) {
-       		onConfirm?.(NewInfo.value, Info.value);
-       		close();
-       	}
-        setTimeout(() => {
-          [Info, NewInfo, ConfirmNewInfo].forEach(i => { i.classList.remove("shake","placeholder:text-red-500"); });
-        }, 800);
-    });
-    return overlay;
+	BtnConfirm.addEventListener("click", () => {
+		let hasErr = false;
+		if (maininfo && value && Info.value !== value) { hasErr = true; Info.classList.add("shake", "placeholder:text-red-500"); }
+		if (confnewinfo && newinfo && NewInfo.value !== ConfirmNewInfo.value) { hasErr = true; NewInfo.classList.add("shake","placeholder:text-red-500"); ConfirmNewInfo.classList.add("shake","placeholder:text-red-500"); }
+	   	if (!hasErr) {
+	   		onConfirm?.(NewInfo.value, Info.value);
+	   		close();
+	   	}
+		setTimeout(() => {
+		  [Info, NewInfo, ConfirmNewInfo].forEach(i => { i.classList.remove("shake","placeholder:text-red-500"); });
+		}, 800);
+	});
+	return overlay;
 }
 
 async function updateProfileInfo(partial: { email?: string; username?: string; avatar?: string }) {
@@ -205,24 +289,24 @@ async function updatePassword(oldPassword: string, newPassword: string) {
 }
 
 function CreateFlagSection(lang: string, IconPath: string, code:string): HTMLButtonElement {
-    const LangBtn = document.createElement("button");
-    LangBtn.className = "p-1 md:p-3 rounded-xl border-1 border-white/30 flex items-center gap-3 transition-all duration-300 hover:bg-white/10 group";
+	const LangBtn = document.createElement("button");
+	LangBtn.className = "p-1 md:p-3 rounded-xl border-1 border-white/30 flex items-center gap-3 transition-all duration-300 hover:bg-white/10 group";
 
-    const LangTxt = document.createElement("p");
-    LangTxt.textContent = lang;
-    LangTxt.className = "hidden md:flex text-xs md:text-lg tracking-wide transition-transform duration-300 group-hover:scale-105";
-    LangBtn.appendChild(LangTxt);
+	const LangTxt = document.createElement("p");
+	LangTxt.textContent = lang;
+	LangTxt.className = "hidden md:flex text-xs md:text-lg tracking-wide transition-transform duration-300 group-hover:scale-105";
+	LangBtn.appendChild(LangTxt);
 
-    const LangImg = document.createElement("img");
-    LangImg.className = "w-12 h-8 lg:w-15 lg:h-10 rounded-md object-cover flex-none shrink-0 select-none pointer-events-none";
-    LangImg.src = IconPath;
-    LangBtn.appendChild(LangImg);
+	const LangImg = document.createElement("img");
+	LangImg.className = "w-12 h-8 lg:w-15 lg:h-10 rounded-md object-cover flex-none shrink-0 select-none pointer-events-none";
+	LangImg.src = IconPath;
+	LangBtn.appendChild(LangImg);
 
-    LangBtn.addEventListener(("click"), () => {
-        setLanguage(code);
-    })
+	LangBtn.addEventListener(("click"), () => {
+		setLanguage(code);
+	})
 
-    return (LangBtn);
+	return (LangBtn);
 }
 
 function CreateLine():HTMLElement{
@@ -333,44 +417,87 @@ export function SettingsPage(): HTMLElement {
 
 	// PASSWORD //
 
-	const changePasswordSection = document.createElement("div");
-	changePasswordSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+	// const changePasswordSection = document.createElement("div");
+	// changePasswordSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
 
-	const Passwordimg = document.createElement("img");
-	Passwordimg.className = "hidden sm:flex";
-	Passwordimg.src = "/icons/key-round.svg";
-	changePasswordSection.appendChild(Passwordimg);
+	// const Passwordimg = document.createElement("img");
+	// Passwordimg.className = "hidden sm:flex";
+	// Passwordimg.src = "/icons/key-round.svg";
+	// changePasswordSection.appendChild(Passwordimg);
 
-	const PasswordContent = document.createElement("p");
-	PasswordContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
-	const maskPassword = (v: string) => "•".repeat(v.length);
-	PasswordContent.textContent = maskPassword(getUser()?.password || password); //!password user pas forcer present, a voir pour modif ou non !! 
-	changePasswordSection.appendChild(PasswordContent);
+	// const PasswordContent = document.createElement("p");
+	// PasswordContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
+	// const maskPassword = (v: string) => "•".repeat(v.length);
+	// PasswordContent.textContent = maskPassword(getUser()?.password || password); //!password user pas forcer present, a voir pour modif ou non !! 
+	// changePasswordSection.appendChild(PasswordContent);
 
-	const ChangePasswordBtn = document.createElement("button");
-	ChangePasswordBtn.type = "button";
-	ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
-	ChangePasswordBtn.addEventListener(("click"), () => {
-		const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, "", async (newVal, oldVal) => {
-			try {
-				await updatePassword(oldVal || '', newVal);
-				password = newVal;
-				PasswordContent.textContent = maskPassword(password);
-			} catch (e: any) {
-				alert(e.message || 'Password update failed');
-			}
-		});
+	// const ChangePasswordBtn = document.createElement("button");
+	// ChangePasswordBtn.type = "button";
+	// ChangePasswordBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+	// ChangePasswordBtn.addEventListener(("click"), () => {
+	// 	const overlay = PopUpChangeInformation(t.changePassword, t.currentPassword, t.newPassword, t.confirmNewPassword, "", async (newVal, oldVal) => {
+	// 		try {
+	// 			await updatePassword(oldVal || '', newVal);
+	// 			password = newVal;
+	// 			PasswordContent.textContent = maskPassword(password);
+	// 		} catch (e: any) {
+	// 			alert(e.message || 'Password update failed');
+	// 		}
+	// 	});
+	// 	mainContainer.appendChild(overlay);
+	// });
+
+	// const ChangePasswordBtnImg = document.createElement("img");
+	// ChangePasswordBtnImg.src = "/icons/pen-line.svg";
+	// ChangePasswordBtnImg.alt = "Edit";
+	// ChangePasswordBtnImg.className = "w-9/10"
+	// ChangePasswordBtn.appendChild(ChangePasswordBtnImg);
+
+	// changePasswordSection.appendChild(ChangePasswordBtn);
+	// changeInfoSection.appendChild(changePasswordSection);
+
+	// avatar //
+
+	const changeavatarSection = document.createElement("div");
+	changeavatarSection.className = "rounded-xl flex sm:gap-2 items-center justify-center w-full";
+
+	const avatarimg = document.createElement("img");
+	avatarimg.className = "hidden sm:flex";
+	avatarimg.src = "/icons/user.svg";
+	changeavatarSection.appendChild(avatarimg);
+
+	const avatarContent = document.createElement("p");
+	avatarContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
+	avatarContent.textContent = "Loading...";
+	
+	getUserInventory().then(inventory => {
+		if (inventory?.avatar_use?.[0]?.id) {
+			avatarContent.textContent = inventory.avatar_use[0].id;
+		} else {
+			avatarContent.textContent = "No avatar";
+		}
+	}).catch(() => {
+		avatarContent.textContent = "Error loading avatar";
+	});
+	
+	changeavatarSection.appendChild(avatarContent);
+
+	const ChangeavatarBtn = document.createElement("button");
+	ChangeavatarBtn.type = "button";
+	ChangeavatarBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
+	ChangeavatarBtn.addEventListener(("click"), () => {
+		const overlay = PopUpImportAvatar(avatarContent.textContent);
 		mainContainer.appendChild(overlay);
 	});
 
-	const ChangePasswordBtnImg = document.createElement("img");
-	ChangePasswordBtnImg.src = "/icons/pen-line.svg";
-	ChangePasswordBtnImg.alt = "Edit";
-	ChangePasswordBtnImg.className = "w-9/10"
-	ChangePasswordBtn.appendChild(ChangePasswordBtnImg);
+	const ChangeavatarBtnImg = document.createElement("img");
+	ChangeavatarBtnImg.src = "/icons/pen-line.svg";
+	ChangeavatarBtnImg.alt = "Edit";
+	ChangeavatarBtnImg.className = "w-9/10"
+	ChangeavatarBtn.appendChild(ChangeavatarBtnImg);
 
-	changePasswordSection.appendChild(ChangePasswordBtn);
-	changeInfoSection.appendChild(changePasswordSection);
+	changeavatarSection.appendChild(ChangeavatarBtn);
+	changeInfoSection.appendChild(changeavatarSection);
 
 	settingsContainer.appendChild(langSettingsSection);
 	settingsContainer.appendChild(CreateLine());
@@ -381,4 +508,3 @@ export function SettingsPage(): HTMLElement {
 
 	return mainContainer;
 }
-
