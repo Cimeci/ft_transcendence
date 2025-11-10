@@ -43,7 +43,9 @@ const game = `
         score2 INTEGER DEFAULT 0,
         mode TEXT,
         tournament TEXT,
-        winner TEXT
+        winner TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 `
 db.exec(game);
@@ -66,7 +68,7 @@ app.post('/game', async (request, reply) => {
     const uuid = crypto.randomUUID();
     try {
         if (mode === "local"){
-            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null);
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null, Date.now(), Date.now());
             console.log("local game created");}
         else{
             const gameExists = db.prepare('SELECT * FROM game WHERE (player1_uuid = ? AND player2_uuid = ? OR player1_uuid = ? AND player2_uuid = ?) AND winner IS NULL').get(player1_uuid, player2_uuid, player2_uuid, player1_uuid);
@@ -77,7 +79,7 @@ app.post('/game', async (request, reply) => {
                 return reply.send({ uuid: gameExists.uuid});
             };
             //db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
-            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
+            db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null, Date.now(), Date.now());
         }
         request.log.info({
             event: 'new-game_attempt'
@@ -155,12 +157,6 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     console.log("🏆 Winner UUID:", winner_uuid, "Is Tournament:", !!data.tournament);
     
     try {
-        db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
-        
-        const game = db.prepare('SELECT * FROM game WHERE uuid = ?').get(gameId);
-        console.log("💾 Game updated in DB. Tournament:", game.tournament, "Winner:", game.winner);
-
-        // 🎯 Si c'est un match de tournoi ET qu'il y a un gagnant, notifier le service tournament
         if (game.tournament && winner_uuid) {
             console.log("🎮 Notifying tournament service...");
             await notifyTournamentMatchComplete(game);

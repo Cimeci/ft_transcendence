@@ -60,6 +60,7 @@ services:
       - app
     volumes:
       - ./src/user/data:/app/data
+      - ./upload:/app/upload
       - app_logs:/var/log/app
     restart: on-failure
     env_file:
