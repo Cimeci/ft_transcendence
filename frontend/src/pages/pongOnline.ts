@@ -460,7 +460,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 	
 	socket.onopen = () => {
 		console.log('[WS] open', socket.url);
-		send({ event: 'join', username: getUser()?.username, avatar: getUser()?.avatar });
+		send({ event: 'join', username: getUser()?.username, avatar: getUser()?.avatar, uuid: getUser()?.uuid  });
 	};
 	socket.onerror = (e) => console.error('[WS] error', e);
 	socket.onclose = (ev) => console.warn('[WS] close', ev.code, ev.reason, ev.wasClean);

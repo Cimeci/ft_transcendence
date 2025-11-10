@@ -265,7 +265,7 @@ app.post('/verify-2fa', async (request, reply) => {
             return reply.code(401).send({ error: 'Invalid or expired a2f code' });
         }
 
-        // Réinitialiser le code a2f après une vérification réussie
+
         db.prepare('UPDATE user SET twofa_code = NULL, twofa_expiry = NULL WHERE uuid = ?').run(uuid);
 
         const info = { online: 1, uuid: user.uuid }

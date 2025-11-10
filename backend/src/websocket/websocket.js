@@ -66,6 +66,15 @@ class Game {
             this.launchTimeout = null;
         }
 
+        // if (this.clients[0].readyState === 1){
+        //     this.score.left = 5;
+        //     this.score.right = 0;
+        // }
+        // else {
+        //     this.score.right = 5;
+        //     this.score.left = 0;
+        // }
+
         // Donner la victoire à l'autre joueur
         if (abandoningPlayer === 'left') {
             this.score.right = 5;
@@ -240,10 +249,10 @@ app.register(async function (app) {
 		request.log.info({
 				event: 'websocket_attempt'
 		}, 'WebSocket connection success');
-        
         // Authentification du token JWT
+        // let uuid;
         // try {
-        //   await request.jwtVerify();
+        //   uuid = await checkToken(request);
         // } catch (err) {
         //   request.log.warn({
         //         event: 'delete-friendship_attempt'
@@ -260,57 +269,6 @@ app.register(async function (app) {
 		let playerPosition = null;
         let playerUsername = "Player";
         
-        // Assigner une position au joueur (avec support de reconnexion)
-        if (!game.players.left) {
-            playerPosition = 'left';
-            game.players.left = socket;
-            game.clients.push(socket);
-            console.log('Nouveau joueur LEFT connecté');
-        } else if (!game.players.right) {
-            playerPosition = 'right';
-            game.players.right = socket;    
-            game.clients.push(socket);
-            console.log('Nouveau joueur RIGHT connecté');
-        
-            // Démarrer le jeu quand les deux joueurs sont connectés
-            setTimeout(() => {
-                game.resetBall();
-            }, 1000);
-        } else if (game.players.left === null) {
-            // Reconnexion du joueur LEFT
-            playerPosition = 'left';
-            game.players.left = socket;
-            game.clients.push(socket);
-            console.log('Joueur LEFT reconnecté');
-            
-            // Reprendre le jeu si l'autre joueur est toujours là
-            if (game.players.right && game.players.right.readyState === 1) {
-                game.isGamerunning = true;
-            }
-        } else if (game.players.right === null) {
-            // Reconnexion du joueur RIGHT
-            playerPosition = 'right';
-            game.players.right = socket;
-            game.clients.push(socket);
-            console.log('Joueur RIGHT reconnecté');
-            
-            // Reprendre le jeu si l'autre joueur est toujours là
-            if (game.players.left && game.players.left.readyState === 1) {
-                game.isGamerunning = true;
-            }
-        } else {
-            // Salle pleine ET les deux joueurs sont connectés
-            socket.send(JSON.stringify({ event: 'error', message: 'Game full' }));
-            socket.close();
-            return;
-        }
-
-        // Envoyer la position assignée au client
-        socket.send(JSON.stringify({ 
-            event: 'assigned', 
-            position: playerPosition 
-        }));
-
         // Envoyer l'état actuel du jeu
         const initialGameState = { ball: game.ball, leftPaddle: game.leftPaddle, rightPaddle: game.rightPaddle, score: game.score };
         socket.send(JSON.stringify(initialGameState));
@@ -322,7 +280,39 @@ app.register(async function (app) {
             // Récupérer le username si fourni
             if (messageData.event === 'join' && messageData.username) {
                 playerUsername = messageData.username;
-                    
+                const playerUuid = messageData.uuid;
+                
+                try {
+                    const data = await fetch(`http://game:4000/game/${gameuuid}`, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    const dataJson = await data.json();
+
+                    if (playerUuid === dataJson.player1_uuid){
+                        playerPosition = 'left';
+                        game.players.left = socket;
+                    } 
+                    else {
+                        playerPosition = 'right';
+                        game.players.right = socket;
+                    }
+                    game.clients.push(socket);
+
+                    if (game.players.left && game.players.right) {
+                        // Démarrer le jeu quand les deux joueurs sont connectés
+                        setTimeout(() => {
+                            game.resetBall();
+                        }, 1000);
+                    }
+
+                    socket.send(JSON.stringify({ 
+                        event: 'assigned', 
+                        position: playerPosition 
+                    }));
+                } catch (error) {
+                    console.error('Erreur fetching game data:', error);
+                }
                 // Informer l'autre joueur
                 const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
                 if (otherPlayer && otherPlayer.readyState === 1) {
