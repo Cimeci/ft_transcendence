@@ -372,15 +372,15 @@ app.register(async function (app) {
                     // ⚠️ NE PAS appeler finishGame() pour les tournois
                     // Laisser la partie en pause pour permettre la reconnexion
                     game.isGamerunning = false;
-                    
+                    game.abandonGame(playerPosition);
                     // Informer l'autre joueur
-                    const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
-                    if (otherPlayer && otherPlayer.readyState === 1) {
-                        otherPlayer.send(JSON.stringify({
-                            event: 'opponent_disconnected',
-                            message: 'Votre adversaire s\'est déconnecté'
-                        }));
-                    }
+                    // const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
+                    // if (otherPlayer && otherPlayer.readyState === 1) {
+                    //     otherPlayer.send(JSON.stringify({
+                    //         event: 'opponent_disconnected',
+                    //         message: 'Votre adversaire s\'est déconnecté'
+                    //     }));
+                    // }
                 }
             }, 5000);
         });

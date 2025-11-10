@@ -677,6 +677,10 @@ app.patch('/shop', async(request, reply) => {
             return reply.code(400).send({ error: 'You do not own this ball' });
         }
         if (!ballupdate.usable) ballupdate.usable = true;
+        else 
+            return;
+        if (ballupdate.price !== amount)
+            return reply.code(400).send({ error: 'Amount mismatch' });
         saveArray('ball', currentBall);
     }
     
@@ -688,6 +692,10 @@ app.patch('/shop', async(request, reply) => {
             return reply.code(400).send({ error: 'You do not own this background' });
         }
         if (!backgroundupdate.usable) backgroundupdate.usable = true;
+        else 
+            return;
+        if (backgroundupdate.price !== amount)
+            return reply.code(400).send({ error: 'Amount mismatch' });
         saveArray('background', currentBackground);
     }
 
@@ -699,6 +707,10 @@ app.patch('/shop', async(request, reply) => {
             return reply.code(400).send({ error: 'You do not own this paddle' });
         }
         if (!paddleupdate.usable) paddleupdate.usable = true;
+        else 
+            return;
+        if (paddleupdate.price !== amount)
+            return reply.code(400).send({ error: 'Amount mismatch' });
         saveArray('paddle', currentPaddle);
     }
 
@@ -710,6 +722,10 @@ app.patch('/shop', async(request, reply) => {
             return reply.code(400).send({ error: 'You do not own this avatar' });
         }
         if (!avatarupdate.usable) avatarupdate.usable = true;
+        else 
+            return;
+        if (avatarupdate.price !== amount)
+            return reply.code(400).send({ error: 'Amount mismatch' });
         saveArray('avatar', currentAvatar);
     }
     

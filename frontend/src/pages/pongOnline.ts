@@ -429,7 +429,7 @@ export function PongOnlineOverlayPage(): HTMLElement {
 			setTimeout(() => {
 				user1.score = 0;
 				user2.score = 0;
-				navigateTo(`/Tournament/gameplay?uid=${tournamentUuid}`);
+				navigateTo(`/Tournament/bracket?uid=${tournamentUuid}`);
 			}, 1000);
 		});
 	} else {
@@ -751,7 +751,7 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 			if (game.tournament) {
 				console.log("Tournament game, redirecting to tournament page...");
 				setTimeout(() => {
-					navigateTo(`/Tournament/gameplay?uid=${game.tournament}`);
+					navigateTo(`/Tournament/bracket?uid=${game.tournament}`);
 				}, 1000);
 			} else {
 				// Sinon, retourner au menu pong online classique

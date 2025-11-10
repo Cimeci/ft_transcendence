@@ -19,7 +19,7 @@ import { addNotification, loadAndDisplayNotifications, type InvitePayload } from
 import { ensureUser, onUserChange} from './linkUser';
 
 const publicRoot = ['/', '/login', '/register', '/oauth/callback'];
-const privateRoot = ['/home', '/shop', '/friends', '/inventory', '/pong/menu', '/pong/local/menu', '/pong/local/game', '/pong/local/game/overlay', '/pong/online/menu', '/pong/online/game', '/pong/online/game/overlay', '/Tournament/menu', '/Tournament/host', '/Tournament/join', '/Tournament/gameplay', '/settings', '/credits', '/profile'];
+const privateRoot = ['/home', '/shop', '/friends', '/inventory', '/pong/menu', '/pong/local/menu', '/pong/local/game', '/pong/local/game/overlay', '/pong/online/menu', '/pong/online/game', '/pong/online/game/overlay', '/Tournament/menu', '/Tournament/host', '/Tournament/join', '/Tournament/bracket', '/settings', '/credits', '/profile'];
 
 document.getElementById("jschef")?.remove();
 
@@ -105,7 +105,7 @@ const routes: { [key: string]: () => HTMLElement } = {
 	'/Tournament/menu': PongTournamentMenuPage,
 	'/Tournament/host': PongTournamentPageHost,
 	'/Tournament/join': PongTournamentPageJoin,
-	'/Tournament/gameplay': PongTournamentPageCurrentGame,
+	'/Tournament/bracket': PongTournamentPageCurrentGame,
 	'/settings': SettingsPage,
 	'/credits': CreditsPage,
 	'/profile': UserPage,

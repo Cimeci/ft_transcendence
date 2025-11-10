@@ -649,7 +649,7 @@ export function PongTournamentPageJoin(): HTMLElement {
             if (freshTournament && freshTournament.launch) {
                 console.log("Tournament launched, redirecting to game...", window.location.href);
                 stopRefresh();
-				navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
+				navigateTo(`/Tournament/bracket?uid=${currentTournament.uuid}`);
                 return true;
             }
         } catch (error) {
@@ -668,7 +668,7 @@ export function PongTournamentPageJoin(): HTMLElement {
 
 				const isLaunched = await checkAndRedirectIfLaunched();
                 if (isLaunched) {
-					// navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
+					// navigateTo(`/Tournament/bracket?uid=${currentTournament.uuid}`);
                     return;
                 }
 
@@ -969,7 +969,7 @@ export function PongTournamentPageHost(): HTMLElement {
             if (currentTournament) {
 				if (currentTournament.launch)
 				{
-					navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
+					navigateTo(`/Tournament/bracket?uid=${currentTournament.uuid}`);
 					stopRefresh();
 					return;
 				}
@@ -1019,7 +1019,7 @@ export function PongTournamentPageHost(): HTMLElement {
                         }
                         if (currentTournament.launch) {
                             stopRefresh();
-                            navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
+                            navigateTo(`/Tournament/bracket?uid=${currentTournament.uuid}`);
                         }
                     }
                 }
@@ -1175,7 +1175,7 @@ export function PongTournamentPageHost(): HTMLElement {
 				if (ret && currentTournament.size === parsePlayer(currentTournament).length)
 				{
 					stopRefresh();
-					navigateTo(`/Tournament/gameplay?uid=${currentTournament.uuid}`);
+					navigateTo(`/Tournament/bracket?uid=${currentTournament.uuid}`);
 				}
 				else
 				{
@@ -1610,7 +1610,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
         stopRefresh();
         refreshInterval = setupManagedInterval(async () => {
             // ⚠️ NE PAS RAFRAÎCHIR si on n'est pas sur la page du tournoi
-            if (window.location.pathname !== '/Tournament/gameplay') {
+            if (window.location.pathname !== '/Tournament/bracket') {
                 console.log("Not on tournament page, stopping refresh");
                 stopRefresh();
                 return;
