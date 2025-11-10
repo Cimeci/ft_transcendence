@@ -534,9 +534,11 @@ export function SettingsPage(): HTMLElement {
 	avatarContent.className = "truncate text-auto md:text-xl w-full p-1 select-none";
 	avatarContent.textContent = "Loading...";
 	
+	let avatar_id = '/avatar/default_avatar.png';
 	getUserInventory().then(inventory => {
 		if (inventory?.avatar_use?.[0]?.id) {
-			avatarContent.textContent = inventory.avatar_use[0].id;
+			avatarContent.textContent = inventory.avatar_use[0].name;
+			avatar_id = inventory.avatar_use[0].name;
 		} else {
 			avatarContent.textContent = "No avatar";
 		}
@@ -550,7 +552,7 @@ export function SettingsPage(): HTMLElement {
 	ChangeavatarBtn.type = "button";
 	ChangeavatarBtn.className = "flex justify-center items-center p-2 cursor-pointer hover:scale-115 duration-300 transition-all";
 	ChangeavatarBtn.addEventListener(("click"), () => {
-		const overlay = PopUpImportAvatar(avatarContent.textContent);
+		const overlay = PopUpImportAvatar(avatar_id);
 		mainContainer.appendChild(overlay);
 	});
 
