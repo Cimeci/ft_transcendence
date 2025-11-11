@@ -6,7 +6,6 @@ import dotenv from 'dotenv'
 
 dotenv.config();
 
-// Configuration du logger fastify
 const loggerConfig = {
     transport: {
         target: 'pino/file',
@@ -52,7 +51,6 @@ class Game {
         this.updateGameInterval = setInterval(this.updateGame.bind(this), 1000 / 60);
     }
 
-    // Méthode appelée quand un joueur abandonne définitivement (pas pour déconnexion temporaire)
     abandonGame(abandoningPlayer) {
         console.log(`Joueur ${abandoningPlayer} a abandonné la partie`);
         
@@ -66,16 +64,6 @@ class Game {
             this.launchTimeout = null;
         }
 
-        // if (this.clients[0].readyState === 1){
-        //     this.score.left = 5;
-        //     this.score.right = 0;
-        // }
-        // else {
-        //     this.score.right = 5;
-        //     this.score.left = 0;
-        // }
-
-        // Donner la victoire à l'autre joueur
         if (abandoningPlayer === 'left') {
             this.score.right = 5;
             this.score.left = 0;
@@ -84,7 +72,6 @@ class Game {
             this.score.right = 0;
         }
         
-        // Informer tous les clients
         const gameState = { 
             ball: this.ball, 
             leftPaddle: this.leftPaddle, 
@@ -113,7 +100,6 @@ class Game {
             this.launchTimeout = null;
         }
         
-        // Informer tous les clients
         const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score, event: 'reset' };
         this.clients.forEach((client) => {
             if (client.readyState === 1) {
@@ -132,16 +118,13 @@ class Game {
     }
     
     resetBall(forceDirection = null) {   
-        // Position centrale
         this.ball.x = 1400 / 2;
         this.ball.y = 800 / 2;
 
-        // Stoppe la balle pendant l’attente
         this.ball.speedX = 0;
         this.ball.speedY = 0;
         this.ballRotation = 0;
     
-        // Envoyer l'état du jeu à tous les clients pour mettre la balle au centre
         const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score };
         this.clients.forEach((client) => {
             if (client.readyState === 1) {
@@ -149,17 +132,13 @@ class Game {
             }
         });
     
-        // Annule un éventuel timer précédent
         if (this.launchTimeout !== null) {
                 clearTimeout(this.launchTimeout);
         }
     
-        // Vitesse initiale
         const speed = 1400 / 200;
         const maxAngle = Math.PI / 4;
     
-        // Lance la balle après un délai
-        /*this.launchTimeout = setTimeout(() => {*/
                 let angle = 0;
                 do {
                         angle = (Math.random() * 2 - 1) * maxAngle;
@@ -170,11 +149,6 @@ class Game {
                 this.ball.speedY = Math.sin(angle) * speed;
                 this.launchTimeout = null;
                 this.isGamerunning = true;
-       /* }, 1000)*/; // 1 secondes d’attente
-    
-        // Envoi régulier de l’état des paddles pendant l’attente, tout les 10 ms
-        // const paddleState = setInterval(() => this.sendPaddleState, 1000 / 60);
-        //setTimeout(clearInterval(this.updateGameInterval), 1000);
     }
 
     endGame() {
@@ -193,7 +167,6 @@ class Game {
             
             this.isGamerunning = false;
             
-            // Réinitialiser après 3 secondes
             setTimeout(() => {
                 this.resetGame();
             }, 1000);
@@ -215,22 +188,19 @@ class Game {
             this.ballRotation += BALL_SPIN_STEP;
         }
                     
-        // Score (on passe la direction du prochain service)
         if (this.ball.x < 0) {
             this.score.right++;
-            this.resetBall(1);   // relance vers le joueur 1 (à droite)
+            this.resetBall(1);
         }
         if (this.ball.x > 1400) {
             this.score.left++;
-            this.resetBall(-1);  // relance vers le joueur 2 (à gauche)
+            this.resetBall(-1);
         }
     
-        // Accélération progressive uniquement si la balle est en mouvement
         if (this.ball.speedX !== 0 || this.ball.speedY !== 0) {
             this.ball.speedX *= 1.0005;
             this.ball.speedY *= 1.0005;
     
-            // Envoyer l'état du jeu à tous les clients
             const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score };
             this.clients.forEach((client) => {
                 if (client.readyState === 1) {
@@ -249,16 +219,6 @@ app.register(async function (app) {
 		request.log.info({
 				event: 'websocket_attempt'
 		}, 'WebSocket connection success');
-        // Authentification du token JWT
-        // let uuid;
-        // try {
-        //   uuid = await checkToken(request);
-        // } catch (err) {
-        //   request.log.warn({
-        //         event: 'delete-friendship_attempt'
-        //     }, 'Delete Friendship Unauthorized: invalid jwt token');
-        //     reply.code(401).send({ error: 'Unauthorized'});
-        // }
 
         gameuuid = request.params.uuid;
         if (!games[gameuuid])
@@ -268,8 +228,7 @@ app.register(async function (app) {
         
 		let playerPosition = null;
         let playerUsername = "Player";
-        
-        // Envoyer l'état actuel du jeu
+
         const initialGameState = { ball: game.ball, leftPaddle: game.leftPaddle, rightPaddle: game.rightPaddle, score: game.score };
         socket.send(JSON.stringify(initialGameState));
 
@@ -277,7 +236,6 @@ app.register(async function (app) {
         try {
             const messageData = JSON.parse(message.toString());
 
-            // Récupérer le username si fourni
             if (messageData.event === 'join' && messageData.username) {
                 playerUsername = messageData.username;
                 const playerUuid = messageData.uuid;
@@ -300,7 +258,6 @@ app.register(async function (app) {
                     game.clients.push(socket);
 
                     if (game.players.left && game.players.right) {
-                        // Démarrer le jeu quand les deux joueurs sont connectés
                         setTimeout(() => {
                             game.resetBall();
                         }, 1000);
@@ -313,7 +270,6 @@ app.register(async function (app) {
                 } catch (error) {
                     console.error('Erreur fetching game data:', error);
                 }
-                // Informer l'autre joueur
                 const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
                 if (otherPlayer && otherPlayer.readyState === 1) {
                     otherPlayer.send(JSON.stringify({
@@ -323,7 +279,6 @@ app.register(async function (app) {
                 }
             }
 
-            // Gestion des mouvements
             if (messageData.event === 'move' && messageData.paddle === playerPosition) {
                 if (playerPosition === 'left') {
                     if (messageData.direction === 'up' && game.leftPaddle.y > 2) {
@@ -340,12 +295,6 @@ app.register(async function (app) {
                 }
             }
 
-            // Gestion des stops
-            if (messageData.event === 'stop' && messageData.paddle === playerPosition) {
-                // Pour l'instant, on ne fait rien de spécial pour les stops
-                // La paddle s'arrête naturellement quand on ne reçoit plus de move
-            }
-
             } catch (error) {
                 console.error('Erreur parsing message:', error);
             }
@@ -354,33 +303,20 @@ app.register(async function (app) {
         socket.on('close', () => {
             console.log(`Joueur ${playerPosition} déconnecté`);
             
-            // Ne pas libérer immédiatement - donner 5 secondes pour reconnexion
             setTimeout(() => {
-                // Vérifier si toujours déconnecté après 5 secondes
                 if ((playerPosition === 'left' && game.players.left === socket) ||
                     (playerPosition === 'right' && game.players.right === socket)) {
                     
                     console.log(`Joueur ${playerPosition} définitivement déconnecté après timeout`);
                     
-                    // Libérer la position
                     if (playerPosition === 'left') {
                         game.players.left = null;
                     } else if (playerPosition === 'right') {
                         game.players.right = null;
                     }
                     
-                    // ⚠️ NE PAS appeler finishGame() pour les tournois
-                    // Laisser la partie en pause pour permettre la reconnexion
                     game.isGamerunning = false;
                     game.abandonGame(playerPosition);
-                    // Informer l'autre joueur
-                    // const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
-                    // if (otherPlayer && otherPlayer.readyState === 1) {
-                    //     otherPlayer.send(JSON.stringify({
-                    //         event: 'opponent_disconnected',
-                    //         message: 'Votre adversaire s\'est déconnecté'
-                    //     }));
-                    // }
                 }
             }, 5000);
         });
@@ -390,17 +326,6 @@ app.register(async function (app) {
         });
     });
 });
-
-// Gestion des erreurs de connexion WebSocket
-// app.on('ws-error', (err, req) => {
-//   request.log.error({
-//       error: {
-//           message: error.message,
-//           code: error.code,
-//       },
-//       event: 'websocket_attempt'
-//   }, 'WebSocket error occurred');  
-// });
 
 app.listen({ port: 4000, host: '0.0.0.0' }, (err, address) => {
     if (err) {

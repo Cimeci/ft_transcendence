@@ -7,7 +7,6 @@ import crypto from 'crypto';
 
 dotenv.config();
 
-// Configuration du logger fastify
 const loggerConfig = {
     transport: {
         target: 'pino/file',
@@ -78,7 +77,6 @@ app.post('/game', async (request, reply) => {
                     }, 'Game Exists: A game between these players is already in progress');
                 return reply.send({ uuid: gameExists.uuid});
             };
-            //db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null);
             db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament || null, null, Date.now(), Date.now());
         }
         request.log.info({
@@ -97,7 +95,6 @@ app.post('/game', async (request, reply) => {
     }
 });
 
-// Endpoint spécial pour créer des games de tournoi avec les deux joueurs prédéfinis
 app.post('/tournament-game', async (request, reply) => {
     const key = request.headers['x-internal-key'];
     if (key !== process.env.JWT_SECRET) {
@@ -113,7 +110,6 @@ app.post('/tournament-game', async (request, reply) => {
     console.log(`Creating tournament game: ${player1} (${player1_uuid}) vs ${player2} (${player2_uuid})`);
 
     try {
-        // Vérifier si un game existe déjà pour ces joueurs dans ce tournoi
         const gameExists = db.prepare('SELECT * FROM game WHERE tournament = ? AND ((player1_uuid = ? AND player2_uuid = ?) OR (player1_uuid = ? AND player2_uuid = ?)) AND winner IS NULL').get(tournament, player1_uuid, player2_uuid, player2_uuid, player1_uuid);
         
         if (gameExists) {
@@ -157,13 +153,11 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     console.log("🏆 Winner UUID:", winner_uuid, "Is Tournament:", !!data.tournament);
 
     try {
-        // Mettre à jour le jeu dans la DB
         db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
 
         const game = db.prepare('SELECT * FROM game WHERE uuid = ?').get(gameId);
         console.log("💾 Game updated in DB. Tournament:", game.tournament, "Winner:", game.winner);
 
-        // 🎯 Si c'est un match de tournoi ET qu'il y a un gagnant, notifier le service tournament
         if (game.tournament && winner_uuid) {
             console.log("🎮 Notifying tournament service...");
             await notifyTournamentMatchComplete(game);
@@ -334,7 +328,6 @@ async function notifyTournamentMatchComplete(game) {
         const matches = JSON.parse(tournament.game);
         console.log("📊 Tournament has", matches.length, "matches");
         
-        // Trouver le match correspondant
         const currentMatch = matches.find(m => m.game_uuid === game.uuid);
         
         if (!currentMatch) {
@@ -345,7 +338,6 @@ async function notifyTournamentMatchComplete(game) {
 
         console.log("✅ Found match:", currentMatch.uuid, "Round:", currentMatch.round, "Match#:", currentMatch.match_number);
 
-        // Notifier le service tournament que ce match est terminé
         console.log("📤 Sending completion notification to tournament service...");
         const completeResp = await fetch(
             `http://tournament:4000/tournament/${game.tournament}/match/${currentMatch.uuid}/complete`,
@@ -372,7 +364,6 @@ async function notifyTournamentMatchComplete(game) {
     }
 }
 
-// Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization;
     console.log('Auth Header:', authHeader);
@@ -380,8 +371,8 @@ async function checkToken(request) {
         return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
-    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    const token = authHeader.slice(7);
+    const payload = await request.jwtVerify();
     console.log('Payload:', payload.uuid);
     return payload.uuid;
 }
