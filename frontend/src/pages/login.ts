@@ -38,7 +38,7 @@ export function TwoFAPage(): HTMLElement {
 	verifyBtn.className = 'flex-1 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-lg font-semibold duration-300 transition-all hover:scale-105 focus:scale-105';
 	verifyBtn.textContent = t.verify;
 	verifyBtn.addEventListener('click', async () => {
-		await verify2FA(codeInput.value, container, root);
+		await verify2FA(codeInput.value, root);
 	});
 
 	const backBtn = document.createElement('button');
@@ -51,7 +51,7 @@ export function TwoFAPage(): HTMLElement {
 
 	codeInput.addEventListener('keydown', (e) => {
 		if (e.key === 'Enter' && codeInput.value.length === 6) {
-			verify2FA(codeInput.value, container, root);
+			verify2FA(codeInput.value, root);
 		}
 	});
 
@@ -73,7 +73,7 @@ export function TwoFAPage(): HTMLElement {
 	return root;
 }
 
-async function verify2FA(code: string, container: HTMLElement, root: HTMLElement) {
+async function verify2FA(code: string, root: HTMLElement) {
 	if (!code || code.length !== 6) {
 		const errorMsg = (root as any).errorMsg;
 		errorMsg.textContent = 'Code invalide (6 chiffres requis)';
@@ -107,7 +107,6 @@ async function verify2FA(code: string, container: HTMLElement, root: HTMLElement
 			return;
 		}
 
-		// Code valide, rediriger vers home
 		await ensureUser(true);
 		navigateTo('/home');
 
@@ -164,19 +163,15 @@ async function login(InputMail: HTMLInputElement, InputPassword: HTMLInputElemen
 			});
 			const data = await resp.json();
 			if (!resp.ok) throw new Error(data?.error || 'Login failed');
-			console.log('jwt:', data.jwtToken);
 			localStorage.setItem('jwt', data.jwtToken);
 
-			// ✅ NOUVEAU: Vérifier si 2FA est requis
 			if (data.requires2FA) {
-				// 2FA activé → afficher page de vérification
 				const app = document.getElementById('app');
 				if (app) {
 					app.innerHTML = '';
 					app.appendChild(TwoFAPage());
 				}
 			} else {
-				// 2FA désactivé → aller à home
 				navigateTo('/home');
 			}
 		} catch (e: any) {
@@ -199,7 +194,6 @@ export function OAuthCallbackPage(): HTMLElement {
 	const params = new URLSearchParams(location.search);
 	const token = params.get('token');
 	const requires2FA = params.get('requires2FA') === 'true';
-	console.log('Token:', token, 'Requires2FA:', requires2FA);
 	const error = params.get('error');
 
 	const showError = (msg: string) => {
@@ -235,10 +229,8 @@ export function OAuthCallbackPage(): HTMLElement {
 	if (token) {
 		localStorage.setItem('jwt', token);
 
-		// Si requires2FA est présent dans l'URL, afficher directement la page 2FA
 		if (requires2FA) {
-			console.log('2FA required, showing 2FA page');
-			root.innerHTML = '';  // Effacer le texte "Connexion..."
+			root.innerHTML = '';
 			root.appendChild(TwoFAPage());
 			return root;
 		}
@@ -246,10 +238,7 @@ export function OAuthCallbackPage(): HTMLElement {
 		ensureUser(true)
 			.then(() => {
 				const user = getUser();
-
-				// ✅ NOUVEAU: Vérifier si 2FA est activé
 				if (user && user.is_a2f === 1) {
-					// 2FA activé → afficher page de vérification
 					const app = document.getElementById('app');
 					if (app) {
 						app.innerHTML = '';

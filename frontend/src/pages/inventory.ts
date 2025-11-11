@@ -120,7 +120,6 @@ export function InventoryPage(): HTMLElement {
         previewsWrap.appendChild(makePreviewBox("Ball", "ball", inventory));
     }
 
-    // Initial preview load
     displayInventoryPreview();
 
     /* ---- Colonne droite: filtres + liste ---- */
@@ -128,7 +127,6 @@ export function InventoryPage(): HTMLElement {
     right.className = "w-8/10 xl:w-4/6 flex flex-col min-h-0 bg-white/10 border border-white/15 rounded-xl mx-auto xl:mx-0";
     layout.appendChild(right);
 
-    // Filtres
     const filters = document.createElement("div");
     filters.className = "flex flex-col md:flex-row gap-3 md:items-center px-4 pt-4";
 
@@ -189,7 +187,6 @@ export function InventoryPage(): HTMLElement {
             body: JSON.stringify({ [payloadKey]: itemName }),
         });
         if (!res.ok) {
-            // Optionally show an error toast
             console.warn('Equip failed', await res.text());
             return;
         }
@@ -235,7 +232,6 @@ export function InventoryPage(): HTMLElement {
                     const img = document.createElement("img");
                     img.src = item.id;
                     img.alt = item.name;
-                    console.log("BAR", item.id);
                     if (!item.id.search("/playbar/"))
                         img.className="rounded-xl bg-white/5 border border-white/10 flex items-center m-auto h-40"
                     else

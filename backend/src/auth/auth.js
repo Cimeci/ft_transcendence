@@ -7,7 +7,6 @@ import dotenv from 'dotenv';
 import jwt from '@fastify/jwt';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-//import sget from 'simple-get';
 
 dotenv.config();
 
@@ -115,7 +114,6 @@ app.post('/register', async (request, reply) => {
         const info = { uuid, username, email, hash }
 
         const { jwtToken, refreshToken } = await generateTokens(uuid, username, email);
-        // const token = await app.jwt.sign({ uuid: uuid, username: username, email: email })
         
         const response = await fetch('http://user:4000/insert', {
             method: 'POST',
@@ -215,9 +213,7 @@ app.post('/login', async (request, reply) => {
         if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
 
-        //const { jwtToken, refreshToken } = await generateTokens(uuid, username, email);
         const { jwtToken, refreshToken } = await generateTokens(user.uuid, user.username, user.email);
-        // const jwtToken = await app.jwt.sign({ userId: user.uuid, email: user.email, username: user.username  });
         request.log.info({
             event: 'login_attempt',
             user: { email }
@@ -298,7 +294,6 @@ app.post('/verify-2fa', async (request, reply) => {
             user: { uuid }
         }, 'a2f verification success');
 
-        console.log(jwtToken, refreshToken);
         reply.send({ jwtToken, refreshToken });
     } catch (err) {
         request.log.error({
@@ -346,7 +341,6 @@ app.patch('/toggle-a2f', async (request, reply) => {
             return reply.code(404).send({ error: 'User not found' });
         }
 
-        // Définir twofa_enabled à 0 ou 1 (0 = désactivé, 1 = activé)
         const newStatus = enable ? 1 : 0;
         
         db.prepare('UPDATE user SET twofa_enabled = ? WHERE uuid = ?').run(newStatus, uuid);
@@ -634,8 +628,6 @@ app.get('/google/callback', async(request, reply) => {
             }
 
             ({jwtToken, refreshToken} = await generateTokens(user.uuid, user.username, user.email));
-            console.log({jwtToken: jwtToken})
-            //jwtToken = await app.jwt.sign({ userId: user.uuid });
             const info = { online: 1, uuid: user.uuid }
 
             const response = await fetch('http://user:4000/online', {
@@ -678,8 +670,6 @@ app.get('/google/callback', async(request, reply) => {
                 user: { email }
             }, 'Google OAuth new user sucess');
         }
-        // reply.send({ message: 'logged in successfully', token: jwtToken, refreshToken });
-        console.log(jwtToken);
         return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}&refreshToken=${encodeURIComponent(refreshToken)}`);
     } catch (err) {
         request.log.error({

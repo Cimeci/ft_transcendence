@@ -52,9 +52,8 @@ class Game {
         this.updateGameInterval = setInterval(this.updateGame.bind(this), 1000 / 60);
     }
 
-    // Méthode appelée quand un joueur abandonne définitivement (pas pour déconnexion temporaire)
+    //? Méthode appelée quand un joueur abandonne définitivement (pas pour déconnexion temporaire)
     abandonGame(abandoningPlayer) {
-        console.log(`Joueur ${abandoningPlayer} a abandonné la partie`);
         
         this.ball = { x: 1400 / 2, y: 800 / 2, radius: 20, speedX: 0, speedY: 0 };
         this.leftPaddle = { x: 10, y: 800 / 2 - paddleHeight / 2 };
@@ -65,16 +64,7 @@ class Game {
             clearTimeout(this.launchTimeout);
             this.launchTimeout = null;
         }
-
-        // if (this.clients[0].readyState === 1){
-        //     this.score.left = 5;
-        //     this.score.right = 0;
-        // }
-        // else {
-        //     this.score.right = 5;
-        //     this.score.left = 0;
-        // }
-
+        
         // Donner la victoire à l'autre joueur
         if (abandoningPlayer === 'left') {
             this.score.right = 5;
@@ -158,23 +148,17 @@ class Game {
         const speed = 1400 / 200;
         const maxAngle = Math.PI / 4;
     
-        // Lance la balle après un délai
-        /*this.launchTimeout = setTimeout(() => {*/
-                let angle = 0;
-                do {
-                        angle = (Math.random() * 2 - 1) * maxAngle;
-                } while (Math.abs(angle) < 0.1);
-    
-                const direction = forceDirection ?? (Math.random() < 0.5 ? -1 : 1);
-                this.ball.speedX = Math.cos(angle) * speed * direction;
-                this.ball.speedY = Math.sin(angle) * speed;
-                this.launchTimeout = null;
-                this.isGamerunning = true;
-       /* }, 1000)*/; // 1 secondes d’attente
-    
-        // Envoi régulier de l’état des paddles pendant l’attente, tout les 10 ms
-        // const paddleState = setInterval(() => this.sendPaddleState, 1000 / 60);
-        //setTimeout(clearInterval(this.updateGameInterval), 1000);
+        let angle = 0;
+        do {
+                angle = (Math.random() * 2 - 1) * maxAngle;
+        } while (Math.abs(angle) < 0.1);
+
+        const direction = forceDirection ?? (Math.random() < 0.5 ? -1 : 1);
+        this.ball.speedX = Math.cos(angle) * speed * direction;
+        this.ball.speedY = Math.sin(angle) * speed;
+        this.launchTimeout = null;
+        this.isGamerunning = true;
+
     }
 
     endGame() {
@@ -192,8 +176,7 @@ class Game {
             });
             
             this.isGamerunning = false;
-            
-            // Réinitialiser après 3 secondes
+
             setTimeout(() => {
                 this.resetGame();
             }, 1000);
@@ -215,17 +198,17 @@ class Game {
             this.ballRotation += BALL_SPIN_STEP;
         }
                     
-        // Score (on passe la direction du prochain service)
+        // Score
         if (this.ball.x < 0) {
             this.score.right++;
-            this.resetBall(1);   // relance vers le joueur 1 (à droite)
+            this.resetBall(1);
         }
         if (this.ball.x > 1400) {
             this.score.left++;
-            this.resetBall(-1);  // relance vers le joueur 2 (à gauche)
+            this.resetBall(-1);
         }
     
-        // Accélération progressive uniquement si la balle est en mouvement
+        // Accélération progressive
         if (this.ball.speedX !== 0 || this.ball.speedY !== 0) {
             this.ball.speedX *= 1.0005;
             this.ball.speedY *= 1.0005;
@@ -249,16 +232,6 @@ app.register(async function (app) {
 		request.log.info({
 				event: 'websocket_attempt'
 		}, 'WebSocket connection success');
-        // Authentification du token JWT
-        // let uuid;
-        // try {
-        //   uuid = await checkToken(request);
-        // } catch (err) {
-        //   request.log.warn({
-        //         event: 'delete-friendship_attempt'
-        //     }, 'Delete Friendship Unauthorized: invalid jwt token');
-        //     reply.code(401).send({ error: 'Unauthorized'});
-        // }
 
         gameuuid = request.params.uuid;
         if (!games[gameuuid])
@@ -340,27 +313,17 @@ app.register(async function (app) {
                 }
             }
 
-            // Gestion des stops
-            if (messageData.event === 'stop' && messageData.paddle === playerPosition) {
-                // Pour l'instant, on ne fait rien de spécial pour les stops
-                // La paddle s'arrête naturellement quand on ne reçoit plus de move
-            }
-
             } catch (error) {
                 console.error('Erreur parsing message:', error);
             }
         });
 
         socket.on('close', () => {
-            console.log(`Joueur ${playerPosition} déconnecté`);
-            
             // Ne pas libérer immédiatement - donner 5 secondes pour reconnexion
             setTimeout(() => {
                 // Vérifier si toujours déconnecté après 5 secondes
                 if ((playerPosition === 'left' && game.players.left === socket) ||
                     (playerPosition === 'right' && game.players.right === socket)) {
-                    
-                    console.log(`Joueur ${playerPosition} définitivement déconnecté après timeout`);
                     
                     // Libérer la position
                     if (playerPosition === 'left') {
@@ -407,5 +370,4 @@ app.listen({ port: 4000, host: '0.0.0.0' }, (err, address) => {
         console.error(err);
         process.exit(1);
     }
-    console.log(`Serveur WebSocket démarré sur ${address}`);
 });

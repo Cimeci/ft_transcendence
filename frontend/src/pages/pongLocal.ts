@@ -44,7 +44,6 @@ export function PongLocalMenuPage(): HTMLElement {
 		const inventory = await getUserInventory();
        	if (!inventory) return;
 
-		console.log("INVENTORY: ", inventory)
 		bar.src = inventory["paddle_use"]?.[0]?.id;
 		user1.paddle = inventory["paddle_use"]?.[0]?.id;
 	}
@@ -132,7 +131,6 @@ export function PongLocalMenuPage(): HTMLElement {
 		const inventory = await getUserInventory();
        	if (!inventory) return;
 
-		console.log("INVENTORY: ", inventory)
 		ball.src = inventory["ball_use"]?.[0]?.id;
 		Ball_src = inventory["ball_use"]?.[0]?.id;
 		bg.src = inventory["background_use"]?.[0]?.id;
@@ -257,7 +255,6 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	const container = document.createElement("div");
 	container.className = "relative flex flex-col items-center justify-center";
 
-	// GESTION DES TOUCHES
 	const keys: Record<string, boolean> = {};
 	const onKeyDown = (e: KeyboardEvent) => {
 		keys[e.key] = true;
@@ -327,18 +324,15 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 	let ballRotation = 0;
 	const BALL_SPIN_STEP = Math.PI / 10;
 
-	let launchTimeout: number | null = null; // <-- ajouté
+	let launchTimeout: number | null = null;
 
 	function resetBall(forceDirection?: number) {
-		// Position centrale
 		ball.x = canvas.width / 2;
 		ball.y = canvas.height / 2;
-		// Stoppe la balle pendant l’attente
 		ball.speedX = 0;
 		ball.speedY = 0;
 		ballRotation = 0;
 
-		// Annule un éventuel timer précédent
 		if (launchTimeout !== null) {
 			clearTimeout(launchTimeout);
 		}
@@ -356,7 +350,7 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 			ball.speedX = Math.cos(angle) * speed * direction;
 			ball.speedY = Math.sin(angle) * speed;
 			launchTimeout = null;
-		}, 3000); // 3 secondes d’attente
+		}, 3000);
 	}
 
 	let prevScore1 = user1.score;
@@ -382,7 +376,6 @@ function LocalPong(score1Elem: HTMLElement, score2Elem: HTMLElement): HTMLElemen
 		const hitRight = ball.x + ball.radius > rightPaddle.x && ball.y > rightPaddle.y && ball.y < rightPaddle.y + paddleHeight;
 		if (hitLeft || hitRight) {
 			ball.speedX *= -1;
-			// ballRotation += BALL_SPIN_STEP;
 		}
 
 		if (ball.x < 0) {
@@ -562,8 +555,6 @@ export function PongLocalGamePage(): HTMLElement {
 	const canvas = LocalPong(Score1, Score2);
 	mainContainer.appendChild(canvas);
 
-	console.log("player:", user1.name, "vs", user2.name);
-
 	const token = localStorage.getItem("jwt") || "";
 	(async () => {
 		const gameId = localStorage.getItem("game_uuid") || "err";
@@ -576,7 +567,6 @@ export function PongLocalGamePage(): HTMLElement {
 				},
 			});
 			const data = await resp.json();
-			console.log("DATA GAME:", data);
 			Score1.textContent = data.player1 + ": " + data.score1;
 			Score2.textContent = data.player2 + ": " + data.score2;
 		} catch(e){

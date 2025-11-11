@@ -17,15 +17,12 @@ export function CreateSlider(ref: { value: number }, txt: string, minValue: numb
     const Slider = document.createElement("div");
     Slider.className = "flex justify-between text-gray-700";
 
-    // Affichages: courant (gauche) et max (droite)
     const current = document.createElement("span");
     const max = document.createElement("span");
-    // Construit la liste des valeurs par paliers *2
     const values: number[] = [];
-    const start = Math.max(1, Math.floor(minValue)); // sécurité (>0)
+    const start = Math.max(1, Math.floor(minValue));
     let v2 = start;
     while (v2 <= maxValue) { values.push(v2); v2 *= 2; }
-    // Index initial: le plus proche de ref.value (ou 0)
     let initIdx = 0;
     if (typeof ref.value === "number" && ref.value > 0) {
         initIdx = values.reduce((best, val, idx) =>
@@ -39,7 +36,6 @@ export function CreateSlider(ref: { value: number }, txt: string, minValue: numb
     InputSlider.type = "range";
     InputSlider.className = "rounded-range w-full";
     if (ref.value > 0) InputSlider.className += " pl-2";
-    // Slider sur indices [0 .. values.length-1]
     InputSlider.min = "0";
     InputSlider.max = String(Math.max(0, values.length - 1));
     InputSlider.step = "1";
@@ -108,7 +104,6 @@ export async function SetWallet(uuid: string, amount: Number)
 }
 
 export async function getUidInventory(uuid: string){
-    console.log("getuuisInventory uuiiiiddididiid: ", uuid);
     const jwt = localStorage.getItem("jwt");
     if (!jwt) return {};
     try {
@@ -119,10 +114,8 @@ export async function getUidInventory(uuid: string){
                 'Content-Type': 'application/json',
             }
         });
-        console.log("RESP GET UUID: ", r2);
         if (r2.ok) {
             const data = await r2.json();
-            console.log("USER GET HEREEEE: ", data.user);
             return {
                 id: data.user.uuid,
                 username: data.user.username || "default",
@@ -142,7 +135,6 @@ export async function getUidInventory(uuid: string){
 
 export async function Invitation(game_uuid: string, friend_uuid: string, mode: string)
 {
-    console.log("INVITATION INFO:", game_uuid, "| " ,friend_uuid, "| ", mode)
     const jwt = localStorage.getItem("jwt");
     if (!jwt) return new Error("Error JWT");
     try {
@@ -157,7 +149,6 @@ export async function Invitation(game_uuid: string, friend_uuid: string, mode: s
                 mode: mode
             })
 		});
-        console.log("RESP POST INVIT: ", resp);
         if (!resp.ok)
         {
             console.error(resp.status);

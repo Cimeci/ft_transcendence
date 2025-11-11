@@ -92,7 +92,6 @@ export async function getDataUuidTournament(uuid: string){
             return null;
         }
 		const data: Tournament = await resp.json();
-		// console.log("GET DATA TOURNAMENT: ", data);
 		return (data);
     } catch (error) {
         console.error("Error network :", error);
@@ -122,7 +121,6 @@ async function GetTournamentList() {
 
         const data: Tournament[] = await resp.json();
         tournamentList = data;
-        // console.log("Tournament list updated:", tournamentList);
         return data;
         
     } catch (error) {
@@ -137,7 +135,6 @@ async function CreateTournament(btn: HTMLButtonElement, uuid_host:string, name: 
     const old = btn.textContent;
     btn.textContent = "…";
     try {
-		console.log("VALUE CREATE TOURNAMENT :", uuid_host, "| ", name, " |", length)	
         const resp = await fetch(`/tournament/tournament`, {
           	method: "POST",
           	headers: {
@@ -146,10 +143,8 @@ async function CreateTournament(btn: HTMLButtonElement, uuid_host:string, name: 
             },
             body: JSON.stringify({ host_uuid: uuid_host, name: name, visibility: visibility, password: password, length: length })
         });
-		console.log("RESP", resp);
         if (resp.ok) {
 			const data = await resp.json();
-			console.log("DATA: ", data)
           	return (data);
         }
         if (resp.status === 400) { btn.textContent = "Invalid Input"; return; }
@@ -172,10 +167,7 @@ export function getUuid(): string {
 
 export async function getCurrentTournament(): Promise<Tournament | undefined> {
     try {
-        const updatedList = await GetTournamentList();
         const uuid = getUuid();
-        console.log("UUID :", uuid);
-        console.log("TOURNAMENTLIST :", updatedList);
         
         if (!uuid) {
             console.error("No UUID found in URL");
@@ -192,7 +184,6 @@ export async function getCurrentTournament(): Promise<Tournament | undefined> {
             }
         }
         
-        console.log("TOURNAMENT FIND: ", tournament);
         return tournament;
     } catch (error) {
         console.error("Error in getCurrentTournament:", error);
@@ -217,7 +208,6 @@ export async function getPlayerNames(uuids: string[]): Promise<string[]> {
         return names;
     } catch (error) {
         console.error("Error in getPlayerNames:", error);
-        // Fallback: return UUID if error
         return uuids.map(uuid => `Player ${uuid.slice(0, 8)}`);
     }
 }
@@ -283,9 +273,9 @@ async function JoinTournament(tournament: Tournament): Promise<boolean> {
 			await GetTournamentList();
     		return (true);
   		} else {
-    		console.log('Error Patch join', resp.status);
+    		console.error('Error Patch join', resp.status);
 			const errorData = await resp.json();
-            console.log('Error details:', errorData);
+            console.error('Error details:', errorData);
   		}
 	} catch (e) {
 		console.error("ERROR PATCH join", e);
@@ -308,9 +298,9 @@ async function launchTournament(uuid: string): Promise<boolean>{
 		if (resp.ok) {
 			return (true);
 		} else {
-			console.log('Error Patch join', resp.status);
+			console.error('Error Patch join', resp.status);
 			const errorData = await resp.json();
-            console.log('Error details:', errorData);
+            console.error('Error details:', errorData);
 		}
 	} catch (e) {
 		console.error("ERROR PATCH join", e);
@@ -340,7 +330,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 	HostTitle.textContent = t.host;
 	HostContainer.appendChild(HostTitle);
 
-	HostContainer.appendChild(CreateSlider(nb_players, t.player_number, 2, 16)); // add render function for db
+	HostContainer.appendChild(CreateSlider(nb_players, t.player_number, 2, 16));
 
 	const GameName = document.createElement("input");
 	GameName.className = "w-9/10 border-2 rounded-xl text-xl p-2";
@@ -539,7 +529,6 @@ export function PongTournamentMenuPage(): HTMLElement {
 	function startRefresh() {
 	    stopRefresh();
 	    refreshInterval = setupManagedInterval(async () => {
-	        console.log("Refreshing tournament list...");
 	        await refreshTournamentData();
 	        renderJoinList();
 	    }, 5000);
@@ -558,7 +547,6 @@ export function PongTournamentMenuPage(): HTMLElement {
 	});
 
 	GetTournamentList().then(() => {
-	    console.log("TOURNAMENTLIST LIST: ", tournamentList); 
 	    renderJoinList();
 	    startRefresh();
 	});
@@ -579,7 +567,6 @@ export function PongTournamentMenuPage(): HTMLElement {
 				tnb.className = "w-1/3";
 				
             	const playerCount = parsePlayer(tournament);
-            	// console.log("TOURNAMENT PLAYER: ", playerCount);
             	tnb.textContent = `${playerCount.length}/${tournament.size}`;
             	li.appendChild(tnb);
 
@@ -595,7 +582,6 @@ export function PongTournamentMenuPage(): HTMLElement {
 			const tournamentPlayers = parsePlayer(tournament);
 			const isPlayerInTournament = currentUserUuid && tournamentPlayers.some(player => player.uuid === currentUserUuid);
 
-			// Permettre l'accès si : le joueur est déjà inscrit OU il y a de la place
 			if (isPlayerInTournament || tournament.size > tournamentPlayers.length)
 			{
     			li.addEventListener("click", () => {
@@ -655,7 +641,6 @@ export function PongTournamentPageJoin(): HTMLElement {
         try {
             const freshTournament = await getDataUuidTournament(currentTournament.uuid);
             if (freshTournament && freshTournament.launch) {
-                console.log("Tournament launched, redirecting to game...", window.location.href);
                 stopRefresh();
 				navigateTo(`/Tournament/bracket?uid=${currentTournament.uuid}`);
                 return true;
@@ -670,13 +655,10 @@ export function PongTournamentPageJoin(): HTMLElement {
         try {
 			await refreshTournamentData();
             currentTournament = await getCurrentTournament();
-            console.log("CURRENT : ", currentTournament);
-
 			if (currentTournament){
 
 				const isLaunched = await checkAndRedirectIfLaunched();
                 if (isLaunched) {
-					// navigateTo(`/Tournament/bracket?uid=${currentTournament.uuid}`);
                     return;
                 }
 
@@ -761,11 +743,6 @@ export function PongTournamentPageJoin(): HTMLElement {
 		  	  	const data = await resp.json();
 		  	  	const me = getUser()?.uuid;
 				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
-
-				console.log("DATA FRIEND RESP :", data);
-				console.log("DATA FRIEND ME :", me);
-				console.log("DATA FRIEND ROWS :", rows);
-
 				const list = await Promise.all(rows.map(async (r) => {
 		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
 		  	  	  	try {
@@ -789,7 +766,6 @@ export function PongTournamentPageJoin(): HTMLElement {
 		  	  	console.error("load friendship failed", e);
 		  	  	friendData = [];
 		  	}
-			console.log("FRIEND DATA: ", friendData);
 			friendData.forEach(e => {
 			const li: HTMLLIElement = document.createElement("li");
 			li.className = "flex justify-between items-center p-2 w-full min-h-12"
@@ -813,8 +789,6 @@ export function PongTournamentPageJoin(): HTMLElement {
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
 			btn.addEventListener("click", async () => {
-			    console.log("BODY INVITATION: ", currentTournament?.uuid, " |", e.id);
-			
 			    if (!currentTournament?.uuid) {
 			        console.error("No tournament UUID");
 			        btn.textContent = t.error;
@@ -834,7 +808,6 @@ export function PongTournamentPageJoin(): HTMLElement {
 			        } else {
 			            btn.textContent = t.error;
 			            btn.disabled = false;
-			            // Réinitialiser après 2 secondes
 			            setTimeout(() => {
 			                btn.textContent = t.invite;
 			                btn.disabled = false;
@@ -844,7 +817,6 @@ export function PongTournamentPageJoin(): HTMLElement {
 			        console.error("Invitation error:", error);
 			        btn.textContent = t.error;
 			        btn.disabled = false;
-			        // Réinitialiser après 2 secondes
 			        setTimeout(() => {
 			            btn.textContent = t.invite;
 			            btn.disabled = false;
@@ -919,8 +891,6 @@ export function PongTournamentPageJoin(): HTMLElement {
     function startRefresh() {
         stopRefresh();
         refreshInterval = setupManagedInterval(async () => {
-            console.log("Refreshing join tournament data...");
-            
             const shouldRedirect = await checkAndRedirectIfLaunched();
             if (shouldRedirect) {
                 return;
@@ -972,8 +942,6 @@ export function PongTournamentPageHost(): HTMLElement {
         try {
 			await refreshTournamentData();
             currentTournament = await getCurrentTournament();
-            console.log("CURRENT TOURNAMENT HOST: ", currentTournament);
-            
             if (currentTournament) {
 				if (currentTournament.launch)
 				{
@@ -1015,7 +983,6 @@ export function PongTournamentPageHost(): HTMLElement {
 
 		if (currentTournament) {
             refreshInterval = setupManagedInterval(async () => {
-                console.log("Refreshing host tournament data...");
                 const hasChanged = await refreshTournamentData(currentTournament?.uuid);
                 if (hasChanged) {
                     const updatedTournament = tournamentList.find(t => t.uuid === currentTournament?.uuid);
@@ -1074,11 +1041,6 @@ export function PongTournamentPageHost(): HTMLElement {
 		  	  	const data = await resp.json();
 		  	  	const me = getUser()?.uuid;
 				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
-
-				console.log("DATA FRIEND RESP :", data);
-				console.log("DATA FRIEND ME :", me);
-				console.log("DATA FRIEND ROWS :", rows);
-
 				const list = await Promise.all(rows.map(async (r) => {
 		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
 		  	  	  	try {
@@ -1102,7 +1064,6 @@ export function PongTournamentPageHost(): HTMLElement {
 		  	  	console.error("load friendship failed", e);
 		  	  	friendData = [];
 		  	}
-			console.log("FRIEND DATA: ", friendData);
 			friendData.forEach(e => {
 			const li: HTMLLIElement = document.createElement("li");
 			li.className = "flex justify-between items-center p-2 w-full min-h-12"
@@ -1126,8 +1087,6 @@ export function PongTournamentPageHost(): HTMLElement {
 			btn.className = "inline-flex px-3 py-1.5 rounded-lg duration-300 transition-all hover:scale-105 bg-green-500 hover:bg-green-600";
 			btn.textContent = t.invite;
 			btn.addEventListener("click", async () => {
-			    console.log("BODY INVITATION: ", currentTournament?.uuid, " |", e.id);
-			
 			    if (!currentTournament?.uuid) {
 			        console.error("No tournament UUID");
 			        btn.textContent = t.error;
@@ -1147,7 +1106,6 @@ export function PongTournamentPageHost(): HTMLElement {
 			        } else {
 			            btn.textContent = t.error;
 			            btn.disabled = false;
-			            // Réinitialiser après 2 secondes
 			            setTimeout(() => {
 			                btn.textContent = t.invite;
 			                btn.disabled = false;
@@ -1157,7 +1115,6 @@ export function PongTournamentPageHost(): HTMLElement {
 			        console.error("Invitation error:", error);
 			        btn.textContent = t.error;
 			        btn.disabled = false;
-			        // Réinitialiser après 2 secondes
 			        setTimeout(() => {
 			            btn.textContent = t.invite;
 			            btn.disabled = false;
@@ -1238,7 +1195,6 @@ export function PongTournamentPageHost(): HTMLElement {
 
 		BackToMenuSure.appendChild(actions);
 		BackToMenuOverlay.appendChild(BackToMenuSure);
-		// L’overlay doit être au niveau du container principal
 		mainContainer.appendChild(BackToMenuOverlay);
 
     	const BackToMenuBtn = document.createElement("button");
@@ -1305,8 +1261,6 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
         try {
             await refreshTournamentData();
             currentTournament = await getCurrentTournament();
-            console.log("CURRENT TOURNAMENT GAME: ", currentTournament);
-            
             if (currentTournament?.uuid) {
                 sessionStorage.setItem('currentTournamentUuid', currentTournament.uuid);
             }
@@ -1336,7 +1290,6 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             
             if (resp.ok) {
                 tournamentStatus = await resp.json();
-                console.log("Tournament status:", tournamentStatus);
             }
         } catch (error) {
             console.error("Error fetching status:", error);
@@ -1357,7 +1310,6 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             if (resp.ok) {
                 const data = await resp.json();
                 myNextMatch = data.match;
-                console.log("My next match:", myNextMatch);
             }
         } catch (error) {
             console.error("Error fetching next match:", error);
@@ -1368,7 +1320,6 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
         loadingContainer.remove();
         mainContainer.innerHTML = "";
 
-        // Title
         const Title = document.createElement("h1");
         Title.className = "absolute top-5 tracking-widest text-6xl neon-matrix mb-15";
         Title.textContent = currentTournament?.name + " " + t.tournament;
@@ -1402,13 +1353,6 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             const matchCard = document.createElement("div");
             matchCard.className = "bg-black/40 p-6 rounded-xl flex flex-col gap-4";
 
-            // Round info
-            // const roundInfo = document.createElement("p");
-            // roundInfo.className = "text-xl text-green-400";
-            // roundInfo.textContent = `Round ${myNextMatch.round || 1}`;
-            // matchCard.appendChild(roundInfo);
-
-            // Players info
             const playersInfo = document.createElement("div");
             playersInfo.className = "text-lg text-gray-300";
             
@@ -1428,17 +1372,14 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
                 statusText.className += " text-green-400";
                 statusText.textContent = `✅ ${t.game_ready} ${t.you_can_play_now}.`;
                 
-                // Play button (seulement si ready et que le game_uuid existe)
                 if (myNextMatch.game_uuid) {
                     const playBtn = document.createElement("button");
                     playBtn.className = "w-full py-4 bg-green-600 hover:bg-green-700 rounded-xl text-2xl font-bold transition-all duration-300 hover:scale-105 shadow-lg animate-pulse";
                     playBtn.textContent = "▶️ " + t.play;
                     playBtn.onclick = () => {
-                        console.log("🎮 Starting game, stopping refresh...");
-                        stopRefresh(); // Arrêter le refresh avant de naviguer
-                        cleanupAllIntervals(); // Nettoyer TOUS les intervals
+                        stopRefresh();
+                        cleanupAllIntervals();
                         
-                        // Stocker l'UUID du tournoi pour la redirection après la game
                         if (currentTournament?.uuid) {
                             sessionStorage.setItem('currentTournamentUuid', currentTournament.uuid);
                         }
@@ -1456,17 +1397,15 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
                 statusText.className += " text-blue-400";
                 statusText.textContent = `🎮 ${t.match_in_progress}!`;
                 
-                // Play button pour rejoindre le match en cours
+                //? Play button pour rejoindre le match en cours
                 if (myNextMatch.game_uuid) {
                     const joinBtn = document.createElement("button");
                     joinBtn.className = "w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-2xl font-bold transition-all duration-300 hover:scale-105 shadow-lg";
                     joinBtn.textContent = `🔗 ${t.join_match}`;
                     joinBtn.onclick = () => {
-                        console.log("🎮 Joining game, stopping refresh...");
-                        stopRefresh(); // Arrêter le refresh avant de naviguer
-                        cleanupAllIntervals(); // Nettoyer TOUS les intervals
+                        stopRefresh();
+                        cleanupAllIntervals();
                         
-                        // Stocker l'UUID du tournoi pour la redirection après la game
                         if (currentTournament?.uuid) {
                             sessionStorage.setItem('currentTournamentUuid', currentTournament.uuid);
                         }
@@ -1515,16 +1454,15 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             const completedMatches = allMatches.filter(m => m.status === 'completed').length;
             const progress = totalMatches > 0 ? (completedMatches / totalMatches) * 100 : 0;
 
-            // Progress bar
             const progressBar = document.createElement("div");
             progressBar.className = "w-full h-8 bg-black/40 rounded-full overflow-hidden mb-4";
+
             const progressFill = document.createElement("div");
             progressFill.className = "h-full bg-gradient-to-r from-green-600 to-green-400 transition-all duration-500";
             progressFill.style.width = `${progress}%`;
             progressBar.appendChild(progressFill);
             progressSection.appendChild(progressBar);
 
-            // Stats
             const stats = document.createElement("div");
             stats.className = "flex justify-between text-lg";
             stats.innerHTML = `<span>${completedMatches}/${totalMatches} ${t.completed}</span>`;
@@ -1533,7 +1471,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             contentContainer.appendChild(progressSection);
         }
 
-        // 🎯 Bracket (votre système existant)
+        //* Bracket *//
         if (currentTournament) {
             const bracketContainer = document.createElement("div");
             bracketContainer.id = "bracket-container";
@@ -1581,7 +1519,7 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
         ConfirmBtn.textContent = t.back;
         ConfirmBtn.onclick = () => {
             stopRefresh();
-            sessionStorage.removeItem('currentTournamentUuid'); // Nettoyer le sessionStorage
+            sessionStorage.removeItem('currentTournamentUuid');
             mainContainer.classList.add("fade-out");
             setTimeout(() => navigateTo("/Tournament/menu"), 1000);
         };
@@ -1612,14 +1550,11 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
     function startRefresh() {
         stopRefresh();
         refreshInterval = setupManagedInterval(async () => {
-            // ⚠️ NE PAS RAFRAÎCHIR si on n'est pas sur la page du tournoi
             if (window.location.pathname !== '/Tournament/bracket') {
-                console.log("Not on tournament page, stopping refresh");
                 stopRefresh();
                 return;
             }
 
-            console.log("Refreshing tournament game data...");
             const previousStatus = JSON.stringify(tournamentStatus);
             const previousMatch = JSON.stringify(myNextMatch);
             
@@ -1627,15 +1562,13 @@ export function PongTournamentPageCurrentGame(): HTMLElement {
             await fetchTournamentStatus();
             await fetchMyNextMatch();
             
-            // Re-render seulement si quelque chose a changé
             const statusChanged = previousStatus !== JSON.stringify(tournamentStatus);
             const matchChanged = previousMatch !== JSON.stringify(myNextMatch);
             
             if (statusChanged || matchChanged) {
-                console.log("Changes detected, re-rendering...");
                 await renderTournament();
             }
-        }, 5000); // Refresh toutes les 5 secondes (augmenté pour moins de charge)
+        }, 5000);
     }
 
     function stopRefresh() {

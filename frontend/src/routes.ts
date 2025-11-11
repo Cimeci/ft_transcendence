@@ -121,7 +121,6 @@ export const navigateTo = async (url: string) => {
 
 async function isJwtValid(): Promise<boolean> {
     const jwt = localStorage.getItem("jwt");
-    console.log("CHECK JWT", jwt);
     if (!jwt) return false;
     
     try {
@@ -132,8 +131,6 @@ async function isJwtValid(): Promise<boolean> {
             }
         });
         
-        console.log("RESP JWT Status:", resp.status, "OK:", resp.ok);
-        
         if (!resp.ok) {
             try {
                 const errorData = await resp.json();
@@ -143,12 +140,7 @@ async function isJwtValid(): Promise<boolean> {
             }
             return false;
         }
-        
-        // Vérifier que la réponse est valide
-        const data = await resp.json();
-        console.log("JWT SUCCESS:", data);
         return true;
-        
     } catch (e) {
         console.error("POST JWT Network Error: ", e);
         return false;
@@ -160,16 +152,12 @@ const renderPage = async () => {
     const isPublic = publicRoot.includes(path);
 	const isPrivate = privateRoot.includes(path);
 
-    console.log("Rendering page:", path, "isPublic:", isPublic);
-    
     if (isPublic) {
-        console.log("Public route, rendering directly");
         renderContent(path);
         return;
     }
     
     const jwtValid = await isJwtValid();
-    console.log("Private route - JWT valid:", jwtValid);
     
     if (!jwtValid && isPrivate) {
         const appContainer = document.getElementById('app');
@@ -242,7 +230,7 @@ const navbar = createNavbar(navRoutesForNavbar);
 document.body.prepend(navbar);
 positionToastRoot();
 
-//! GLOBAL POPUP Invitation
+//! GLOBAL
 declare global {
   	interface Window {
 		renderPage?: () => void;
@@ -259,7 +247,7 @@ function ensureTopRightToastRoot(): HTMLDivElement {
 		document.body.appendChild(root);
   	}
   	const nav = document.querySelector('nav') as HTMLElement | null;
-  	const top = (nav?.offsetHeight || 56) + 8; // hauteur navbar + 8px
+  	const top = (nav?.offsetHeight || 56) + 8;
   	root.style.top = `${top}px`;
   	return root;
 }
@@ -300,7 +288,6 @@ function makeInviteToast(p: InvitePayload): HTMLDivElement {
   	textWrap.appendChild(title); textWrap.appendChild(sub);
   	toast.appendChild(textWrap);
 
-  	// Actions
   	const actions = document.createElement('div');
   	actions.className = 'flex items-center gap-2';
 

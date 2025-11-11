@@ -40,7 +40,6 @@ interface InventoryResponse {
 }
 
 const setUserOnline = async (uuid: string, online: string) => {
-	console.log("USER ONLINE", uuid, online);
 	const res = await fetch('/user/env', { method: 'GET' });
   	const response = await fetch('/user/online', {
     	method: 'PATCH',
@@ -53,8 +52,6 @@ const setUserOnline = async (uuid: string, online: string) => {
 
   	if (!response.ok) {
     	console.error('Erreur:', await response.json());
-  	} else {
-    	console.log('Mise à jour réussie !');
   	}
 };
 
@@ -108,7 +105,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	function renderNotifs() {
 	  listNotif.innerHTML = "";
 	
-	  // Afficher un indicateur de chargement
 	  if (notifications.length === 0) {
 	    const emptyMsg = document.createElement("li");
 	    emptyMsg.className = "w-full text-center p-4 text-white/60";
@@ -153,7 +149,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	    accept.onclick = () => { 
 	      n.onAccept?.(); 
 	      removeNotification(n.key); 
-	      // Recharger les notifications après action
 	      setTimeout(() => loadAndDisplayNotifications(), 500);
 	    };
 	
@@ -163,7 +158,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	    refuse.onclick = () => { 
 	      n.onRefuse?.(); 
 	      removeNotification(n.key); 
-	      // Recharger les notifications après action
 	      setTimeout(() => loadAndDisplayNotifications(), 500);
 	    };
 	
@@ -177,7 +171,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	notifBtn.addEventListener('click', (e) => {
 	  e.stopPropagation();
 	
-	  // Afficher un indicateur de chargement
 	  listNotif.innerHTML = `
 	    <li class="w-full text-center p-4 text-white/60">
 	      <div class="flex justify-center items-center gap-2">
@@ -189,7 +182,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	  overlayNotif.classList.remove('hidden');
 	  navLinks.classList.add('hidden');
 	
-	  // Recharger et afficher les notifications
 	  loadAndDisplayNotifications().then(() => {
 	    renderNotifs();
 	  }).catch(error => {
@@ -202,18 +194,12 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	  });
 	});
 
-	// document.addEventListener('click', (e) => {
-	//   const t = e.target as Node;
-	//   if (!overlayNotif.contains(t) && !notifBtn.contains(t)) overlayNotif.classList.add('hidden');
-	// });
-
 	window.addEventListener('notif:changed', renderNotifs);
 
 	const profileBox = document.createElement('div');
 	profileBox.className = 'z-[3500] flex items-center gap-2 p-1 rounded-lg hover:bg-white/10 cursor-default transition-opacity duration-200 md:opacity-100';
 
 	const avatarImg = document.createElement('img');
-	// avatarImg.src = getUser()?.avatar || '/avatar/default_avatar.png';
 	avatarImg.alt = 'avatar';
 	avatarImg.className = 'z-[3500] w-8 h-8 rounded-full object-cover border border-white/20';
 
@@ -226,11 +212,9 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
     		const res = await fetch("/user/inventory", { headers: { Authorization: `Bearer ${token}` } });
     		if (!res.ok) throw new Error(`HTTP ${res.status}`);
     		const data = await res.json();
-    		// avatar_use est un tableau: [{ id, name }]
     		const avatarUseArr = data?.filteredInventory?.avatar_use;
     		const id = avatarUseArr?.[0]?.id || getUser()?.avatar || 'avatar/default_avatar.png';
     		avatarImg.src = '/' + id.replace(/^\/+/, '');
-			console.log("IMG ID:", id);
     	} catch (e) {
     		console.warn('Avatar fetch failed', e);
     	}
@@ -241,8 +225,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	const nameSpan = document.createElement('span');
 	nameSpan.textContent = getUser()?.username || "default";
 	nameSpan.className = 'z-[3500] text-sm font-medium truncate max-w-[20ch] hidden sm:block';
-
-	// loadUser().catch(() => {});
 
 	profileBox.appendChild(avatarImg);
 	profileBox.appendChild(nameSpan);
@@ -263,8 +245,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 	});
 
 	nav.appendChild(rightBox);
-
-	// — Notifications overlay ancré à la fenêtre —
 
 	const navLinks = document.createElement('div');
 	navLinks.className = "fixed right-0 top-20 bottom-0 z-[1000] p-2 w-[8rem] md:w-[12rem] lg:w-[14rem] glass-blur flex flex-col gap-3 justify-center items-center hidden";
@@ -317,7 +297,6 @@ export function createNavbar(routes: { [key: string]: string }): HTMLElement {
 		navLinks.classList.toggle('hidden');
 	});
 
-	// Fermer au clic extérieur (par rapport à la fenêtre)
 	document.addEventListener('click', (e) => {
 		const target = e.target as Node;
 		if (!nav.contains(target) && !navLinks.contains(target) && !overlayNotif.contains(target)) {

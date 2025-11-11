@@ -42,7 +42,6 @@ async function register(newuser: User, InputName: HTMLInputElement, InputEmail: 
 			localStorage.setItem('jwt', jwt);
 			await ensureUser(true);
 		}
-		console.log("jwt:", jwt);
 		navigateTo("/home");
 	} catch (e: any) {
 		if (e.message.includes("username") || e.message.includes("Username"))

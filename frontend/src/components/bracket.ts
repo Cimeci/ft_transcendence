@@ -22,7 +22,6 @@ export async function createTournamentBracket(Tournament: Tournament): Promise<H
                 ? JSON.parse(Tournament.game) 
                 : Tournament.game;
             matches = Array.isArray(gameData) ? gameData : [];
-            console.log("MATCHES FROM TOURNAMENT:", matches);
             
             // Ajouter tous les UUIDs des joueurs présents dans les matches (y compris les winners)
             const allPlayerUuids = new Set(playerUuids);
@@ -49,9 +48,7 @@ export async function createTournamentBracket(Tournament: Tournament): Promise<H
     }
 
     function render() {
-        console.log("PLAYERS BRACKET: ", players);
         const filled = fillToPowerOfTwo(players);
-        console.log("PLAYERS FILLED BRACKET: ", filled);
         const rounds = Math.log2(filled.length);
 
         const COL_W = 180;

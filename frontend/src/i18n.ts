@@ -144,6 +144,15 @@ export const translations = {
 		twoFA_code_invalid: "Code invalide",
 		twoFA_enabled_success: "a2f activé avec succès",
 		twoFA_disabled_success: "a2f désactivé avec succès",
+		// Online Pong
+		back_to_tournament: "Retour au Tournoi",
+		waiting_opponent: "En attente d'un adversaire...",
+		position: "Position",
+		not_assigned: "Non assignée",
+		you_are_player: "Vous êtes le joueur",
+		left_player: "gauche",
+		right_player: "droit",
+		waiting_game_start: "En attente du début de la partie...",
 	},
 	en: {
 		error: "Error",
@@ -290,6 +299,15 @@ export const translations = {
 		twoFA_code_invalid: "Invalid code",
 		twoFA_enabled_success: "a2f enabled successfully",
 		twoFA_disabled_success: "a2f disabled successfully",
+		// Online Pong
+		back_to_tournament: "Back to Tournament",
+		waiting_opponent: "Waiting for an opponent...",
+		position: "Position",
+		not_assigned: "Not assigned",
+		you_are_player: "You are the player",
+		left_player: "left",
+		right_player: "right",
+		waiting_game_start: "Waiting for the game to start...",
 	},
 	es: {
 		// Settings
@@ -436,5 +454,14 @@ export const translations = {
 		twoFA_code_invalid: "Código inválido",
 		twoFA_enabled_success: "a2f activado correctamente",
 		twoFA_disabled_success: "a2f desactivado correctamente",
+		// Online Pong
+		back_to_tournament: "Volver al Torneo",
+		waiting_opponent: "Esperando un oponente...",
+		position: "Posición",
+		not_assigned: "No asignada",
+		you_are_player: "Eres el jugador",
+		left_player: "izquierdo",
+		right_player: "derecho",
+		waiting_game_start: "Esperando el inicio del partido...",
 	}
 };

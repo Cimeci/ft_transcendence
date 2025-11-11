@@ -51,7 +51,6 @@ export function FriendsPage(): HTMLElement {
 		profileContainer.appendChild(imgBox);
 
 		const imgProfile = document.createElement("img");
-		// imgProfile.src = "/avatar/default_avatar.png";
 		imgProfile.alt = "profile";
 		imgProfile.className = "w-full h-full object-cover hover:scale-105 transition-transform duration-300 p-1 border-2 rounded-xl";
 		imgBox.appendChild(imgProfile);
@@ -59,8 +58,6 @@ export function FriendsPage(): HTMLElement {
 		async function getSetupUser() {
 			const inventory = await getUserInventory();
 			if (!inventory) return;
-		
-			console.log("INVENTORY: ", inventory)
 			imgProfile.src = inventory["avatar_use"]?.[0]?.id || "/avatar/default_avatar.png";
 		}
 		getSetupUser();
@@ -413,7 +410,6 @@ export function FriendsPage(): HTMLElement {
 				search_dropdown.textContent = "User id";
 				row.appendChild(search_dropdown);
 
-				// Dropdown_btn //
 				const dropdown_btn = document.createElement("button");
 				dropdown_btn.id = "dropdown-button";
 				dropdown_btn.type = "button";
@@ -449,7 +445,6 @@ export function FriendsPage(): HTMLElement {
 
 				row.appendChild(dropdown_btn);
 
-				// Dropdown
 				const dropdown: HTMLDivElement = document.createElement("div");
 				dropdown.id = "dropdown";
 				dropdown.className = "z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700 absolute mt-12";
@@ -488,7 +483,6 @@ export function FriendsPage(): HTMLElement {
 					if (!dropdown.contains(t) && !dropdown_btn.contains(t)) dropdown.classList.add("hidden");
 				});
 
-				// Input
 				const container: HTMLDivElement = document.createElement("div");
 				container.className = "relative w-full";
 
@@ -665,12 +659,10 @@ export function FriendsPage(): HTMLElement {
 				const RequestsRecievedContainer = document.createElement("div");
 				RequestsRecievedContainer.className = "w-full h-9/10 flex flex-col p-10 items-center gap-8 hidden";
 				RequestsRecievedContainer.dataset.section = "invites";
-				// expose ref
 				// @ts-ignore
 				window.__invSection = RequestsRecievedContainer;
 				FriendMenu.appendChild(RequestsRecievedContainer);
 
-				// Search bar + liste dans FriendContainer
 				const form = document.createElement("form");
 				form.className = "w-full";
 
@@ -1104,7 +1096,6 @@ export function FriendsPage(): HTMLElement {
 		(window as any).__reloadRequests?.();
 	});
 	
-	// Même logique au clavier
 	[FriendsSelector, SearchSelector, RequestsRecievedSelector, RequestSelector].forEach(el => {
 	  (el as HTMLElement).tabIndex = 0;
 	  el.addEventListener("keydown", (e: KeyboardEvent) => {

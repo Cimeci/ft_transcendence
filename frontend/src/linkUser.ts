@@ -45,7 +45,6 @@ export async function ensureUser(force = false): Promise<User | null> {
 	loading = (async () => {
 		try {
 			const res = await fetch('/user/me', { headers: { Authorization: `Bearer ${token}` } });
-			console.log("RES: ",res);
 			if (!res.ok) cachedUser = null;
 			else {
 				const data = await res.json();
@@ -56,7 +55,6 @@ export async function ensureUser(force = false): Promise<User | null> {
 		} finally {
 			loading = null;
 			notify();
-			console.log("GETUSER: ", cachedUser); 
 			return cachedUser;
 		}
 	})();

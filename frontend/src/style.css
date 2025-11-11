@@ -1,20 +1,8 @@
 @import "tailwindcss";
-/* @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap'); */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* @media (max-width: 480px) {
-  .translate-icon {
-	width: 1.2rem;
-	height: 1.2rem;
-  }
-  .logout-btn {
-	padding: 0.25rem 0.5rem;
-	font-size: 0.8rem;
-	min-width: unset;
-  }
-} */
 
 @property --animated-angle {
 	syntax: '<angle>';
@@ -35,11 +23,10 @@
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	font-family: 'Orbitron', sans-serif; /* Ajout de la police Orbitron */
+	font-family: 'Orbitron', sans-serif;
 }
 
 #app {
-	/* padding-top: 80px; */
 	min-height: 100vh;
 	box-sizing: border-box;
 	display: flex;
@@ -54,8 +41,6 @@ body {
 	min-height: 100vh;
 	min-width: 300px;
 	padding: 0;
-	/* background-image: linear-gradient(rgba(10, 10, 10, 0.3), rgba(0, 0, 0, 0.8)), url('../public/bg_matrix.gif'); */
-	/* background-color: #0c0e0d; */
 	background-size: cover; 
 	background-position: center center; 
 	background-repeat: no-repeat; 
@@ -235,10 +220,6 @@ h2 {
 
 /* LOGIN */
 
-.login-container {
-
-}
-
 @media (max-width: 975px){
 	.login-container {
 		flex-direction: column-reverse;
@@ -273,24 +254,6 @@ h2 {
 .rounded-range:hover::-webkit-slider-thumb {
   box-shadow: 0 0 0 6px rgba(22, 163, 74, .2); /* halo au hover/focus */
 }
-
-/* .rounded-range::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 9999px;
-  background: #ffffff;
-  border: 3px solid #16a34a;
-  transition: box-shadow .2s ease;
-}
-.rounded-range:focus::-moz-range-thumb,
-.rounded-range:hover::-moz-range-thumb {
-  box-shadow: 0 0 0 6px rgba(22, 163, 74, .2);
-}
-.rounded-range::-moz-range-progress {
-  height: 10px;
-  border-radius: 9999px;
-  background: #065f46;
-} */
 
 /* Halo vert sur le thumb du slider quand il est focus */
 .rounded-range:focus::-webkit-slider-thumb {

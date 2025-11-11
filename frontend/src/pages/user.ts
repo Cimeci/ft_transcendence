@@ -19,13 +19,11 @@ export async function GetData(uuid: string) {
                 "Authorization": token ? `Bearer ${token}` : "",
             },
         });
-        console.log("GET DATA RESP:", resp);
         if (!resp.ok) {
           console.error(`Erreur serveur (${resp.status})`);
           return;
         }
         const data = await resp.json();
-        console.log("GET DATA DATA:", data);
         return (data.user);
     } catch(e) {console.error(e)};
 }
@@ -35,13 +33,10 @@ async function GetBtnType(): Promise<number>{
 
     const currentUser = getUser();
     if (!currentUser) throw new Error("No user logged in");
-    console.log("UUID", uuid);
     
     const me = currentUser.uuid;
     if (uuid === me) return (0);
     
-    console.log("ME:", me);
-
     const token = localStorage.getItem("jwt");
     if (!token) throw new Error("Missing token");
 
@@ -49,21 +44,18 @@ async function GetBtnType(): Promise<number>{
     if (!resp.ok) throw new Error(String(resp.status));
 
     const data = await resp.json();
-    console.log("DATA:", data);
 
     const rows = [
         ...(data.friendship ?? []),
         ...(data.sentRequest ?? []),
         ...(data.receivedRequest ?? []),
     ];
-    console.log("ROWS:", rows);
     
     const relation = rows.find(
         (r) =>
             (r.user_id === me && r.friend_id === uuid) ||
             (r.friend_id === me && r.user_id === uuid)
     );
-    console.log("FOUND RELATION:", relation);
 
     if (!relation) return 1;
     if (relation.status === "accepted") return 2;
@@ -192,7 +184,7 @@ export function UserPage(): HTMLElement {
         barLabel.textContent = t.bar;
 
         const barImg = document.createElement("img");
-        barImg.src = "/playbar/default_bar.png"; //! BAR USER LOOK
+        barImg.src = "/playbar/default_bar.png";
         barImg.alt = "bar";
         barImg.className = "h-6 sm:h-8 object-contain drop-shadow";
 
@@ -208,7 +200,7 @@ export function UserPage(): HTMLElement {
         ballLabel.textContent = t.ball;
 
         const ballImg = document.createElement("img");
-        ballImg.src = "/ball/default_ball.png"; //! BALL USER LOOK
+        ballImg.src = "/ball/default_ball.png";
         ballImg.alt = "ball";
         ballImg.className = "w-6 h-6 sm:w-8 sm:h-8 object-contain drop-shadow";
 
@@ -281,7 +273,6 @@ export function UserPage(): HTMLElement {
             (async () => {
                 try {
                     await GetBtnType().then((res) => {
-                        console.log("Résultat GetBtnType:", res);
                         if (res === 0) {}
                         else if (res === 1)
                             right.appendChild(addBtn);
@@ -334,17 +325,17 @@ export function UserPage(): HTMLElement {
         const invBody = document.createElement("div");
         invBody.className = "flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden scroll_bar";
 
-        const barsGrid = document.createElement("div"); //! ALL BARS USER LOOK
+        const barsGrid = document.createElement("div");
         barsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6";
         let allBars = [{"id":"/playbar/default_bar.png","name":"default bar","type":"bar","price":0,"usable":true}]; // replace by user inventory bars
         invBody.appendChild(barsGrid);
 
-        const ballsGrid = document.createElement("div"); //! ALL BALLS USER LOOK {
+        const ballsGrid = document.createElement("div");
         ballsGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-6";
         let allBalls = [{"src":"/ball/default_ball.png","id":"ball/default_ball.png","name":"default ball","type":"ball","price":0,"usable":true}]; // replace by user inventory balls
         invBody.appendChild(ballsGrid);
         
-        const backgroundGrid = document.createElement("div"); //! ALL BACKGROUNDS USER LOOK
+        const backgroundGrid = document.createElement("div");
         backgroundGrid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4";
         let allBackgrounds = [{"src":"/bg/default_bg.png","id":"bg/default_bg.png","name":"default bg","type":"background","price":0,"usable":true}]; // replace by user inventory backgrounds
         invBody.appendChild(backgroundGrid);
@@ -428,7 +419,6 @@ export function UserPage(): HTMLElement {
                 const br = document.createElement("br");
                 const date = document.createElement("span");
                 date.className = "text-xs text-white/50";
-                console.log("GAME:", game);
                 if (game.player1_uuid === uuid)
                     vs.textContent = `${game.player1} vs ${game.player2}`;
                 else

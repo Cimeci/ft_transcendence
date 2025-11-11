@@ -64,7 +64,7 @@ async function fetchNotifications(): Promise<UserNotification[]> {
     try {
         const token = localStorage.getItem('jwt');
         if (!token) {
-            console.error('❌ No JWT token found');
+            console.error('No JWT token found');
             return [];
         }
         
@@ -79,16 +79,15 @@ async function fetchNotifications(): Promise<UserNotification[]> {
         if (!response.ok) {
 
             if (response.status === 500) {
-                console.warn('⚠️ Server error 500 - returning empty notifications');
+                console.warn('Server error 500 - returning empty notifications');
                 return [];
             }
             
             const errorText = await response.text();
-            console.error('❌ Fetch failed:', response.status, response.statusText, errorText);
+            console.error('Fetch failed:', response.status, response.statusText, errorText);
             throw new Error(`Erreur ${response.status}: ${response.statusText}`);
         }
         const data = await response.json();
-        console.log('📨 Notifications data received:', data);
         
         return Array.isArray(data.notifications) ? data.notifications : [];
     } catch (error) {
@@ -103,7 +102,6 @@ async function checkInvitation(mode: string, uuid: string): Promise<boolean> {
     if (mode === "tournament")
     {
         const data = await getDataUuidTournament(uuid);
-        console.log("👋DATA Tournamnent: ", data);
         if (data && data.size > parsePlayer(data).length)
             return true;
         return false;
@@ -111,7 +109,6 @@ async function checkInvitation(mode: string, uuid: string): Promise<boolean> {
     else if (mode === "online")
     {
         const data = await getDataGame(uuid);
-        console.log("👋DATA game: ", data);
         if (data && !data.player_2 && !data.player2_uuid)
             return true;
         return false;
@@ -121,8 +118,6 @@ async function checkInvitation(mode: string, uuid: string): Promise<boolean> {
 
 export async function responseInvitation(mode: string, game_uuid: string, response: number)
 {
-
-    console.log("REPONSE INVITATION: ", mode, " |", game_uuid, " |", response);
     if (response === 1 && !(await checkInvitation(mode, game_uuid)))
         return;
 	try {
@@ -137,7 +132,6 @@ export async function responseInvitation(mode: string, game_uuid: string, respon
             },
 			body: JSON.stringify({ response: response })
         });
-		console.log(resp);
         if (!resp.ok) {
             console.error("PATCH INVIT RESPONSE: ", resp.status);
             throw new Error('Erreur lors de la récupération');
@@ -163,15 +157,12 @@ export async function loadAndDisplayNotifications() {
         const UserNotifications = await fetchNotifications();
         clearNotifications();
         
-		console.log("USER NOTIF :", UserNotifications);
         UserNotifications.forEach(async (notif: UserNotification) => {
             const user = await getUidInventory(notif.sender_uuid);
-			console.log("USER IUDUDUDUDIUIDU: ", user);
             if (user instanceof Error) {
                 console.error('Error fetching user:', user);
                 return;
             }
-            console.log("NOTIF :", notif);
             if (!notif.response)
             {
                 addNotification({

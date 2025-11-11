@@ -20,7 +20,6 @@ async function getShop() {
     }
 
     const data = await response.json();
-    console.log('Inventaire:', data.filteredInventory);
     return data.filteredInventory;
 }
 
@@ -135,7 +134,6 @@ export function ShopPage(): HTMLElement {
     search.className = "flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-green-500";
     toolbar.appendChild(search);
 
-    //! .get WALLET
     async function getWallet(){
         const jwt = localStorage.getItem("jwt") || "";
 
@@ -216,7 +214,6 @@ export function ShopPage(): HTMLElement {
         frame.appendChild(img);
         card.appendChild(frame);
 
-        // Prix (style espacé)
         const price = document.createElement("div");
         price.className = "truncate w-9/10 text-center px-2 py-1.5 rounded-lg bg-white/60 text-gray-800 text-xs tracking-[0.2em] font-semibold hover:scale-110 transition-all duration-300";
         price.textContent = `${it.price} $`;

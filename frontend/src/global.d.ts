@@ -11,5 +11,4 @@ interface Window {
     __reloadRequests?: () => Promise<void>;
 }
 
-// Déclaration pour l'importation des fichiers CSS
 declare module '*.css';

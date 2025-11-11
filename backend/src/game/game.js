@@ -54,7 +54,6 @@ app.addHook('onClose', async (instance) => {
 });
 
 app.post('/game', async (request, reply) => {
-    console.log("POST Game")
     let player1_uuid;
     try {
         player1_uuid = await checkToken(request);
@@ -69,8 +68,7 @@ app.post('/game', async (request, reply) => {
     try {
         if (mode === "local"){
             db.prepare('INSERT INTO game (uuid, player1, player1_uuid, player2, player2_uuid, mode, tournament, winner, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(uuid, player1, player1_uuid, player2, player2_uuid, mode, null, null, Date.now(), Date.now());
-            console.log("local game created");}
-        else{
+        } else {
             const gameExists = db.prepare('SELECT * FROM game WHERE (player1_uuid = ? AND player2_uuid = ? OR player1_uuid = ? AND player2_uuid = ?) AND winner IS NULL').get(player1_uuid, player2_uuid, player2_uuid, player1_uuid);
             if (gameExists) {
                 request.log.warn({
@@ -110,8 +108,6 @@ app.post('/tournament-game', async (request, reply) => {
     const { player1, player1_uuid, player2, player2_uuid, mode, tournament } = request.body;
     const uuid = crypto.randomUUID();
 
-    console.log(`Creating tournament game: ${player1} (${player1_uuid}) vs ${player2} (${player2_uuid})`);
-
     try {
         // Vérifier si un game existe déjà pour ces joueurs dans ce tournoi
         const gameExists = db.prepare('SELECT * FROM game WHERE tournament = ? AND ((player1_uuid = ? AND player2_uuid = ?) OR (player1_uuid = ? AND player2_uuid = ?)) AND winner IS NULL').get(tournament, player1_uuid, player2_uuid, player2_uuid, player1_uuid);
@@ -145,7 +141,6 @@ app.patch('/update-game/:gameId', async (request, reply) => {
     const { gameId } = request.params;
     const { score1, score2, winner } = request.body;
 
-    console.log("📝 UPDATE GAME:", gameId, "Scores:", score1, "-", score2, "Winner:", winner);
     const data = db.prepare('SELECT player1_uuid, player2_uuid, mode, tournament FROM game WHERE uuid = ?').get(gameId);
     if (!data) {
         request.log.warn({
@@ -154,21 +149,14 @@ app.patch('/update-game/:gameId', async (request, reply) => {
         return reply.code(404).send({ error: 'Game not found' });
     }
     let winner_uuid = score1 == 5 ? data.player1_uuid : data.player2_uuid || null;
-    console.log("🏆 Winner UUID:", winner_uuid, "Is Tournament:", !!data.tournament);
-
     try {
         // Mettre à jour le jeu dans la DB
         db.prepare('UPDATE game SET score1 = ?, score2 = ?, winner = ? WHERE uuid = ?').run(score1, score2, winner_uuid, gameId);
 
         const game = db.prepare('SELECT * FROM game WHERE uuid = ?').get(gameId);
-        console.log("💾 Game updated in DB. Tournament:", game.tournament, "Winner:", game.winner);
 
-        // 🎯 Si c'est un match de tournoi ET qu'il y a un gagnant, notifier le service tournament
         if (game.tournament && winner_uuid) {
-            console.log("🎮 Notifying tournament service...");
             await notifyTournamentMatchComplete(game);
-        } else {
-            console.log("⏭️ Skipping tournament notification (no tournament or no winner)");
         }
 
         await fetch('http://user:4000/historic', {
@@ -309,15 +297,13 @@ app.delete('/delete-game', async(request, reply) => {
 })
 
 async function notifyTournamentMatchComplete(game) {
-    console.log("📞 notifyTournamentMatchComplete called. Game:", game.uuid, "Tournament:", game.tournament, "Winner:", game.winner);
     
     if (!game.tournament || !game.winner) {
-        console.log("⚠️ Skipping notification: tournament=", game.tournament, "winner=", game.winner);
+        console.warn("Skipping notification: tournament=", game.tournament, "winner=", game.winner);
         return;
     }
 
     try {
-        console.log("🔍 Fetching tournament data:", game.tournament);
         const tournamentResp = await fetch(`http://tournament:4000/tournament/${game.tournament}`, {
             method: 'GET',
             headers: {
@@ -326,27 +312,24 @@ async function notifyTournamentMatchComplete(game) {
         });
 
         if (!tournamentResp.ok) {
-            console.error("❌ Failed to fetch tournament:", tournamentResp.status);
+            console.error("Failed to fetch tournament:", tournamentResp.status);
             return;
         }
 
         const tournament = await tournamentResp.json();
         const matches = JSON.parse(tournament.game);
-        console.log("📊 Tournament has", matches.length, "matches");
         
         // Trouver le match correspondant
         const currentMatch = matches.find(m => m.game_uuid === game.uuid);
         
         if (!currentMatch) {
-            console.error('❌ Match not found in tournament. Looking for game_uuid:', game.uuid);
+            console.error('Match not found in tournament. Looking for game_uuid:', game.uuid);
             console.error('Available matches:', matches.map(m => ({ uuid: m.uuid, game_uuid: m.game_uuid })));
             return;
         }
 
-        console.log("✅ Found match:", currentMatch.uuid, "Round:", currentMatch.round, "Match#:", currentMatch.match_number);
 
         // Notifier le service tournament que ce match est terminé
-        console.log("📤 Sending completion notification to tournament service...");
         const completeResp = await fetch(
             `http://tournament:4000/tournament/${game.tournament}/match/${currentMatch.uuid}/complete`,
             {
@@ -362,27 +345,24 @@ async function notifyTournamentMatchComplete(game) {
         );
 
         if (completeResp.ok) {
-            console.log('✅ Tournament match completion notified successfully');
         } else {
             const errorText = await completeResp.text();
-            console.error('❌ Failed to notify tournament match completion. Status:', completeResp.status, 'Error:', errorText);
+            console.error('Failed to notify tournament match completion. Status:', completeResp.status, 'Error:', errorText);
         }
     } catch (error) {
-        console.error('❌ Error notifying tournament match completion:', error);
+        console.error('Error notifying tournament match completion:', error);
     }
 }
 
 // Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization;
-    console.log('Auth Header:', authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
-    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
-    console.log('Payload:', payload.uuid);
+    const token = authHeader.slice(7);
+    const payload = await request.jwtVerify();
     return payload.uuid;
 }
 

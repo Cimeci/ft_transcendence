@@ -192,7 +192,6 @@ function creationInventory(user_uuid) {
     const paddle_use = JSON.stringify([{ id: '/playbar/default_bar.png', name: 'default bar'}]);
     const avatar_use = JSON.stringify([{ id: '/avatar/default_avatar.png', name: 'default avatar'}]);
 
-    console.log(ball);
     db.prepare('INSERT INTO items (uuid, user_uuid, ball, background, paddle, avatar, ball_use, background_use, paddle_use, avatar_use) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         .run(uuid, user_uuid, ball, background, paddle, avatar, ball_use, background_use, paddle_use, avatar_use);
 }
@@ -207,7 +206,6 @@ app.post('/insert', async(request, reply) => {
     }
 
     const { uuid, username, email, hash, avatar } = request.body;
-    console.log(request.body);
     try{
         db.prepare('INSERT INTO user (uuid, username, username_tournament, email, password, avatar, is_online) VALUES (?, ?, ?, ?, ?, ?, ?)').run(uuid, username, username, email, hash, avatar || null, 1);
         const historic_uuid = crypto.randomUUID();
@@ -639,8 +637,6 @@ app.patch('/shop', async(request, reply) => {
 
     const { ball, background, paddle, avatar, amount } = request.body;
     
-    console.log("AMOUNT :", amount);
-    console.log("BODY :", request.body);
     const wallet = db.prepare('SELECT wallet FROM user WHERE uuid = ?').get(uuid);
     if (!wallet || wallet.wallet < amount) {
         request.log.warn({
@@ -917,7 +913,6 @@ app.patch('/new_avatar', async(request, reply) => {
     }
 
     const avatar = await request.file();
-    console.log("avatar ->", avatar)
     const goodType = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'];
     if (!goodType.includes(avatar.mimetype)) {
         request.log.warn({
@@ -1057,8 +1052,6 @@ app.post('/invit/:uuid', async(request, reply) => {
     const receiver_uuid = request.params.uuid;
     const { uuid, mode } = request.body;
 
-    console.log("\nLOG UUID: ", request.body, "receiver_uuid: ", receiver_uuid, "sender_uuid: ", sender_uuid, "\n\n");
-
     const notif_exist = db.prepare(`SELECT * FROM notification WHERE receiver_uuid = ? AND sender_uuid = ? and response = 0`).get(receiver_uuid, sender_uuid);
     if (notif_exist){
         request.log.info({
@@ -1098,8 +1091,6 @@ app.patch('/invit/:uuid', async(request, reply) => {
     
     const uuid  = request.params.uuid;
     const { response } = request.body;
-
-    console.log("📝 Données reçues - UUID:", uuid, "| Response:", response, "| Receiver UUID:", receiver_uuid);
 
     try {
         const existingNotification = db.prepare('SELECT * FROM notification WHERE uuid = ? AND receiver_uuid = ?').get(uuid, receiver_uuid);
@@ -1204,7 +1195,7 @@ app.get('/notifications', async(request, reply) => {
         `).get();
         
         if (!tableExists) {
-            console.log('Table notification does not exist');
+            console.warn('Table notification does not exist');
             return reply.send({ notifications: [] });
         }
 
@@ -1317,7 +1308,6 @@ app.delete('/delete-user', async(request, reply) => {
 })
 
 app.get('/env', async(request, reply) => {
-    console.log('JWT_SECRET:', process.env.JWT_SECRET);
     return reply.send({ JWT_SECRET: process.env.JWT_SECRET });
 });
 
@@ -1429,7 +1419,6 @@ app.patch('/update-a2f-status', async (request, reply) => {
 // Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization;
-    console.log('Auth Header:', authHeader);
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return reply.code(401).send({ error: 'Unauthorized' });
     }

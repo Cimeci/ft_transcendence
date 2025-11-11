@@ -93,7 +93,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 	let user2Inventory: Inventory = {id: "", username: "player2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png",  bg: "/bg/default_bg.png",};
 
 	const uuidGame = getUuid();
-	console.log("UUID :", uuidGame);
 
 	const mainContainer = document.createElement("div");
 	mainContainer.className = "p-10 pt-25 min-h-screen w-full flex flex-col xl:flex-row items-center justify-center gap-10 bg-linear-to-bl from-black via-green-900 to-black"
@@ -108,7 +107,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 		mainContainer.innerHTML = ""
 		const gameData = await getDataGame(uuidGame);
 
-		console.log("GAME DATA: ", gameData);
 		if (gameData.player1_uuid && gameData.player2_uuid) {
 		    user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
 		    user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
@@ -116,9 +114,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 		    user1Inventory = {id: "", username: "Player 1", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png", bg: "/bg/default_bg.png"};
 		    user2Inventory = {id: "", username: "Player 2", avatar: "/avatar/default_avatar.png", ball: "/ball/default_ball.png", bar: "/playbar/default_bar.png", bg: "/bg/default_bg.png"};
 		}
-		console.log("USERINVENTORY1: ", user1Inventory);
-		console.log("USERINVENTORY2: ", user2Inventory);
-		console.log("------HERE------: ", user2Inventory.id);
 		if (user2Inventory.id)
 			stopRefresh();
 		render();
@@ -168,8 +163,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 		  	  	const me = getUser()?.uuid;
 				const rows = (data?.friendship ?? []) as Array<{ user_id: string; friend_id: string }>;
 
-				console.log("Data", data);
-				console.log("Rows", rows);
 				const list = await Promise.all(rows.map(async (r) => {
 		  	  	  	const other = r.user_id === me ? r.friend_id : r.user_id;
 		  	  	  	try {
@@ -178,7 +171,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 		  	  	  	  	});
 		  	  	  	  	if (r2.ok) {
 		  	  	  	  	  	const { user } = await r2.json();
-							console.log("USER", user);
 		  	  	  	  	  	return {
 		  	  	  	  	  	  	id: other,
 		  	  	  	  	  	  	username: user.username || other,
@@ -198,10 +190,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 		  	  	friendData = [];
 		  	}
 		
-			console.log("FRIEND_DATA", friendData);
-		
 			friendData.forEach(e => {
-				console.log("EACH USER: ", e);
 				const li: HTMLLIElement = document.createElement("li");
 				li.className = "flex justify-between items-center p-2 w-full min-h-12"
 			
@@ -225,7 +214,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 				btn.textContent = t.invite;
 				btn.addEventListener("click", async () => {
 				
-					console.log("BODY INVITATION: ", uuidGame, " |", e.id);
 				
 					if (!uuidGame) {
 						console.error("No Game online UUID");
@@ -306,7 +294,6 @@ export function PongOnlineMenuPage(): HTMLElement {
 
 		const playBtn = CreateWrappedButton(mainContainer, t.play, "null", 5);
 		playBtn.onclick = () => {
-			console.log("Creating online game for players:", user1.name, "and", user2.name);
 			if (user2Inventory.username !== "player2"){
 				stopRefresh();
 				navigateTo(`/pong/online/game?uid=${encodeURIComponent(uuidGame)}`);
@@ -374,7 +361,7 @@ export function PongOnlineMenuPage(): HTMLElement {
 	let refreshInterval: number | null = null;
 
 	function startRefresh() {
-	    refreshInterval = window.setInterval(Initializing, 5000); // 5 secondes
+	    refreshInterval = window.setInterval(Initializing, 5000);
 	}
 
 	function stopRefresh() {
@@ -420,11 +407,10 @@ export function PongOnlineOverlayPage(): HTMLElement {
 	BackBtn.className = "relative z-10 inline-flex items-center justify-center whitespace-nowrap leading-none w-fit h-fit cursor-pointer transition-all duration-300 hover:scale-98 text-7xl tracking-widest text-green-400 neon-matrix rounded-full px-12 py-6 bg-linear-to-bl from-black via-green-900 to-black border-none";
 	BackBtn.tabIndex = 0;
 
-	// Vérifier si on vient d'un tournoi en regardant l'URL précédente ou sessionStorage
 	const tournamentUuid = sessionStorage.getItem('currentTournamentUuid');
-	
+
 	if (tournamentUuid) {
-		BackBtn.textContent = "Retour au Tournoi";
+		BackBtn.textContent = t.back_to_tournament;
 		BackBtn.addEventListener('click', () => {
 			overlay.classList.add("fade-out");
 			setTimeout(() => {
@@ -454,12 +440,10 @@ export function PongOnlineOverlayPage(): HTMLElement {
 
 
 function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game, user1Inventory: Inventory, user2Inventory: Inventory): HTMLElement {
-	console.log("Initializing OnlinePong with game UUID:", game.uuid);
 	let socket = new WebSocket(`wss://${window.location.host}/websocket/${game.uuid}`);
 	let myPosition: 'left' | 'right' | null = null;
 	
 	socket.onopen = () => {
-		console.log('[WS] open', socket.url);
 		send({ event: 'join', username: getUser()?.username, avatar: getUser()?.avatar, uuid: getUser()?.uuid  });
 	};
 	socket.onerror = (e) => console.error('[WS] error', e);
@@ -510,16 +494,14 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 
 		const prevLeft = input.left, prevRight = input.right;
 		
-		// Chaque joueur ne contrôle que sa propre paddle
 		if (myPosition === 'left') {
 			input.left = pressedKeys.has('w') ? 'up' : (pressedKeys.has('s') ? 'down' : 'idle');
-			input.right = 'idle'; // Le joueur gauche ne contrôle pas la droite
+			input.right = 'idle';
 		} else if (myPosition === 'right') {
-			input.left = 'idle'; // Le joueur droite ne contrôle pas la gauche
+			input.left = 'idle';
 			input.right = pressedKeys.has('ArrowUp') ? 'up' : (pressedKeys.has('ArrowDown') ? 'down' : 'idle');
 		}
 
-		// Envoyer les commandes stop seulement pour sa propre paddle
 		if (myPosition === 'left' && prevLeft !== input.left && input.left === 'idle') {
 			send({ event: 'stop', paddle: 'left' });
 		}
@@ -548,7 +530,6 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 			recomputeFromPressed();
 			e.preventDefault();
 		} 
-		// Boost disponible pour les deux joueurs
 		else if (e.key === 'e') {
 			send({ event: 'boost' });
 		}
@@ -654,10 +635,8 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 					navigateTo("/pong/online/game/overlay");
 				}, 2000);
 			}
-			// Recevoir la position assignée
 			if (msg.event === 'assigned') {
 				myPosition = msg.position;
-				console.log(`Position assignée: ${myPosition}`);
 				
 				user1.name = user1Inventory?.username || game.player1 || "Player 1";
 				user2.name = user2Inventory?.username || game.player2 || "Player 2";
@@ -665,8 +644,6 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 				score1Elem.textContent = `${user1.name}: ${user1.score}`;
 				score2Elem.textContent = `${user2.name}: ${user2.score}`;
 			}
-			
-			// Recevoir l'état du jeu
 			if (msg.ball && msg.leftPaddle && msg.rightPaddle) {
 				state = {
 		  			ball: msg.ball,
@@ -748,14 +725,11 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 		if (state?.state !== 'game_over') {
 			cleanup();
 			
-			// Si c'est un match de tournoi, retourner à la page du tournoi
 			if (game.tournament) {
-				console.log("Tournament game, redirecting to tournament page...");
 				setTimeout(() => {
 					navigateTo(`/Tournament/bracket?uid=${game.tournament}`);
 				}, 1000);
 			} else {
-				// Sinon, retourner au menu pong online classique
 				setTimeout(() => {
 					navigateTo("/pong/online/menu");
 				}, 1000);
@@ -789,13 +763,14 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 			ctx.fillStyle = "white";
 			ctx.font = "24px system-ui";
 			ctx.textAlign = "center";
-			
-			if (!myPosition) { //! i18n
-				ctx.fillText("En attente d'un adversaire...", canvas.width/2, canvas.height/2);
-				ctx.fillText("Position: " + (myPosition || "Non assignée"), canvas.width/2, canvas.height/2 + 40);
+
+			if (!myPosition) {
+				ctx.fillText(t.waiting_opponent, canvas.width/2, canvas.height/2);
+				ctx.fillText(t.position + ": " + (myPosition || t.not_assigned), canvas.width/2, canvas.height/2 + 40);
 			} else {
-				ctx.fillText(`Vous êtes le joueur ${myPosition === 'left' ? 'gauche' : 'droit'}`, canvas.width/2, canvas.height/2);
-				ctx.fillText("En attente du début de la partie...", canvas.width/2, canvas.height/2 + 40);
+				const playerSide = myPosition === 'left' ? t.left_player : t.right_player;
+				ctx.fillText(`${t.you_are_player} ${playerSide}`, canvas.width/2, canvas.height/2);
+				ctx.fillText(t.waiting_game_start, canvas.width/2, canvas.height/2 + 40);
 			}
 			return;
 		}
@@ -834,11 +809,6 @@ function OnlinePong(score1Elem: HTMLElement, score2Elem: HTMLElement, game: Game
 		ctx.font = "16px system-ui";
 		ctx.textAlign = "left";
 		
-		// if (myPosition === 'left') {
-		// 	ctx.fillText("Contrôles: W (haut) / S (bas)", 20, 30);
-		// } else if (myPosition === 'right') {
-		// 	ctx.fillText("Contrôles: ↑ (haut) / ↓ (bas)", canvas.width - 250, 30);
-		// }
 	}
 
 	function loop() {
@@ -880,16 +850,12 @@ export function PongOnlineGamePage(): HTMLElement {
 		loadingContainer.remove();
 		mainContainer.innerHTML = ""
 		gameData = await getDataGame(gameuuid);
-		console.log("GAME DATA GAME PAGE: ", gameData);
 
-		console.log("GAME DATA: ", gameData);
 		user1Inventory = (await getUidInventory(gameData.player1_uuid)) as Inventory;
 		user1Inventory.username = (await GetData(gameData.player1_uuid)).username_tournament;
 		user2Inventory = (await getUidInventory(gameData.player2_uuid)) as Inventory;
 		user2Inventory.username = (await GetData(gameData.player2_uuid)).username_tournament;
 
-		console.log("USERINVENTORY1: ", user1Inventory);
-		console.log("USERINVENTORY2: ", user2Inventory);
 		render();
 	}
 
@@ -910,8 +876,6 @@ export function PongOnlineGamePage(): HTMLElement {
 		Avatar1.className = "border-1 size-15 rounded-lg";
 		Profile1.appendChild(Avatar1);
 
-		console.log("player:", gameData.player1, "vs", gameData.player2);
-		
 		const Score1 = document.createElement("h1");
 		Score1.className = "text-3xl tracking-widest text-green-400 neon-matrix";
 		Score1.textContent = (user1Inventory?.username || gameData.player1 || "Player 1") + ": " + user1.score
