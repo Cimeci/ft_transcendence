@@ -13,7 +13,6 @@ import fastifyStatic from '@fastify/static';
 
 dotenv.config();
 
-// Configuration du logger fastify
 const loggerConfig = {
     transport: {
         target: 'pino/file',
@@ -31,7 +30,7 @@ const app = fastify({ logger: loggerConfig });
 
 app.register(multipart, {
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5 MB
+        fileSize: 5 * 1024 * 1024
     }
 });
 
@@ -49,14 +48,12 @@ await app.register(jwt, {
 
 const db = new Database('./data/user.sqlite');
 
-// penser a enlever password, juste le laisser dans auth
 const user = `
     CREATE TABLE IF NOT EXISTS user (
         uuid TEXT PRIMARY KEY,
         username TEXT NOT NULL,
         username_tournament TEXT,
         email TEXT NOT NULL,
-        password TEXT,
         avatar TEXT,
         wallet INTEGER DEFAULT 10000,
         is_online INTEGER,
@@ -542,7 +539,6 @@ app.patch('/historic', async (request, reply) => {
         }
         
         try {
-            // Mettre à jour la base de données avec les nouveaux tableaux de jeux
             db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game1JSON, Number(game_win1), Number(game_ratio1), game.player1_uuid);
             if (game.mode === "online")
                 db.prepare('UPDATE historic SET games = ?, game_win = ?, game_ratio = ?, updated_at = CURRENT_TIMESTAMP WHERE user_uuid = ?').run(game2JSON, Number(game_win2), Number(game_ratio2), game.player2_uuid);
@@ -660,7 +656,6 @@ app.patch('/shop', async(request, reply) => {
         return reply.code(404).send({ error: 'Inventory not found' });
     }
 
-    // Helper to persist array back
     function saveArray(column, arr){
         db.prepare(`UPDATE items set ${column} = ? WHERE user_uuid = ?`).run(JSON.stringify(arr), uuid);
     }
@@ -869,7 +864,6 @@ app.get('/avatar/:filename', async (request, reply) => {
     const { filename } = request.params;
     
     try {
-        //recupere tout les avatars de l'utilisateur
         const userAvatar = db.prepare('SELECT avatar FROM user WHERE uuid = ?').get(uuid);
         if (!userAvatar || !userAvatar.avatar || !userAvatar.avatar.includes(filename)) {
             request.log.warn({
@@ -878,10 +872,8 @@ app.get('/avatar/:filename', async (request, reply) => {
             return reply.code(403).send({ error: 'You do not own this avatar' });
         }
         
-        // cree le chemin complet du fichier
         const filePath = path.join(process.cwd(), 'upload', filename);
 
-        // verifie si le fichier existe
         await fs.promises.access(filePath);
 
         return reply.sendFile(filePath);
@@ -1109,7 +1101,6 @@ app.patch('/invit/:uuid', async(request, reply) => {
 
         if (response === 1) {
             try {
-                // Utiliser username_tournament pour les modes tournament, sinon username classique
                 const usernameToUse = (mode && mode.mode === 'tournament')
                     ? (user.username_tournament || user.username)
                     : user.username;
@@ -1227,7 +1218,6 @@ app.get('/notifications', async(request, reply) => {
     }
 });
 
-//! a voir pour delete /me
 app.get('/:uuid', async(request, reply) => {
     const uuid  = request.params.uuid;
 
@@ -1364,7 +1354,6 @@ app.patch('/update-a2f-status', async (request, reply) => {
     const { uuid, is_a2f } = request.body;
     const internalKey = request.headers['x-internal-key'];
 
-    // Vérifier la clé interne
     if (internalKey !== process.env.JWT_SECRET) {
         request.log.warn({
             event: 'update_a2f_status_attempt',
@@ -1392,7 +1381,6 @@ app.patch('/update-a2f-status', async (request, reply) => {
             return reply.code(404).send({ error: 'User not found' });
         }
 
-        // Mettre à jour le statut a2f dans la table user
         db.prepare('UPDATE user SET is_a2f = ? WHERE uuid = ?').run(is_a2f, uuid);
 
         request.log.info({
@@ -1416,15 +1404,14 @@ app.patch('/update-a2f-status', async (request, reply) => {
     }
 });
 
-// Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
-    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    const token = authHeader.slice(7);
+    const payload = await request.jwtVerify();
     return payload.uuid;
 }
 

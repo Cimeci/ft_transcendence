@@ -27,8 +27,7 @@ naments
    └── Major: Remote authentication. (Google Sign-In)
 
 #### 🎮 Gameplay & UX
-   ├── Major: Remote Players
-   └── Minor: Game customization options (power-ups, map)
+   └── Major: Remote Players
 
 #### 🔐 Cybersecurity
    └── Major: Two-Factor Authentication (2FA) and JWT.
@@ -39,7 +38,9 @@ naments
    └── Minor: Monitoring system (Prometheus + Grafana)
 
 #### 🌍 Accessibility
+   ├── Minor: Expanding Browser Compatibility
    └── Minor: Multiple language support
+
 ```
 
 ## Getting Started
@@ -65,7 +66,10 @@ git clone https://github.com/Cimeci/ft_transcendence.git
 cd ft_transcendence
 ```
 - 2️⃣ **Configure env variables**
-*[add details about it]*
+You can find a .env.example file in the repository.
+Use it to set up your environment variables, such as passwords and API keys.
+If you want to enable Google or GitHub OAuth, you’ll need to create the corresponding client IDs and secrets.
+You can also set up a Discord webhook in a server and add its URL to the .env file.
 - 3️⃣ **Launch the app** 
 ```bash
 make
