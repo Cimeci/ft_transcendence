@@ -495,6 +495,6 @@ This project is part of the 42 school curriculum.
 
 ## 👥 Contributor
 
-- **Ilan (Inowak--)** - Frontend
+- [Cimeci](https://github.com/Cimeci) - **Ilan (Inowak--)** - Frontend
 
 ---
