@@ -495,8 +495,9 @@ export function PongTournamentMenuPage(): HTMLElement {
 		const ConfirmJoinBtn = document.createElement("button");
 		ConfirmJoinBtn.className = "h-[7vh] btn-fluid bg-green-600 text-white rounded-xl hover:scale-102 hover:bg-green-700 transition-all";
 		ConfirmJoinBtn.textContent = t.join;
-		ConfirmJoinBtn.addEventListener("click", () => {
-			if ((!tournament.password || PasswordInputJoin.value === tournament.password ) && tournament.launch == 0) {
+		ConfirmJoinBtn.addEventListener("click", async () => {
+			const ret = await JoinTournament(tournament);
+			if (ret && (!tournament.password || PasswordInputJoin.value === tournament.password ) && tournament.launch == 0) {
 				mainContainer.classList.add("fade-out");
 				stopRefresh();
 				if (tournament.host === getUser()?.uuid)
@@ -589,7 +590,13 @@ export function PongTournamentMenuPage(): HTMLElement {
     		};
     		renderLabel();
 
-			if (tournament.size > parsePlayer(tournament).length)
+			// Vérifier si le joueur est déjà inscrit dans le tournoi
+			const currentUserUuid = getUser()?.uuid;
+			const tournamentPlayers = parsePlayer(tournament);
+			const isPlayerInTournament = currentUserUuid && tournamentPlayers.some(player => player.uuid === currentUserUuid);
+
+			// Permettre l'accès si : le joueur est déjà inscrit OU il y a de la place
+			if (isPlayerInTournament || tournament.size > tournamentPlayers.length)
 			{
     			li.addEventListener("click", () => {
       				JoinContainer.querySelectorAll(".join-form").forEach(el => el.remove());
@@ -598,7 +605,7 @@ export function PongTournamentMenuPage(): HTMLElement {
 						currentJoinForm.remove();
 						currentJoinForm = null;
 					}
-            	    if (tournament.visibility === 1) {
+            	    if (tournament.visibility === 1 && !isPlayerInTournament) {
 						const form = createFormJoin(tournament);
 						currentJoinForm = form;
 						JoinList.insertAdjacentElement("afterend", form);

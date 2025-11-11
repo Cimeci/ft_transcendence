@@ -28,7 +28,7 @@ export function createInputWithEye(input: HTMLInputElement, eye: HTMLImageElemen
 	return wrapper;
 }
 
-async function register(newuser: User, InputEmail: HTMLInputElement, InputPassword: HTMLInputElement, InputConfirmPassword: HTMLInputElement) {
+async function register(newuser: User, InputName: HTMLInputElement, InputEmail: HTMLInputElement, InputPassword: HTMLInputElement, InputConfirmPassword: HTMLInputElement) {
 	try {
 		const resp = await fetch("/auth/register", {
 			method: "POST",
@@ -43,41 +43,21 @@ async function register(newuser: User, InputEmail: HTMLInputElement, InputPasswo
 			await ensureUser(true);
 		}
 		console.log("jwt:", jwt);
-		{ // Connect
-			// const overlay = document.createElement("div");
-        	// overlay.className = "fixed inset-0 z-[5000] flex items-center justify-center bg-linear-to-t from-green-800 via-black to-green-800";
-			// overlay.style.opacity = "0";
-        	// overlay.style.transition = "opacity 1s ease";
-			// // 
-        	// const msg = document.createElement("h1");
-        	// msg.className = "text-6xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-green-500 to-white tracking-widest neon-matrix neon-move text-center px-6";
-        	// msg.textContent = translations[getCurrentLang()].welcome_to_our_transcendence;
-        	// overlay.appendChild(msg);
-			// // 
-        	// document.body.appendChild(overlay);
-        	// requestAnimationFrame(() => {
-        	//     overlay.style.opacity = "1";
-        	// });
-			// // 
-        	// RegisterContainer.classList.add("fade-out");
-			// 
-        	// setTimeout(() => {
-			// 	overlay.style.opacity = "0";
-			// 	const onTransitionEnd = () => {
-			// 		overlay.removeEventListener("transitionend", onTransitionEnd);
-        	// 		if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-        	// 		navigateTo("/home");
-			// 	}
-			// 	overlay.addEventListener("transitionend", onTransitionEnd);
-        	// }, 4000);
-			navigateTo("/home");
-		}
+		navigateTo("/home");
 	} catch (e: any) {
-		if (e.message.includes("email") || e.message.includes("Email"))
+		if (e.message.includes("username") || e.message.includes("Username"))
+		{
+			InputName.value = "";
+			InputName.placeholder = e.message || "Register failed";
+			InputName.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
+		}
+		else if (e.message.includes("email") || e.message.includes("Email"))
+		{
 			InputEmail.value = "";
 			InputEmail.placeholder = e.message || "Register failed";
 			InputEmail.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
-		if (e.message.includes("password") || e.message.includes("Password"))
+		}
+		else if (e.message.includes("password") || e.message.includes("Password"))
 		{
 			InputPassword.value = "";
 			InputPassword.placeholder = e.message || "Register failed";
@@ -87,6 +67,8 @@ async function register(newuser: User, InputEmail: HTMLInputElement, InputPasswo
 			InputConfirmPassword.classList.add('placeholder:text-lg','placeholder:text-red-500','shake');
 		}
 		setTimeout(() => {
+			InputName.placeholder = t.username;
+			InputName.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
 			InputEmail.placeholder = t.email;
 			InputEmail.classList.remove('placeholder:text-lg','placeholder:text-red-500','shake');
 			InputPassword.placeholder = t.password;
@@ -137,7 +119,7 @@ export function RegisterPage(): HTMLElement {
 
 	const InputName = document.createElement("input");
 	InputName.className = "text-xl border-2 rounded px-4 py-2 w-full mb-2 duration-300 transition-all focus:scale-103";
-	InputName.placeholder = t.name;
+	InputName.placeholder = t.username;
 	InputName.maxLength = 20;
 	InputName.addEventListener("input", () => {
 		newuser.name = InputName.value;
@@ -186,7 +168,10 @@ export function RegisterPage(): HTMLElement {
 		newuser.confirm_password = InputConfirmPassword.value;
 	});
 	InputConfirmPassword.addEventListener('keydown', async (event: KeyboardEvent) => {
-  		if (event.key === 'Enter') { event.preventDefault(); register(newuser, InputEmail, InputPassword, InputConfirmPassword); }
+  		if (event.key === 'Enter') {
+			event.preventDefault();
+			await register(newuser, InputName, InputEmail, InputPassword, InputConfirmPassword);
+		}
 	})
 
 	const EyeConfirm = document.createElement("img");
@@ -196,17 +181,26 @@ export function RegisterPage(): HTMLElement {
 	EyeConfirm.onclick = () => togglePassword(InputConfirmPassword, EyeConfirm);
 	RegisterContainer.appendChild(createInputWithEye(InputConfirmPassword, EyeConfirm));
 
+	const infoContainer = document.createElement("div");
+	infoContainer.className = "flex flex-col gap-2 p-2 text-xs text-white/30";
+	RegisterContainer.appendChild(infoContainer);
+
+	const usernameInfo = document.createElement("p");
+	usernameInfo.className = "text-xs text-white/30";
+	usernameInfo.textContent = t.username_length;
+	infoContainer.appendChild(usernameInfo);
+
 	const passwordInfo = document.createElement("p");
 	passwordInfo.className = "text-xs text-white/30";
 	passwordInfo.textContent = t.password_must;
-	RegisterContainer.appendChild(passwordInfo);
+	infoContainer.appendChild(passwordInfo);
 
 	// Register Button
 	const RegisterBtn = document.createElement("button");
 	RegisterBtn.className = "mt-4 px-8 py-3 rounded-xl bg-green-600 text-white text-2xl duration-300 focus:scale-105 hover:scale-105 hover:bg-green-700 transition-all w-full";
 	RegisterBtn.textContent = t.register;
 	RegisterBtn.addEventListener("click", async () => {
-		register(newuser, InputEmail, InputPassword, InputConfirmPassword);
+		await register(newuser, InputName, InputEmail, InputPassword, InputConfirmPassword);
 	});
 	RegisterContainer.appendChild(RegisterBtn);
 

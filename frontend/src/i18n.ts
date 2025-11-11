@@ -29,6 +29,7 @@ export const translations = {
 		not_same_input: "Entrées differentes",
 		insufficient_length: "Longueur insuffisante (8 min)",
 		password_must: "Le mot de passe doit comporter au moins 8 caractères, dont une majuscule, un chiffre et un caractère spécial.",
+		username_length: "Le pseudonyme doit contenir entre 3 et 20 caractères.",
 		// Navbar link
 		home: "Accueil",
 		inventory: "Inventaire",
@@ -174,6 +175,7 @@ export const translations = {
 		not_same_input: "Not the same input",
 		insufficient_length: "Insufficient length (8 min)",
 		password_must: "Password must be at least 8 characters, include one uppercase letter, one number, and one special character.",
+		username_length: "Username must be between 3 and 20 characters.",
 		// Navbar link
 		home: "Home",
 		settings: "Settings",
@@ -319,6 +321,7 @@ export const translations = {
 		not_same_input: "No es la misma entrada",
 		insufficient_length: "Duración insuficiente (8 min)",
 		password_must: "La contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, un número y un carácter especial.",
+		username_length: "El seudónimo debe tener entre 3 y 20 caracteres.",
 		// Navbar link
 		home: "Inicio",
 		inventory: "Inventario",

@@ -63,8 +63,18 @@ app.addHook('onClose', async (instance) => {
 app.post('/register', async (request, reply) => {
     const { username, email, password } = request.body;
     const uuid = crypto.randomUUID();
-    
+
     try {
+        if (!username || username.length < 3 || username.length > 20) {
+            request.log.warn({
+                event: 'register_attempt',
+                user: { email, username }
+            }, 'Registration failed: invalid username length');
+            return reply.code(400).send({
+                error: 'Username must be between 3 and 20 characters'
+            });
+        }
+
         const validationPassword = (password) => {
             return /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(password);
         };

@@ -251,24 +251,39 @@ app.patch('/join', async (request, reply) => {
         }
         
         const players = tournament.players ? JSON.parse(tournament.players) : [];
-        
+
         const playerExists = players.some(player => player.uuid === uuidPlayer);
+
+        // Si le joueur est déjà inscrit, retourner succès sans modifier
         if (playerExists) {
+            request.log.info({
+                event: 'tournament-join_attempt'
+            }, 'Tournament Join Success: Player already in tournament, allowing re-entry');
+            return reply.send({
+                success: true,
+                message: 'Player already in tournament',
+                already_joined: true,
+                tournament: { ...tournament, players: players }
+            });
+        }
+
+        // Vérifier qu'il y a de la place pour un nouveau joueur
+        if (players.length >= tournament.size) {
             request.log.warn({
                 event: 'tournament-join_attempt'
-            }, 'Tournament Join Failed: Player already in tournament');
-            return reply.code(400).send({ error: 'Player already in this tournament' });
+            }, 'Tournament Join Failed: Tournament is full');
+            return reply.code(400).send({ error: 'Tournament is full' });
         }
-        
-        // Ajouter le joueur
+
+        // Ajouter le nouveau joueur
         players.push({ uuid: uuidPlayer });
         db.prepare('UPDATE tournament SET players = ? WHERE uuid = ?').run(JSON.stringify(players), uuid_tournament);
-        
+
         request.log.info({
             event: 'tournament-join_attempt'
         }, 'Tournament Join Success: Player added to tournament');
-        reply.send({ 
-            success: true, 
+        reply.send({
+            success: true,
             message: 'Player added to tournament',
             tournament: { ...tournament, players: players }
         });
