@@ -97,6 +97,8 @@ This setup also enables connections from other machines if we want to offload re
 ---
 ### Frontend
 
+[Go to Readme](https://github.com/Cimeci/ft_transcendence/tree/main/frontend)
+
 ---
 ### Backend
 
