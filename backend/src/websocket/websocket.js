@@ -6,7 +6,6 @@ import dotenv from 'dotenv'
 
 dotenv.config();
 
-// Configuration du logger fastify
 const loggerConfig = {
     transport: {
         target: 'pino/file',
@@ -74,7 +73,6 @@ class Game {
             this.score.right = 0;
         }
         
-        // Informer tous les clients
         const gameState = { 
             ball: this.ball, 
             leftPaddle: this.leftPaddle, 
@@ -103,7 +101,6 @@ class Game {
             this.launchTimeout = null;
         }
         
-        // Informer tous les clients
         const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score, event: 'reset' };
         this.clients.forEach((client) => {
             if (client.readyState === 1) {
@@ -122,16 +119,13 @@ class Game {
     }
     
     resetBall(forceDirection = null) {   
-        // Position centrale
         this.ball.x = 1400 / 2;
         this.ball.y = 800 / 2;
 
-        // Stoppe la balle pendant l’attente
         this.ball.speedX = 0;
         this.ball.speedY = 0;
         this.ballRotation = 0;
     
-        // Envoyer l'état du jeu à tous les clients pour mettre la balle au centre
         const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score };
         this.clients.forEach((client) => {
             if (client.readyState === 1) {
@@ -139,12 +133,10 @@ class Game {
             }
         });
     
-        // Annule un éventuel timer précédent
         if (this.launchTimeout !== null) {
                 clearTimeout(this.launchTimeout);
         }
     
-        // Vitesse initiale
         const speed = 1400 / 200;
         const maxAngle = Math.PI / 4;
     
@@ -176,7 +168,6 @@ class Game {
             });
             
             this.isGamerunning = false;
-
             setTimeout(() => {
                 this.resetGame();
             }, 1000);
@@ -213,7 +204,6 @@ class Game {
             this.ball.speedX *= 1.0005;
             this.ball.speedY *= 1.0005;
     
-            // Envoyer l'état du jeu à tous les clients
             const gameState = { ball: this.ball, leftPaddle: this.leftPaddle, rightPaddle: this.rightPaddle, score: this.score };
             this.clients.forEach((client) => {
                 if (client.readyState === 1) {
@@ -241,8 +231,7 @@ app.register(async function (app) {
         
 		let playerPosition = null;
         let playerUsername = "Player";
-        
-        // Envoyer l'état actuel du jeu
+
         const initialGameState = { ball: game.ball, leftPaddle: game.leftPaddle, rightPaddle: game.rightPaddle, score: game.score };
         socket.send(JSON.stringify(initialGameState));
 
@@ -250,7 +239,6 @@ app.register(async function (app) {
         try {
             const messageData = JSON.parse(message.toString());
 
-            // Récupérer le username si fourni
             if (messageData.event === 'join' && messageData.username) {
                 playerUsername = messageData.username;
                 const playerUuid = messageData.uuid;
@@ -273,7 +261,6 @@ app.register(async function (app) {
                     game.clients.push(socket);
 
                     if (game.players.left && game.players.right) {
-                        // Démarrer le jeu quand les deux joueurs sont connectés
                         setTimeout(() => {
                             game.resetBall();
                         }, 1000);
@@ -286,7 +273,6 @@ app.register(async function (app) {
                 } catch (error) {
                     console.error('Erreur fetching game data:', error);
                 }
-                // Informer l'autre joueur
                 const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
                 if (otherPlayer && otherPlayer.readyState === 1) {
                     otherPlayer.send(JSON.stringify({
@@ -296,7 +282,6 @@ app.register(async function (app) {
                 }
             }
 
-            // Gestion des mouvements
             if (messageData.event === 'move' && messageData.paddle === playerPosition) {
                 if (playerPosition === 'left') {
                     if (messageData.direction === 'up' && game.leftPaddle.y > 2) {
@@ -321,7 +306,6 @@ app.register(async function (app) {
         socket.on('close', () => {
             // Ne pas libérer immédiatement - donner 5 secondes pour reconnexion
             setTimeout(() => {
-                // Vérifier si toujours déconnecté après 5 secondes
                 if ((playerPosition === 'left' && game.players.left === socket) ||
                     (playerPosition === 'right' && game.players.right === socket)) {
                     
@@ -332,18 +316,8 @@ app.register(async function (app) {
                         game.players.right = null;
                     }
                     
-                    // ⚠️ NE PAS appeler finishGame() pour les tournois
-                    // Laisser la partie en pause pour permettre la reconnexion
                     game.isGamerunning = false;
                     game.abandonGame(playerPosition);
-                    // Informer l'autre joueur
-                    // const otherPlayer = playerPosition === 'left' ? game.players.right : game.players.left;
-                    // if (otherPlayer && otherPlayer.readyState === 1) {
-                    //     otherPlayer.send(JSON.stringify({
-                    //         event: 'opponent_disconnected',
-                    //         message: 'Votre adversaire s\'est déconnecté'
-                    //     }));
-                    // }
                 }
             }, 5000);
         });
@@ -353,17 +327,6 @@ app.register(async function (app) {
         });
     });
 });
-
-// Gestion des erreurs de connexion WebSocket
-// app.on('ws-error', (err, req) => {
-//   request.log.error({
-//       error: {
-//           message: error.message,
-//           code: error.code,
-//       },
-//       event: 'websocket_attempt'
-//   }, 'WebSocket error occurred');  
-// });
 
 app.listen({ port: 4000, host: '0.0.0.0' }, (err, address) => {
     if (err) {

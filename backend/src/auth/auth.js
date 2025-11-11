@@ -119,7 +119,7 @@ app.post('/register', async (request, reply) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
+                'x-internal-key': process.env.JWT_SECRET
             },
             body: JSON.stringify(info)
         });
@@ -175,7 +175,7 @@ app.post('/login', async (request, reply) => {
             return reply.code(401).send({ error: 'Invalid identifier or password'});
         }
 
-        // Vérifier si 2FA est activé
+       
         const isa2fEnabled = user.twofa_enabled === 1;
         if (isa2fEnabled) {
             const code = createCode(user.uuid);
@@ -205,7 +205,7 @@ app.post('/login', async (request, reply) => {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
-                'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
+                'x-internal-key': process.env.JWT_SECRET
             },
             body: JSON.stringify(info)
         });
@@ -279,7 +279,7 @@ app.post('/verify-2fa', async (request, reply) => {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
-                'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
+                'x-internal-key': process.env.JWT_SECRET
             },
             body: JSON.stringify(info)
         });
@@ -423,13 +423,12 @@ app.get('/a2f-status', async (request, reply) => {
 
 function createCode(uuid) {
     const code = crypto.randomInt(100000, 999999).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // Le code expire dans 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     db.prepare('UPDATE user SET twofa_code = ?, twofa_expiry = ? WHERE uuid = ?').run(code, expiresAt.toISOString(), uuid);
     return code;
 }
 
-// Configuration du transporteur nodemailer
 const transporter = nodemailer.createTransport({
     port: process.env.SMTP_PORT, 
     host: process.env.SMTP_HOST, // true pour 465, false pour les autres ports
@@ -572,10 +571,8 @@ app.get('/google/callback', async(request, reply) => {
     }
 
     try {
-        //recuperation du token d'acces et du token de rafraichisement
         const { token } = await app.google.getAccessTokenFromAuthorizationCodeFlow(request);
         
-        //requete HTTP pour recuperer la data
         let response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             method: 'GET',
             headers: {
@@ -585,7 +582,6 @@ app.get('/google/callback', async(request, reply) => {
         if (!response.ok)
             throw new Error(`HTTP error! status: ${response.status}`);
         
-        //mettre en json pour ensuite mettre dans la db
         const {id: google_id, email, given_name, picture } = await response.json();
 
         const local = db.prepare('SELECT password FROM user WHERE email = ?').get(email);
@@ -601,7 +597,6 @@ app.get('/google/callback', async(request, reply) => {
 
         const user = db.prepare('SELECT * FROM user WHERE email = ?').get(email);
         if (user) {
-            // Vérifier si 2FA est activé
             const isa2fEnabled = user.twofa_enabled === 1;
             if (isa2fEnabled) {
                 const code = createCode(user.uuid);
@@ -616,7 +611,6 @@ app.get('/google/callback', async(request, reply) => {
                     return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('2fa_email_failed')}`);
                 }
 
-                // Générer un JWT temporaire pour la vérification 2FA
                 const tempToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email });
 
                 request.log.info({
@@ -634,7 +628,7 @@ app.get('/google/callback', async(request, reply) => {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
-                'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
+                'x-internal-key': process.env.JWT_SECRET
             },
             body: JSON.stringify(info)
             });
@@ -733,25 +727,10 @@ app.get('/github/callback', async function (request, reply) {
                 }
         });
 
-        // Parse GitHub user first to obtain login for fallback email if needed
         const { login, avatar_url, id } = await userResponse.json();
         
         const emails = await emailResponse.json();
         const emailPrimary = await emails.find(email => email.primary)?.email || null;
-        //a voir si on garde
-        // let emailPrimary = (Array.isArray(emails) && (
-        // // emails.find(e => e.primary && e.verified)?.email ||
-        // // emails.find(e => e.verified)?.email ||
-        // // emails[0]?.email
-        // // )) || null;
-        //Fallback for users with hidden email on GitHub
-        // // if (!emailPrimary && login) {
-            // // emailPrimary = `${login}@users.noreply.github.com`;
-        // // } 
-        // if (!emailPrimary) {
-            //Cannot proceed without an email; redirect back with an error
-            // return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('no_email_from_github')}`);
-        // }
 
         const local = db.prepare('SELECT password FROM user WHERE email = ?').get(emailPrimary);
         if (local && local.password){
@@ -769,7 +748,6 @@ app.get('/github/callback', async function (request, reply) {
         let refreshToken;
 
         if (user) {
-            // Vérifier si 2FA est activé
             const isa2fEnabled = user.twofa_enabled === 1;
             if (isa2fEnabled) {
                 const code = createCode(user.uuid);
@@ -784,7 +762,6 @@ app.get('/github/callback', async function (request, reply) {
                     return reply.redirect(`${FRONT}/oauth/callback?error=${encodeURIComponent('2fa_email_failed')}`);
                 }
 
-                // Générer un JWT temporaire pour la vérification 2FA
                 const tempToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email });
 
                 request.log.info({
@@ -796,14 +773,13 @@ app.get('/github/callback', async function (request, reply) {
             }
 
             ({jwtToken, refreshToken  }= await generateTokens(user.uuid, user.username, user.email));
-            //jwtToken = await app.jwt.sign({ uuid: user.uuid, username: user.username, email: user.email});
 
             const info = { online: 1, uuid: user.uuid }
             const response = await fetch('http://user:4000/online', {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-internal-key': process.env.JWT_SECRET //cela permet a ce que seul un service ayant cette cle peut avoir accees a cette methode
+                    'x-internal-key': process.env.JWT_SECRET
                 },
                 body: JSON.stringify(info)
             });
@@ -834,14 +810,12 @@ app.get('/github/callback', async function (request, reply) {
                 throw new Error(`HTTP error! status: ${response.status}`);
 
             ({jwtToken, refreshToken} = await generateTokens(uuid, login, emailPrimary));
-            //jwtToken = await app.jwt.sign({ uuid: uuid, username: login, email: emailPrimary});
             request.log.info({
                 event: 'github_oauth_attempt',
                 user: { email: emailPrimary, username: login }
                 }, 'GitHub OAuth new user sucess');
 
         }
-        //reply.send({ access_token: token.access_token, jwtToken, refreshToken });
         return reply.redirect(`${FRONT}/oauth/callback?token=${encodeURIComponent(jwtToken)}&refreshToken=${encodeURIComponent(refreshToken)}`);
      } catch (err) {
         request.log.error({
@@ -952,15 +926,14 @@ app.delete('/account', async (request, reply) => {
     }
 });
 
-// Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
-    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    const token = authHeader.slice(7);
+    const payload = await request.jwtVerify();
     return payload.uuid;
 }
 
@@ -968,10 +941,8 @@ async function generateTokens(uuid, username, email) {
     const jwtToken = await app.jwt.sign({ uuid: uuid, username: username, email: email });
     const refreshToken = crypto.randomBytes(64).toString('hex');
 
-    // Le refresh token expirera dans 7 jours
     const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Stocker le refresh token en mémoire (à remplacer par une base de données ou un stockage persistant en production)
     memStore.set(refreshToken, { 
         uuid, 
         username, 

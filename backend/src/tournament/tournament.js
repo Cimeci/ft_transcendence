@@ -7,7 +7,6 @@ import jwt from '@fastify/jwt';
 
 dotenv.config();
 
-// Configuration du logger fastify
 const loggerConfig = {
     transport: {
         target: 'pino/file',
@@ -166,14 +165,12 @@ app.post('/tournament', async (request, reply) => {
             matchesByRound[match.round].push(match);
         });
         
-        // Pour chaque round sauf le dernier (finale), assigner next_match_index
         for (let round = 1; round < totalRounds; round++) {
             const currentRoundMatches = matchesByRound[round];
             const nextRoundMatches = matchesByRound[round + 1];
             
             if (currentRoundMatches && nextRoundMatches) {
                 currentRoundMatches.forEach((match, idx) => {
-                    // Deux matchs consécutifs du round actuel alimentent un match du round suivant
                     const nextMatchIndexInRound = Math.floor(idx / 2);
                     const nextMatch = nextRoundMatches[nextMatchIndexInRound];
                     
@@ -532,7 +529,6 @@ async function getUserData(userUuid, token) {
 
         if (resp.ok) {
             const data = await resp.json();
-            // Privilégier username_tournament pour les tournois
             if (data.user && data.user.username_tournament) {
                 data.user.username = data.user.username_tournament;
             }
@@ -563,7 +559,6 @@ async function launchNextMatchAutomatically(tournamentUuid) {
             return;
         }
 
-        // Prendre le premier match du round le plus bas
         const currentRound = Math.min(...waitingMatches.map(m => m.round));
         const nextMatch = waitingMatches.find(m => m.round === currentRound);
         
@@ -578,7 +573,6 @@ async function launchNextMatchAutomatically(tournamentUuid) {
         nextMatch.player1 = player1Data?.username_tournament || 'Player 1';
         nextMatch.player2 = player2Data?.username_tournament || 'Player 2';
         
-        // Créer le game pour ce match
         const gameUuid = await createGameForMatch(nextMatch, tournamentUuid, null);
         
         if (!gameUuid) {
@@ -586,7 +580,6 @@ async function launchNextMatchAutomatically(tournamentUuid) {
             return;
         }
         
-        // Marquer le match comme prêt
         nextMatch.status = 'ready';
         nextMatch.game_uuid = gameUuid;
         
@@ -806,10 +799,8 @@ app.get('/tournament/:uuid/status', async (request, reply) => {
         const matches = JSON.parse(tournament.game);
         const matchesStatus = [];
 
-        // Récupérer l'état de chaque match qui a un game
         for (const match of matches) {
             if (!match.game_uuid) {
-                // Match pas encore créé - enrichir avec les noms des joueurs
                 const matchData = {
                     uuid: match.uuid,
                     round: match.round,
@@ -821,7 +812,6 @@ app.get('/tournament/:uuid/status', async (request, reply) => {
                     winner_uuid: match.winner_uuid
                 };
                 
-                // 🔧 CORRECTION: Enrichir avec les noms des joueurs si pas déjà présents
                 try {
                     if (match.player1_uuid && !match.player1) {
                         const player1Data = await getUserDataInternal(match.player1_uuid);
@@ -871,7 +861,6 @@ app.get('/tournament/:uuid/status', async (request, reply) => {
             }
         }
 
-        // Organiser par rounds
         const rounds = {};
         matchesStatus.forEach(match => {
             if (!rounds[match.round]) {
@@ -928,9 +917,6 @@ async function createGame (player1_uuid = null, player2_uuid = null, tournament 
     if (!res.ok)
         throw new Error('Failed to create game');
 
-    // deconstruction d'objet, equivalent a ca:
-    // const data = await res.json();
-    // const uuid = data.uuid;
     const { uuid } = await res.json();
     return uuid;
 }
@@ -964,15 +950,14 @@ app.delete('/delete-tournament', async(request, reply) => {
     }
 })
 
-// Middleware pour vérifier le JWT et récupérer le uuid
 async function checkToken(request) {
     const authHeader = request.headers.authorization
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const token = authHeader.slice(7); // slice coupe le nombre de caractere donne
-    const payload = await request.jwtVerify(); // methode de fastify-jwt pour verifier le token
+    const token = authHeader.slice(7);
+    const payload = await request.jwtVerify();
     return payload.uuid;
 }
 

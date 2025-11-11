@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 0,
+  "id": 5,
   "links": [],
   "panels": [
     {
@@ -182,7 +182,7 @@
         {
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])) * 1000",
+          "expr": "(sum(rate(http_request_duration_seconds_sum[5m])) by (instance))\n/\n(sum(rate(http_request_duration_seconds_count[5m])) by (instance))\n* 1000\n",
           "format": "time_series",
           "interval": "",
           "legendFormat": "{{instance}}",
@@ -501,5 +501,5 @@
   "timezone": "browser",
   "title": "Architecture Overview",
   "uid": "adtgbhg",
-  "version": 6
+  "version": 1
 }
