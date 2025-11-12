@@ -27,11 +27,16 @@ services:
       - monitoring
       - elk
     depends_on:
-      - frontend
-      - gateway
-      - kibana
-      - prometheus
-      - grafana
+      frontend:
+        condition: service_started
+      gateway:
+        condition: service_started
+      kibana:
+          condition: service_healthy
+      prometheus:
+          condition: service_healthy
+      grafana:
+        condition: service_started
     build:
       context: ./reverse-proxy
     ports:
