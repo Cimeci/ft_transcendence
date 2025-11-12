@@ -29,9 +29,9 @@ services:
     depends_on:
       - frontend
       - gateway
-      #- kibana
-      #- prometheus
-      #- grafana
+      - kibana
+      - prometheus
+      - grafana
     build:
       context: ./reverse-proxy
     ports:
